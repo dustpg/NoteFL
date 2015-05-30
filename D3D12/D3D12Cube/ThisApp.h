@@ -27,7 +27,7 @@ private:
     // 窗口句柄
     HWND                        m_hwnd = nullptr;
     // 渲染器
-    SceneRenderer	            m_sceneRenderer;
+    SceneRenderer               m_sceneRenderer;
     // 退出
     std::atomic<BOOL>           m_bExit = FALSE;
 };

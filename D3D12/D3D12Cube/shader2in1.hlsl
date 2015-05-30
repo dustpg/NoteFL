@@ -1,4 +1,4 @@
-﻿// C Buffer 0 : 储存转换矩阵
+// C Buffer 0 : 储存转换矩阵
 cbuffer MatrixBuffer : register (b0) {
     matrix worldMatrix;
     matrix viewMatrix;

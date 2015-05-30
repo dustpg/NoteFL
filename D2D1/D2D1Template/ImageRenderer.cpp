@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "included.h"
 
-#undef 	PixelFormat
+#undef  PixelFormat
 // ImageRenderer类构造函数
 ImageRenderer::ImageRenderer() {
     m_parameters.DirtyRectsCount = 0;
