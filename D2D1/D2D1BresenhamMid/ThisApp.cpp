@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "included.h"
 
-#define TITLE L"Title"
+#define TITLE L"中点Bresenham法画直线"
 
 
 
@@ -78,6 +78,7 @@ void ThisApp::RunMessageLoop(){
     }
 }
 
+#include <windowsx.h>
 
 // 窗口过程函数
 LRESULT CALLBACK ThisApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
@@ -98,6 +99,28 @@ LRESULT CALLBACK ThisApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
         if (pOurApp){
             switch (message)
             {
+            case WM_MOUSEMOVE:
+                pOurApp->m_ImagaRenderer.Lock();
+                pOurApp->m_ImagaRenderer.pushed = wParam & MK_LBUTTON;
+                if (pOurApp->m_ImagaRenderer.pushed) {
+                    pOurApp->m_ImagaRenderer.points[1] = { 
+                        float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam))
+                    };
+                }
+                pOurApp->m_ImagaRenderer.Unlock();
+                break;
+            case WM_LBUTTONDOWN:
+                pOurApp->m_ImagaRenderer.Lock();
+                pOurApp->m_ImagaRenderer.points[0] = {
+                    float(GET_X_LPARAM(lParam)), float(GET_Y_LPARAM(lParam))
+                };
+                pOurApp->m_ImagaRenderer.Unlock();
+                break;
+            case WM_LBUTTONUP:
+                pOurApp->m_ImagaRenderer.Lock();
+                pOurApp->m_ImagaRenderer.pushed = FALSE;
+                pOurApp->m_ImagaRenderer.Unlock();
+                break;
             case WM_CLOSE:
                 // 将收尾操作(如结束全部子线程)放在这里
                 pOurApp->m_bExit = TRUE;

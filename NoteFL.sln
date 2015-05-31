@@ -13,6 +13,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D2D1Template", "D2D1\D2D1Template\D2D1Template.vcxproj", "{7B1DA6E7-5D89-471F-8B7F-52A0920FA173}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D2D1BresenhamMid", "D2D1\D2D1BresenhamMid\D2D1BresenhamMid.vcxproj", "{D9D80257-6538-4A49-9C32-CC66AF2D2E1C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -31,6 +33,10 @@ Global
 		{7B1DA6E7-5D89-471F-8B7F-52A0920FA173}.Debug|x86.Build.0 = Debug|Win32
 		{7B1DA6E7-5D89-471F-8B7F-52A0920FA173}.Release|x86.ActiveCfg = Release|Win32
 		{7B1DA6E7-5D89-471F-8B7F-52A0920FA173}.Release|x86.Build.0 = Release|Win32
+		{D9D80257-6538-4A49-9C32-CC66AF2D2E1C}.Debug|x86.ActiveCfg = Debug|Win32
+		{D9D80257-6538-4A49-9C32-CC66AF2D2E1C}.Debug|x86.Build.0 = Debug|Win32
+		{D9D80257-6538-4A49-9C32-CC66AF2D2E1C}.Release|x86.ActiveCfg = Release|Win32
+		{D9D80257-6538-4A49-9C32-CC66AF2D2E1C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -38,5 +44,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{A3E96AC5-157A-41F9-A2A2-43DA615C294E} = {BCDE7BD2-7E91-4E5E-9A0D-DBCD40620A14}
 		{7B1DA6E7-5D89-471F-8B7F-52A0920FA173} = {2092E3C8-BDCB-4D9B-A5CA-D9084C2E324C}
+		{D9D80257-6538-4A49-9C32-CC66AF2D2E1C} = {2092E3C8-BDCB-4D9B-A5CA-D9084C2E324C}
 	EndGlobalSection
 EndGlobal
