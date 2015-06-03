@@ -21,6 +21,7 @@ For this repo, you need:
     3. D2D1EdgeFilling 边缘填充，并附上当时自己项目报告
     4. D2D1MidCircle 中点Bresenham画圆 并在代码中**实现了画椭圆**(但是没有展示),
          您可以自行抉择，也附上了自己当时的项目报告
+    5. D2D1SeedFilling 种子填充，并附上了自己当时的项目报告
         
 - D3D12/
     
