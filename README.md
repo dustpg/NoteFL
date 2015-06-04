@@ -26,3 +26,7 @@ For this repo, you need:
 - D3D12/
     
     1. D3D12Cube 旋转的彩色立方体, 双倍 CommandList
+    
+- Game/
+    
+    1. DrawFantasy, 游戏示例，使用3rdparty/WrapAL

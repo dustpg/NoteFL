@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\杂项">
+      <UniqueIdentifier>{c8963abb-208b-4ab9-adfa-2873e4bc48d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\程序逻辑">
+      <UniqueIdentifier>{8e844148-dac1-4a56-a73a-e311c04a3aff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\IO">
+      <UniqueIdentifier>{331ce8cb-937c-4fb7-bd9a-17c10f690a33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI">
+      <UniqueIdentifier>{9511503a-bbbe-4169-9a5d-5ee4144813ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\程序逻辑">
+      <UniqueIdentifier>{f623c5a6-6d52-4921-92e7-fcf4e57fe4ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\IO">
+      <UniqueIdentifier>{1e676db8-9a11-434b-9fa9-9ec23e14d02d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{937fb5e8-3ed3-4612-b775-3e864b7dfcd9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="included.h">
+      <Filter>Header Files\杂项</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files\杂项</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageRenderer.h">
+      <Filter>Header Files\程序逻辑</Filter>
+    </ClInclude>
+    <ClInclude Include="ThisApp.h">
+      <Filter>Header Files\程序逻辑</Filter>
+    </ClInclude>
+    <ClInclude Include="GameInput.h">
+      <Filter>Header Files\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="EzButton.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UITimer.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="GameScene.h">
+      <Filter>Header Files\程序逻辑</Filter>
+    </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Header Files\杂项</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageRenderer.cpp">
+      <Filter>Source Files\程序逻辑</Filter>
+    </ClCompile>
+    <ClCompile Include="ThisApp.cpp">
+      <Filter>Source Files\程序逻辑</Filter>
+    </ClCompile>
+    <ClCompile Include="GameInput.cpp">
+      <Filter>Source Files\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScene.cpp">
+      <Filter>Source Files\程序逻辑</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
