@@ -261,6 +261,17 @@ auto ThisApp::GetThemeColor(D2D1_COLOR_F& colorf) noexcept -> HRESULT {
         &color,
         &buffer_size
         );
+    DWORD balance = 0;
+    buffer_size = sizeof(DWORD);
+    ::RegGetValueA(
+        HKEY_CURRENT_USER,
+        "Software\\Microsoft\\Windows\\DWM",
+        "ColorizationColorBalance",
+        RRF_RT_DWORD,
+        nullptr,
+        &balance,
+        &buffer_size
+        );
     {
         /*/ TODO: 修正
         float alpha = float(argb[3]) / 255.f;
@@ -283,18 +294,30 @@ auto ThisApp::GetThemeColor(D2D1_COLOR_F& colorf) noexcept -> HRESULT {
         if (colorf.b < 0.f) colorf.b = 0.f;*/
 
         constexpr auto cc = 0xaff2df49ui32;
-        constexpr float a = float((cc >> 24) & 0xFF) / 255.f;
+        constexpr float a = 0.78f; //float((cc >> 24) & 0xFF) / 255.f;
         constexpr float r = float((cc >> 16) & 0xFF) / 255.f;
         constexpr float g = float((cc >>  8) & 0xFF) / 255.f;
         constexpr float b = float((cc >>  0) & 0xFF) / 255.f;
         //---
-        constexpr float R = (0.9294f - r * a) / (1.f - a);
-        constexpr float G = (0.8706f - g * a) / (1.f - a);
-        constexpr float B = (0.4118f - b * a) / (1.f - a);
+        constexpr float R = (float(0xA9) / 255.f - r * a) / (1.f - a);
+        constexpr float G = (float(0x95) / 255.f - g * a) / (1.f - a);
+        constexpr float B = (float(0x0A) / 255.f - b * a) / (1.f - a);
         //---
         constexpr float rr = r * r / (r + g + b);
         constexpr float gg = g * g / (r + g + b);
         constexpr float bb = b * b / (r + g + b);
+
+        auto blend_channel = [](float ch1, float ch2, float prec) {
+            register auto data = ch1 + (ch2 - ch1) * prec;
+            return data > 1.f ? 1.f : (data < 0.f ? 0.f : data);
+        };
+
+        colorf.a = 1.f;
+        auto prec = 1.f - float(balance) / 100.f;
+        constexpr float basegrey = float(217) / 255.f;
+        colorf.r = blend_channel(float(argb[2]) / 255.f, basegrey, prec);
+        colorf.g = blend_channel(float(argb[1]) / 255.f, basegrey, prec);
+        colorf.b = blend_channel(float(argb[0]) / 255.f, basegrey, prec);
     }
 #else
     BOOL aphla_blend = false;
@@ -371,7 +394,7 @@ auto ThisApp::GetThemeColor(D2D1_COLOR_F& colorf) noexcept -> HRESULT {
         colorf = D2D1::ColorF(color, float(color>>24)/255.f);
     }*/
 #endif
-    {
+    /*{
         auto dll = ::GetModuleHandleW(L"dwmapi");
         struct COLORIZATIONPARAMS  {
             COLORREF        clrColor;           // ColorizationColor
@@ -388,8 +411,7 @@ auto ThisApp::GetThemeColor(D2D1_COLOR_F& colorf) noexcept -> HRESULT {
             auto hr = dwmGetColorizationParameters(&params);
             int a = 9;
         }
-    }
-    colorf = D2D1::ColorF(color/*, float(color >> 24) / 255.f*/);
+    }*/
     return hr;
 }
 
