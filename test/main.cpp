@@ -3,19 +3,19 @@
 #include <iostream>
 #include <string>
 
-struct TEST {
-    int x, y, z;
-};
 
 // 应用程序入口
 int main(int argc, const char* argv[]) {
     std::string info = "infomation";
-    std::cout << 0.f;
-    std::cout << info << std::endl;
+    int bbb = 100;
+    const int a = bbb;
+    const_cast<int&>(a) = 255;
+    int* p = const_cast<int*>(&a);
+    *p = 200;
+    std::cout << &a << '[' 
+        << *(&a) << ']' << ' ' << p << '[' << *p << ']' << std::endl;
     //
-    TEST test1 = { 0, 1, 2 };
-    // C99
-    //TEST test2 = { .y = 1,.z = 2 };
+    std::printf("%p[%d] %p[%d]", &a, *(&a), p, *p);
     (void)std::getchar();
     return EXIT_SUCCESS;
 }
