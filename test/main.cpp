@@ -1,60 +1,35 @@
-﻿#include <cstdlib>
-#include <cstdio>
-#include <iostream>
-#include <string>
+﻿#include <iostream>
 
-class Base {
-public:
-    Base() { 
-        for (auto& i : m_base) 
-            i = 0; 
-    }
-    Base(int base) { 
-        for (auto& i : m_base) 
-            i = base; 
-    }
-protected:
-    int     m_base[128];
+enum XX {
+    XX_1st = 0,
+    XX_2nd,
+    XX_SIZE,
 };
 
-class Dase1 : public virtual Base {
+class XXHelper {
 public:
-    Dase1(int base) : m_dase1(base), Base(base){}
-private:
-    int     m_dase1;
+    static constexpr auto GetCount() { return static_cast<uint32_t>(XX_SIZE); }
+};
+
+class XXXHelper {
+public:
+    static constexpr auto GetCount() { return static_cast<uint32_t>(XX_SIZE) +1; }
 };
 
 
-class Dase2 : public virtual Base {
+template<class T>
+class TT {
 public:
-    Dase2(int base) : m_dase2(base), Base(base) {}
-private:
-    int     m_dase2;
+    int     data[T::GetCount()];
 };
 
-class Fase : public Dase1, public Dase2 {
-public:
-    Fase(int base) : Dase1(base), Dase2(base), m_fase(base) {}
-private:
-    int     m_fase;
-};
-
-
-// 应用程序入口
+// main
 int main(int argc, const char* argv[]) {
-    {
-        Fase fase(9);
-    }
-    std::string info = "infomation";
-    int bbb = 100;
-    const int a = bbb;
-    const_cast<int&>(a) = 255;
-    int* p = const_cast<int*>(&a);
-    *p = 200;
-    std::cout << &a << '[' 
-        << *(&a) << ']' << ' ' << p << '[' << *p << ']' << std::endl;
-    //
-    std::printf("%p[%d] %p[%d]", &a, *(&a), p, *p);
+    TT<XXHelper> tta;
+    TT<XXXHelper> ttb;
+    constexpr int ttaa = sizeof(tta);
+    constexpr int ttbb = sizeof(ttb);
+    constexpr bool aaa = ttaa == ttbb;
     (void)std::getchar();
     return EXIT_SUCCESS;
 }

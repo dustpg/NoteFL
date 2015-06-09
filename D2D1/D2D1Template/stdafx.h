@@ -3,7 +3,7 @@
 // 用途:  包含不再修改头文件,生成预编译文件
 
 
-//#define USING_DirectComposition
+#define USING_DirectComposition
 // 使用固定DPI(PPI)
 #define FIXED_DPI (96.f)
 
@@ -56,7 +56,7 @@ inline void SafeCloseHandle(HANDLE& handle){
 #include <thread>
 #include <cwchar>
 
-#include <dxgi1_2.h>
+#include <dxgi1_3.h>
 #include <D3D11.h>
 #include <d2d1_1.h>
 #include <d2d1_1helper.h>

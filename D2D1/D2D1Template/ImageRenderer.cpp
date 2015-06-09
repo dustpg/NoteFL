@@ -66,7 +66,8 @@ HRESULT ImageRenderer::CreateDeviceIndependentResources() {
 HRESULT ImageRenderer::CreateDeviceResources() {
     HRESULT hr = S_OK;
     // DXGI Surface 后台缓冲
-    IDXGISurface*                        pDxgiBackBuffer = nullptr;
+    IDXGISurface*                   pDxgiBackBuffer = nullptr;
+    IDXGISwapChain1*                pSwapChain = nullptr;
     // 创建 D3D11设备与设备上下文 
     if (SUCCEEDED(hr)) {
         // D3D11 创建flag 
@@ -157,7 +158,7 @@ HRESULT ImageRenderer::CreateDeviceResources() {
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapChainDesc.BufferCount = 2;
         swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-        swapChainDesc.Flags = 0;
+        swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 #ifdef USING_DirectComposition
         // DirectComposition桌面应用程序
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
@@ -167,12 +168,12 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             m_pDxgiDevice,
             &swapChainDesc,
             nullptr,
-            &m_pSwapChain
+            &pSwapChain
             );
 #else
         // 一般桌面应用程序
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         // 利用窗口句柄创建交换链
         hr = m_pDxgiFactory->CreateSwapChainForHwnd(
             m_pd3dDevice,
@@ -180,9 +181,20 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             &swapChainDesc,
             nullptr,
             nullptr,
-            &m_pSwapChain
+            &pSwapChain
             );
 #endif
+    }
+    // 获取接口
+    if (SUCCEEDED(hr)) {
+        hr = pSwapChain->QueryInterface(
+            IID_IDXGISwapChain2,
+            reinterpret_cast<void**>(&m_pSwapChain)
+            );
+    }
+    // 获取等待事件
+    if (SUCCEEDED(hr)) {
+        m_hVSync = m_pSwapChain->GetFrameLatencyWaitableObject();
     }
     // 确保DXGI队列里边不会超过一帧
     if (SUCCEEDED(hr)) {
@@ -245,6 +257,7 @@ HRESULT ImageRenderer::CreateDeviceResources() {
     }
 #endif
     ::SafeRelease(pDxgiBackBuffer);
+    ::SafeRelease(pSwapChain);
     return hr;
 }
 
@@ -267,6 +280,11 @@ ImageRenderer::~ImageRenderer(){
 
 // 丢弃设备相关资源
 void ImageRenderer::DiscardDeviceResources(){
+    if (m_hVSync) {
+        ::CloseHandle(m_hVSync);
+        m_hVSync = nullptr;
+    }
+
     ::SafeRelease(m_pd3dDevice);
     ::SafeRelease(m_pd3dDeviceContext);
     ::SafeRelease(m_pd2dDevice);
@@ -285,15 +303,31 @@ void ImageRenderer::DiscardDeviceResources(){
 #endif
 }
 
+#include <Mmsystem.h>
+#pragma comment(lib, "Winmm.lib")
+#pragma comment(lib, "dxguid.lib")
+
 // 渲染图形图像
 HRESULT ImageRenderer::OnRender(UINT syn){
     HRESULT hr = S_OK;
     // 没有就创建
     if (!m_pd2dDeviceContext) {
         hr = this->CreateDeviceResources();
+        assert(SUCCEEDED(hr));
     }
     // 成功就渲染
     if (SUCCEEDED(hr)) {
+        // 等待事件
+#ifdef _DEBUG
+        {
+            auto time = ::timeGetTime();
+            ::WaitForSingleObject(m_hVSync, INFINITE);
+            time = ::timeGetTime() - time;
+            ::_cwprintf(L"Time:%2d ms  ", time);
+        }
+#else
+        ::WaitForSingleObject(m_hVSync, INFINITE);
+#endif
         // 开始渲染
         m_pd2dDeviceContext->BeginDraw();
         // 清屏
@@ -301,7 +335,20 @@ HRESULT ImageRenderer::OnRender(UINT syn){
         // 结束渲染
         m_pd2dDeviceContext->EndDraw();
         // 呈现目标
+#ifdef _DEBUG
+        {
+            auto time = ::timeGetTime();
+            static int a = 0;
+            if (a <= 10) {
+                hr = m_pSwapChain->Present(syn, 0);
+                ++a;
+            }
+            time = ::timeGetTime() - time;
+            ::_cwprintf(L"Time:%2d ms \n", time);
+        }
+#else
         hr = m_pSwapChain->Present(syn, 0);
+#endif
     }
     // 设备丢失?
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {

@@ -49,8 +49,10 @@ private:
     // 调试对象
     ID3D11Debug*                        m_pd3dDebug = nullptr;
 #endif
+    // 等待垂直同步句柄
+    HANDLE                              m_hVSync = nullptr;
     // DXGI 交换链
-    IDXGISwapChain1*                    m_pSwapChain = nullptr;
+    IDXGISwapChain2*                    m_pSwapChain = nullptr;
     // D2D 位图 储存当前显示的位图
     ID2D1Bitmap1*                       m_pd2dTargetBimtap = nullptr;
 #ifdef USING_DirectComposition
