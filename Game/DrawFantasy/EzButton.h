@@ -76,7 +76,7 @@ public:
     // 析构函数
     ~GameButton()  { ::SafeRelease(m_pSprite); }
     // ->
-    auto operator ->() noexcept { return m_pSprite; }
+    auto operator ->() noexcept { assert(m_pSprite); return m_pSprite; }
     // 设置
     void SetSprite(Sprite* s) noexcept { ::SafeRelease(m_pSprite); m_pSprite = s; }
     // 刷新

@@ -26,9 +26,7 @@ public:
         return m_imageRenderer.LoadBitmapFromFile(uri, ppb);
     }
     // 载入新的场景
-    template<class T> auto LoadScene() { m_spNowScene.reset(new(std::nothrow) T(*this)); }
-    // 载入新的场景
-    template<class T> auto LoadScene(void* data) { m_spNowScene.reset(new(std::nothrow) T(data, *this)); }
+    template<class T> auto LoadScene() { m_spNowScene.reset(new(std::nothrow) T(*this)); m_pOldScene = nullptr; }
 public:
     // 显示标题栏
     auto ShowCaption()noexcept { return m_imageRenderer.ShowCaption(); }
@@ -42,6 +40,10 @@ public:
     auto IsExit() noexcept -> BOOL  { return m_bExit; }
     // 获取窗口句柄
     auto GetHwnd() noexcept { return m_hwnd; }
+    // 设置背景模糊
+    auto SetBackgroundBlur(int32_t z, float b) noexcept { return m_imageRenderer.SetBackgroundBlur(z, b); }
+    // 设置时间缩放比例
+    auto SetTimeScale(float ts) noexcept { return m_imageRenderer.SetTimeScale(ts); }
     // 渲染窗口
     static auto Render(ThisApp* pThis)noexcept->HRESULT;
     // 获取主题颜色

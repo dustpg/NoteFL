@@ -33,13 +33,20 @@ using GameCallBack = void(*)(void* game_object, void* call_data);
 using SpriteList = std::list<Sprite>;
 // 剩余
 #include "EzButton.h"
+#include "GameActor.h"
 #include "GameScene.h"
 
 #include "GameInput.h"
 #include "ImageRenderer.h"
 #include "ThisApp.h"
 
+#ifdef min
+#undef min
+#endif
 
+#ifdef max
+#undef max
+#endif
 // 数组长度
 #define lengthof(a) (sizeof(a)/sizeof(*(a)))
 // 更新一帧

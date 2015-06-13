@@ -62,6 +62,9 @@
     <ClInclude Include="Util.h">
       <Filter>Header Files\杂项</Filter>
     </ClInclude>
+    <ClInclude Include="GameActor.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -83,6 +86,9 @@
       <Filter>Source Files\程序逻辑</Filter>
     </ClCompile>
     <ClCompile Include="Sprite.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="GameActor.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
   </ItemGroup>

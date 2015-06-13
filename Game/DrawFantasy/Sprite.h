@@ -61,6 +61,8 @@ public:
     auto SetNewMoveEnd(GameCallBack call, void* data) noexcept { m_pMoveEndData = data; m_pMoveEnd = call;};
     // 刷新
     void Updata(float delta) noexcept;
+    // 移动中
+    auto IsMoving() noexcept { return m_fTime > 0.f; }
     // 获取目前
     auto GetOld() ->SpriteStatus& { return m_oldStatus; }
     // 获取目标
@@ -77,7 +79,7 @@ public:
     auto ChangeTo(const SpriteStatus& target, float time) noexcept { return this->change_to(target, time); }
     // 渲染
     void Render(ID2D1DeviceContext* dc, const D2D1_MATRIX_3X2_F& old) const noexcept {
-        if (!m_pBitmap) return;
+        if (!m_pBitmap || this->opacity <= 0.f) return;
         D2D1_MATRIX_3X2_F matrix = m_matrix * old;
         dc->SetTransform(&matrix);
         dc->DrawBitmap(

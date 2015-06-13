@@ -72,6 +72,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="EzButton.h" />
+    <ClInclude Include="GameActor.h" />
     <ClInclude Include="GameInput.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="ImageRenderer.h" />
@@ -83,6 +84,7 @@
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GameActor.cpp" />
     <ClCompile Include="GameInput.cpp" />
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="ImageRenderer.cpp" />

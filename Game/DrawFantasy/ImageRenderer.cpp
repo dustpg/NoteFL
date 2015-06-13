@@ -3,6 +3,8 @@
 
 // ImageRenderer类构造函数
 ImageRenderer::ImageRenderer(ThisApp& m) noexcept :m_app(m) {
+    ZeroMemory(m_cache, sizeof(m_cache));
+    //
     Sprite::s_pImageRenderer = this;
     m_parameters.DirtyRectsCount = 0;
     m_parameters.pDirtyRects = nullptr;
@@ -332,6 +334,10 @@ auto ImageRenderer::CreateDeviceResources() noexcept ->HRESULT {
             &m_pCommonBrush
             );
     }
+    // 创建高斯模糊特效
+    if (SUCCEEDED(hr)) {
+        hr = m_pd2dDeviceContext->CreateEffect(CLSID_D2D1GaussianBlur, &m_pGBlur);
+    }
     // 创建临时位图
     if (SUCCEEDED(hr)) {
         hr = m_pd2dDeviceContext->CreateBitmap(
@@ -434,7 +440,13 @@ void ImageRenderer::OpenClose(bool open) noexcept {
 
 // 丢弃设备相关资源
 void ImageRenderer::DiscardDeviceResources() noexcept {
+    for (auto i = 0u; i < m_cCacheSize; ++i) {
+        m_cache[i].path[0] = 0;
+        ::SafeRelease(m_cache[i].bitmap);
+    }
+    m_cCacheSize = 0;
     // 资源
+    ::SafeRelease(m_pGBlur);
     ::SafeRelease(m_pTempBitmap);
     ::SafeRelease(m_pd3dDevice);
     ::SafeRelease(m_pd3dDeviceContext);
@@ -500,10 +512,31 @@ auto ImageRenderer::OnRender(UINT syn) noexcept ->float {
         m_timer.RefreshFrequency();
     }
     // 更新计时器
-    auto delta = m_timer.Delta_s<float>();
+    auto delta = m_timer.Delta_s<float>() * this->time_scalar;
     // 成功就渲染
     if (SUCCEEDED(hr)) {
         m_pMultithread->Enter();
+        ID2D1CommandList* command = nullptr;
+        // 更新模糊
+        if (m_fBlur != m_fBlurEnd) {
+            auto va = delta / time_scalar * 5.f;
+            if (m_fBlur < m_fBlurEnd) {
+                m_fBlur += va;
+                m_fBlur = std::min(m_fBlur, m_fBlurEnd);
+            }
+            else {
+                m_fBlur -= va * 4.f;
+                m_fBlur = std::max(m_fBlur, 0.f);
+            }
+        }
+        // 需要模糊?
+        if (m_fBlur) {
+            m_pd2dDeviceContext->CreateCommandList(&command);
+            m_pd2dDeviceContext->SetTarget(command);
+        }
+        else {
+            m_pd2dDeviceContext->SetTarget(m_pd2dTargetBimtap);
+        }
         // 开始渲染
         m_pd2dDeviceContext->BeginDraw();
         // 清屏
@@ -521,17 +554,50 @@ auto ImageRenderer::OnRender(UINT syn) noexcept ->float {
             // 排序
             if (m_bSptNeedSort) {
                 m_list.sort(
-                    [](const Sprite& sprite1, const Sprite& sprite2) ->bool {
-                    return sprite1.z < sprite2.z;
-                }
+                    [](const Sprite& sprite1, const Sprite& sprite2) noexcept { return sprite1.z < sprite2.z; }
                 );
                 m_bSptNeedSort = false;
             }
             D2D1_MATRIX_3X2_F matrix;
             m_pd2dDeviceContext->GetTransform(&matrix);
             // 渲染精灵
-            for (auto& sprite : m_list) {
-                sprite.Render(m_pd2dDeviceContext, matrix);
+            if(command){
+                auto last_z = m_list.front().z;
+                bool doit = true;
+                auto draw_effect = [this](ID2D1CommandList* command) noexcept {
+                    // 结束渲染
+                    m_pd2dDeviceContext->EndDraw();
+                    m_pd2dDeviceContext->SetTarget(m_pd2dTargetBimtap);
+                    m_pd2dDeviceContext->BeginDraw();
+                    // 渲染
+                    command->Close();
+                    m_pGBlur->SetInput(0, command);
+                    m_pGBlur->SetValue(D2D1_GAUSSIANBLUR_PROP_STANDARD_DEVIATION, m_fBlur);
+                    D2D1_MATRIX_3X2_F matrix;
+                    m_pd2dDeviceContext->GetTransform(&matrix);
+                    m_pd2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
+                    m_pd2dDeviceContext->DrawImage(m_pGBlur);
+                    m_pd2dDeviceContext->SetTransform(&matrix);
+
+                };
+                // 遍历
+                for (auto& sprite : m_list) {
+                    if (doit && last_z < m_zBlur && sprite.z >= m_zBlur) {
+                        doit = false;
+                        draw_effect(command);
+                    }
+                    last_z = sprite.z;
+                    sprite.Render(m_pd2dDeviceContext, matrix);
+                }
+                // 干他!
+                if (doit) {
+                    draw_effect(command);
+                }
+            }
+            else {
+                for (auto& sprite : m_list) {
+                    sprite.Render(m_pd2dDeviceContext, matrix);
+                }
             }
             // 回退
             m_pd2dDeviceContext->SetTransform(&matrix);
@@ -551,10 +617,12 @@ auto ImageRenderer::OnRender(UINT syn) noexcept ->float {
         }
         // 结束渲染
         m_pd2dDeviceContext->EndDraw();
-        // 呈现目标
-        hr = m_pSwapChain->Present(syn, 0);
+        // 释放
+        ::SafeRelease(command);
         // 离开
         m_pMultithread->Leave();
+        // 呈现目标
+        hr = m_pSwapChain->Present(syn, 0);
     }
     // 设备丢失?
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
@@ -667,6 +735,31 @@ auto ImageRenderer::LoadBitmapFromFile(
     ::SafeRelease(pScaler);
 
     return hr;
+}
+
+// 读取图片
+auto ImageRenderer::LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap1 ** ppb) noexcept ->HRESULT{
+    assert(uri && ppb);
+    // 查找缓存信息
+    for (auto i = 0u; i < m_cCacheSize; ++i) {
+        if (!m_cache[i].bitmap) break;
+        if (!std::wcscmp(m_cache[i].path, uri)) {
+            *ppb = ::SafeAcquire(m_cache[i].bitmap);
+            return S_OK;
+        }
+    }
+    // 再硬盘载入
+    auto hr = ImageRenderer::LoadBitmapFromFile(
+        m_pd2dDeviceContext, m_pWICFactory, uri, 0, 0, ppb
+        );
+    // 缓存空间足够
+    if (SUCCEEDED(hr) && m_cCacheSize < BITMAP_CACHE_SIZE) {
+        std::wcscpy(m_cache[m_cCacheSize].path, uri);
+        m_cache[m_cCacheSize].bitmap = ::SafeAcquire(*ppb);
+        ++m_cCacheSize;
+    }
+    return hr;
+
 }
 
 // ------------------

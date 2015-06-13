@@ -65,6 +65,7 @@ inline void SafeCloseHandle(HANDLE& handle){
     }
 }
 
+#include <algorithm>
 #include <iostream>
 #include <cassert>
 #include <cstdlib>

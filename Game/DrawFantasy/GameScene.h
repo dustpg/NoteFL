@@ -11,7 +11,7 @@ enum class SceneStage : uint32_t {
 
 
 // 游戏场景
-class DECLSPEC_NOVTABLE BaseScene {
+class BaseScene {
 public:
     // 构造函数
     BaseScene(ThisApp& a) noexcept : m_app(a) {  };
@@ -46,7 +46,7 @@ protected:
 };
 
 // 基本场景 lv2
-class DECLSPEC_NOVTABLE BaseScene2 : public BaseScene {
+class BaseScene2 : public BaseScene {
     // 父类声明
     using Super = BaseScene;
 public:
@@ -60,12 +60,14 @@ protected:
     // 开始后
     virtual inline void post_start() noexcept {};
     // 刷新
-    virtual inline void update() GameExitThrow { Sprite::UpdateFrame(1); };
+    virtual inline void update() GameExitThrow { m_fDeltaTime = Sprite::UpdateFrame(1); };
     // 结束前
     virtual inline void pre_terminate() noexcept {};
     // 结束
     virtual inline void terminate() noexcept {};
-private:
+protected:
+    // 间隔时间
+    float               m_fDeltaTime = 0.f;
 };
 
 
@@ -103,9 +105,11 @@ public:
     ~TitleScene() noexcept;
 protected:
     // 开始
-    void start() noexcept ;
+    void start() noexcept override;
     // 刷新
-    void update() GameExitThrow;
+    void update() GameExitThrow override;
+    // 结束前
+    void pre_terminate() noexcept override;
 protected:
     // 背景图片
     Sprite*             m_pBackground = nullptr;
@@ -121,3 +125,83 @@ protected:
     GameButtonEx        m_opintion[OPINTION_SIZE];
 };
 
+
+// 游戏场景
+class GameScene final : public BaseScene2 {
+    // 父类声明
+    using Super = BaseScene2;
+    // 精灵
+    enum : uint32_t {
+        // 背景图
+        Sprite_Background = 0,
+        // 技能槽
+        Sprite_SkillSlot,
+        // 技能点
+        Sprite_SkillPoint,
+        // 选择技能
+        Sprite_Skill,
+        // HP值
+        Sprite_Health,
+        // 菜单A
+        Sprite_MenuA,
+        // 菜单B
+        Sprite_MenuB,
+        // 大小
+        SPRITE_SIZE,
+    };
+    // 技能编号
+    enum Skill : uint32_t {
+        Skill_FireBall = 0,
+        Skill_Heal,
+        Skill_AoE,
+        Skill_God,
+        SKILL_SIZE
+    };
+public:
+    // 构造函数
+    GameScene(ThisApp& g) noexcept;
+    // 析构函数
+    ~GameScene() noexcept;
+protected:
+    // 开始
+    void start() noexcept override;
+    // 刷新
+    void update() GameExitThrow override;
+private:
+    // 检查玩家
+    void updata_player() noexcept;
+    // 检查玩家
+    void updata_menu() noexcept;
+    // 检查玩家
+    void updata_skill() noexcept;
+    // 设置技能动画
+    void set_skill_animation()noexcept;
+private:
+    // 背景图片
+    Sprite*             m_apSprites[SPRITE_SIZE];
+    // 技能动画
+    AutoAnimation       m_skillAnimation;
+    // 玩家
+    GameActor           m_player;
+    // 数据
+    ActorData           m_playerData;
+    // 地形
+    GameTerrain         m_terrain;
+    // 技能数据
+    union {
+        // 火球
+        struct  {
+            // 方向
+            float       fire_direction;
+            // 速度X
+            float       fire_x;
+            // 速度X
+            float       fire_y;
+        };
+        // 无敌
+        struct {
+            // 剩余时间
+            float       god_time;
+        };
+    }                   data;
+};

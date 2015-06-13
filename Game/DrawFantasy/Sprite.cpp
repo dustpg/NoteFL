@@ -130,7 +130,7 @@ void Sprite::Updata(float delta) noexcept {
     }
     // 检查Z坐标
     if (this->z != m_iOldZ) {
-        this->z = m_iOldZ;
+        m_iOldZ = this->z;
         s_pImageRenderer->NeedSort();
     }
 }

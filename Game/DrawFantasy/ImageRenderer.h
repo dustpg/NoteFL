@@ -7,6 +7,15 @@
 class ImageRenderer{
     // 友元声明
     friend class Sprite;
+    // 位图缓存数量
+    static constexpr uint32_t BITMAP_CACHE_SIZE = 16;
+    // 缓存信息
+    struct CacheInfo {
+        // 位图
+        ID2D1Bitmap1*   bitmap;
+        // 路径
+        wchar_t         path[(256 - sizeof(void*)) / sizeof(wchar_t)];
+    };
 public:
     // 构造函数
     ImageRenderer(ThisApp&)noexcept;
@@ -24,6 +33,10 @@ public:
     auto OnRender(UINT syn)noexcept ->float;
     // 设置窗口句柄
     auto SetHwnd(HWND hwnd)noexcept { m_hwnd = hwnd; return this->CreateDeviceIndependentResources();}
+    // 设置背景模糊
+    auto SetBackgroundBlur(int32_t z, float b) noexcept { m_zBlur = z; m_fBlurEnd = b; }
+    // 设置时间缩放
+    auto SetTimeScale(float ts) noexcept { time_scalar = ts; }
 public:
     // 标题栏高度
     static constexpr uint32_t CAPTION_HEIGHT = 32;
@@ -69,9 +82,7 @@ private:
     auto LoadBitmapFromFile(ID2D1DeviceContext*, IWICImagingFactory2 *, PCWSTR uri, UINT, UINT, ID2D1Bitmap1 **) noexcept ->HRESULT;
 public:
     // 读取图片文件
-    auto LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap1 ** ppb) noexcept {
-        return ImageRenderer::LoadBitmapFromFile(m_pd2dDeviceContext, m_pWICFactory, uri, 0, 0, ppb);
-    }
+    auto LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap1 ** ppb) noexcept->HRESULT;
 private:
     // 本程序
     ThisApp&                        m_app;
@@ -114,6 +125,8 @@ private:
     ID2D1Bitmap1*                   m_pd2dTargetBimtap = nullptr;
     // D2D 位图 临时位图
     ID2D1Bitmap1*                   m_pTempBitmap = nullptr;
+    // 高斯模糊
+    ID2D1Effect*                    m_pGBlur = nullptr;
 #ifdef USING_DirectComposition
     // Direct Composition Device
     IDCompositionDevice*            m_pDcompDevice = nullptr;
@@ -139,6 +152,16 @@ private:
     float                           m_captionValue = 0.f;
     // 事件
     float                           m_captionTime = 0.f;
+    // 背景模糊值
+    float                           m_fBlurEnd = 0.f;
+    // 当前背景模糊值
+    float                           m_fBlur = 0.f;
+    // 背景模糊Z阈值
+    int32_t                         m_zBlur = 0;
+public:
+    // 时间缩放比
+    float                           time_scalar = 1.f;
+private:
     // 需要排序
     bool                            m_bSptNeedSort = false;
     // 标题渐出
@@ -146,12 +169,16 @@ private:
     // 最小化
     bool                            m_bMinSize = false;
     //
-    bool                            m_bUnused[5];
+    bool                            m_bUnused[1];
+    // 大小
+    uint32_t                        m_cCacheSize = 0;
 private:
     // 精灵链表
     SpriteList                      m_list;
     // 标题栏按钮
     EzButton                        m_captionButtons[CBUTTON_SIZE];
+    // 缓存
+    CacheInfo                       m_cache[BITMAP_CACHE_SIZE];
 public: // 精灵相关
     // 需要排序
     auto NeedSort() noexcept { m_bSptNeedSort = true; }
