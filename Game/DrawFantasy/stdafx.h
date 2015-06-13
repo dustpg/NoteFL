@@ -52,9 +52,9 @@ inline void SafeRelease(Interface *&pInterfaceToRelease){
 template <typename Interface>
 inline Interface* SafeAcquire(Interface* newObject)
 {
-    if (newObject != nullptr)
-        ((IUnknown*)newObject)->AddRef();
-
+    if (newObject != nullptr) {
+        newObject->AddRef();
+    }
     return newObject;
 }
 

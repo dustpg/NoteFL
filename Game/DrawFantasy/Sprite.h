@@ -51,6 +51,8 @@ public:
     ~Sprite() noexcept { ::SafeRelease(m_pBitmap); }
     // 释放
     void Release() noexcept;
+    // 设置
+    auto Set(const SpriteStatus& ss)noexcept { static_cast<SpriteStatus&>(*this) = ss; }
     // 新的位图
     void SetNewBitmap(ID2D1Bitmap1* bitmap) noexcept;
     // 载入新的位图
@@ -59,6 +61,8 @@ public:
     auto SetNewMoveEnd(GameCallBack call, void* data) noexcept { m_pMoveEndData = data; m_pMoveEnd = call;};
     // 刷新
     void Updata(float delta) noexcept;
+    // 获取目前
+    auto GetOld() ->SpriteStatus& { return m_oldStatus; }
     // 获取目标
     auto GetTarget() ->SpriteStatus& { return m_tarStatus; }
     // 获取位图宽度

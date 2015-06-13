@@ -27,6 +27,8 @@ public:
     }
     // 载入新的场景
     template<class T> auto LoadScene() { m_spNowScene.reset(new(std::nothrow) T(*this)); }
+    // 载入新的场景
+    template<class T> auto LoadScene(void* data) { m_spNowScene.reset(new(std::nothrow) T(data, *this)); }
 public:
     // 显示标题栏
     auto ShowCaption()noexcept { return m_imageRenderer.ShowCaption(); }

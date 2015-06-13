@@ -81,13 +81,26 @@ class TitleScene final : public BaseScene2 {
         Button_Opt,     // 
         BUTTON_SIZE,    // 总数量
     };
+    // 选项按钮
+    enum OpintionButton {
+        Button_BGMA,
+        Button_BGMB,
+        Button_BGMC,
+        Button_SEA,
+        Button_SEB,
+        Button_SEC,
+        Button_WndA,
+        Button_WndB,
+        Button_WndC,
+        OPINTION_SIZE,    // 总数量
+    };
     // 父类声明
     using Super = BaseScene2;
 public:
     // 构造函数
     TitleScene(ThisApp& g) noexcept : Super(g) {};
     // 析构函数
-    ~TitleScene() override;
+    ~TitleScene() noexcept;
 protected:
     // 开始
     void start() noexcept ;
@@ -96,6 +109,15 @@ protected:
 protected:
     // 背景图片
     Sprite*             m_pBackground = nullptr;
+    // 背景: BGM
+    Sprite*             m_pBackBGM = nullptr;
+    // 背景: SE
+    Sprite*             m_pBackSE = nullptr;
+    // 背景: 窗口缩放
+    Sprite*             m_pBackWndZoom = nullptr;
     // 游戏按钮
-    GameButton          m_buttons[BUTTON_SIZE];
+    GameButtonEx        m_buttons[BUTTON_SIZE];
+    // 选项区
+    GameButtonEx        m_opintion[OPINTION_SIZE];
 };
+

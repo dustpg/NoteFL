@@ -509,6 +509,13 @@ GameButton::GameButton(Sprite * s) noexcept : m_pSprite(s) {
     ZeroMemory(src_rects, sizeof(src_rects)); 
 }
 
+
+// GameButton: 移动构造函数
+GameButton::GameButton(GameButton&& btn) noexcept :m_pSprite(btn.m_pSprite){
+    ::memcpy(src_rects, btn.src_rects, sizeof(src_rects));
+    btn.m_pSprite = nullptr;
+}
+
 // GameButton: 刷新
 bool GameButton::Update() noexcept {
     assert(m_pSprite && "OH NO!");

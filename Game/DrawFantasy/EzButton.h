@@ -67,12 +67,12 @@ public:
 // 游戏按钮
 class GameButton {
 public:
-    // 构造函数
+    // 默认构造函数
     GameButton(Sprite* s = nullptr) noexcept;
-    // 构造函数
-    GameButton(const GameButton&) = delete;
-    // 构造函数
-    GameButton(GameButton&&) = delete;
+    // 复制构造函数
+    GameButton(const GameButton&) =delete;
+    // 移动构造函数
+    GameButton(GameButton&&) noexcept;
     // 析构函数
     ~GameButton()  { ::SafeRelease(m_pSprite); }
     // ->
@@ -94,4 +94,17 @@ private:
     bool                    m_bClickIn = false;
     // 保留
     bool                    m_bUnsed[sizeof(void*) - 1];
+};
+
+// 游戏按钮EX
+class GameButtonEx : public GameButton {
+public:
+    // 默认构造函数
+    GameButtonEx(Sprite* s = nullptr) noexcept : GameButton(s) {
+        start.Init(); end.Init();
+    };
+    // 初始状态
+    SpriteStatus            start;
+    // 末尾状态
+    SpriteStatus            end;
 };
