@@ -2,17 +2,20 @@
 #include "included.h"
 
 
+BaseScene::BaseScene(ThisApp& a) noexcept: m_app(a), m_pMRuby(a.GetMRuby()){
+};
+
 // HelloScene: 运行
 void HelloScene::Run() GameExitThrow {
 #ifdef _DEBUG
-    ID2D1Bitmap1* bitmap = nullptr;
+    /*ID2D1Bitmap1* bitmap = nullptr;
     m_app.LoadBitmapFromFile(L"resource/All.png", &bitmap);
     ::SafeRelease(bitmap);
     m_app.LoadBitmapFromFile(L"resource/background1.png", &bitmap);
     ::SafeRelease(bitmap);
     // 载入场景
     m_app.LoadScene<GameScene>();
-    return;
+    return;*/
 #endif
     float time = 2.0f;
     auto sprite(Sprite::New());
@@ -82,6 +85,7 @@ TitleScene::~TitleScene() noexcept {
     ::SafeRelease(m_pBackBGM);
     ::SafeRelease(m_pBackSE);
     ::SafeRelease(m_pBackWndZoom);
+    m_clip.Destroy();
 }
 
 
@@ -150,6 +154,12 @@ static const D2D1_RECT_F OPINTION_POS[] = {
 
 // TitleScene: 刷新
 void TitleScene::start() noexcept {
+    m_clip = WrapAL::CreateAudioClip(
+        WrapAL::AudioFormat::Format_OggVorbis, 
+        L"resource/city.ogg", 
+        WrapAL::AudioClipFlag(WrapAL::Flag_LoopInfinite | WrapAL::Flag_StreamingReading)
+        );
+    m_clip.Play();
     m_pBackground = Sprite::New();
     if (m_pBackground) {
         m_pBackground->atype = AnimationType::Type_CubicEaseIn;
@@ -276,6 +286,7 @@ void TitleScene::update() GameExitThrow {
             m_buttons[Button_Ply]->ChangeTo(m_buttons[Button_Ply].end, 0.4f);
             m_buttons[Button_New]->ChangeTo(m_buttons[Button_New].end, 0.45f);
             m_buttons[Button_Con]->ChangeTo(m_buttons[Button_Con].end, 0.5f);
+            m_pBackground->MoveTo(0.f, 0.f, 0.5f);
             // 
             for (auto& btn : m_opintion) {
                 btn->ChangeTo(btn.start, 0.3f);
@@ -286,6 +297,7 @@ void TitleScene::update() GameExitThrow {
             m_buttons[Button_Ply]->ChangeTo(m_buttons[Button_Ply].start, 0.4f);
             m_buttons[Button_New]->ChangeTo(m_buttons[Button_New].start, 0.45f);
             m_buttons[Button_Con]->ChangeTo(m_buttons[Button_Con].start, 0.5f);
+            m_pBackground->MoveTo(-300.f, 0.f, 0.5f);
             //
             for (auto& btn : m_opintion) {
                 if ((&btn - m_opintion) % 3 != 2) {
@@ -300,6 +312,8 @@ void TitleScene::update() GameExitThrow {
     auto new_bgm = bgm;
     auto se = AudioEngine.Master_Volume();
     auto new_se= se;
+    auto ws = m_app.WindowScale();
+    auto new_ws = ws;
 
     // BGM: A
     if (m_opintion[Button_BGMA].Update()) {
@@ -326,10 +340,12 @@ void TitleScene::update() GameExitThrow {
     }
     // Wnd: A
     if (m_opintion[Button_WndA].Update()) {
+        new_ws -= 0.25f;
 
     }
     // Wnd: B
     if (m_opintion[Button_WndB].Update()) {
+        new_ws += 0.25f;
 
     }
     // Wnd: C
@@ -361,7 +377,7 @@ void TitleScene::update() GameExitThrow {
         float y = m_opintion[Button_WndA]->y;
         m_pBackWndZoom->x = x;
         m_pBackWndZoom->y = y;
-        m_opintion[Button_WndC]->x = x;
+        m_opintion[Button_WndC]->x = x + new_ws * 190.f;
         m_opintion[Button_WndC]->y = y;
     }
     // 修改
@@ -370,6 +386,9 @@ void TitleScene::update() GameExitThrow {
     }
     if (new_se != se) {
         AudioEngine.Master_Volume(new_se);
+    }
+    if (new_ws != ws) {
+        m_app.WindowScale(new_ws);
     }
     // 父类
     Super::update();
@@ -402,6 +421,7 @@ GameScene::~GameScene() noexcept {
     for (auto& sprite : m_apSprites) {
         ::SafeRelease(sprite);
     }
+    m_clip.Destroy();
 }
 
 
@@ -443,6 +463,14 @@ static const D2D1_RECT_F GAME_HUD_SRC_RECTS[] = {
 
 // GameScene 开始
 void GameScene::start() noexcept {
+    m_clip = WrapAL::CreateAudioClip(
+        WrapAL::AudioFormat::Format_OggVorbis,
+        L"resource/city.ogg",
+        WrapAL::AudioClipFlag(WrapAL::Flag_LoopInfinite | WrapAL::Flag_StreamingReading)
+        );
+    m_clip.Play();
+    // 执行AI脚本
+    ::mrb_load_string(m_pMRuby, u8"AI.run");
     {
         static_assert(lengthof(GAME_HUD_SRC_RECTS) == SPRITE_SIZE, "ck");
         ID2D1Bitmap1* bitmap = nullptr;
@@ -462,6 +490,23 @@ void GameScene::start() noexcept {
         }
         ::SafeRelease(bitmap);
         m_player->LoadNewBitmap(L"resource/player.png");
+    }
+    // 敌人
+    for (int i = 0; i < 4; ++i) {
+        auto enemy = m_enemy.AddEnemy();
+        if (enemy) {
+            enemy->SetPos((float(i)*150.f) + 300.f, 400.f);
+            enemy->SetFaceLeft();
+            (*enemy)->z = 200;
+        }
+    }
+    {
+        auto enemy = m_enemy.AddEnemy();
+        if (enemy) {
+            enemy->SetPos(710.f, 400.f);
+            enemy->SetFaceLeft();
+            (*enemy)->z = 200;
+        }
     }
     // 设置
     m_terrain.Set(lengthof(GAME_LINES), GAME_LINES);
@@ -508,23 +553,12 @@ void GameScene::start() noexcept {
 
 // GameScene 刷新
 void GameScene::update() GameExitThrow {
-    // 鼠标左键
-    if (KMInput.MPress(DIMOFS_BUTTON0)) {
-        if (KMInput.x() > m_player->x) {
-            m_player.RunRight();
-        }
-        else {
-            m_player.RunLeft();
-        }
-    }
-    // 空格
-    if (KMInput.KKeyDown(DIK_SPACE)) {
-        m_player.Jump();
-    }
     // 刷新玩家
     this->updata_player();
     // 刷新菜单
     this->updata_menu();
+    // 刷新敌人
+    m_enemy.Update(m_fDeltaTime);
     // 父类
     Super::update();
 }
@@ -537,14 +571,12 @@ auto GameTerrain::Fx(size_t no, float x) const noexcept -> float {
 }
 
 // GameScene 构造函数
-GameScene::GameScene(ThisApp& g) noexcept: Super(g), m_player(m_terrain){
+GameScene::GameScene(ThisApp& g) noexcept: Super(g), m_player(m_terrain), m_enemy(m_terrain, m_player){
     // 初始化
     m_playerData.skill_id = 0;
     m_playerData.old_id = SKILL_SIZE;
     m_playerData.hp = 3;
     m_playerData.sp = 0;
-    //
-    m_playerData.skill_id = Skill_Heal;
     // 清理
     ::memset(&data, 0, sizeof(data));
 };
@@ -561,6 +593,79 @@ static const D2D1_RECT_F SKILL_ID[]{
 
 // GameScene 刷新玩家
 void GameScene::updata_player() noexcept {
+    // 普通攻击
+    constexpr float NORMAL_ATTACK_RANGE = 64.f;
+    // 鼠标左键
+    if (KMInput.MKeyDown(DIMOFS_BUTTON0)) {
+        GameActor* hittedactor = nullptr;
+        m_enemy.for_each(
+            [&](GameActor& actor) {
+            if (actor.IsDead()) return false;
+            D2D1_POINT_2F pt = {
+                static_cast<float>(KMInput.x()),
+                static_cast<float>(KMInput.y())
+            };
+            // 计算
+            actor->TransformPoint(pt);
+            // 位置
+            D2D1_RECT_F rect = { 0.f, 0.f, actor->GetWidth(), actor->GetHeight() };
+            // 按下
+            if (::InRect(pt.x, pt.y, rect)) {
+                hittedactor = &actor;
+                return true;
+            }
+            return false;
+        }
+        );
+        // 攻击
+        if (hittedactor) {
+            m_player.Attack();
+            return;
+        }
+    }
+    // 鼠标左键
+    if (KMInput.MPress(DIMOFS_BUTTON0)) {
+        GameActor* hittedactor = nullptr;
+        m_enemy.for_each(
+            [&](GameActor& actor) {
+            if (actor.IsDead()) return false;
+            D2D1_POINT_2F pt = {
+                static_cast<float>(KMInput.x()),
+                static_cast<float>(KMInput.y())
+            };
+            // 计算
+            actor->TransformPoint(pt);
+            // 位置
+            D2D1_RECT_F rect = { 0.f, 0.f, actor->GetWidth(), actor->GetHeight() };
+            // 按下
+            if (::InRect(pt.x, pt.y, rect)) {
+                hittedactor = &actor;
+                return true;
+            }
+            return false;
+        }
+        );
+        // 攻击
+        if (hittedactor) {
+            m_player.Attack();
+            auto xxx = (*hittedactor)->x - m_player->x;
+            auto yyy = (*hittedactor)->y - m_player->y;
+            if (std::abs(xxx) + std::abs(yyy) < NORMAL_ATTACK_RANGE) {
+                hittedactor->Die();
+            }
+            return;
+        }
+        if (KMInput.x() > m_player->x) {
+            m_player.RunRight();
+        }
+        else {
+            m_player.RunLeft();
+        }
+    }
+    // 空格
+    if (KMInput.KKeyDown(DIK_SPACE)) {
+        m_player.Jump();
+    }
     // 释放技能
     if (KMInput.MTrigger(DIMOFS_BUTTON2)) {
         m_playerData.sp = 4;
@@ -580,7 +685,7 @@ void GameScene::updata_player() noexcept {
     // 刷新技能
     this->updata_skill();
     // 死亡?
-    if (!m_playerData.hp || m_player.Dead()) {
+    if (!m_playerData.hp || m_player.IsDead()) {
         ::MessageBoxW(nullptr, L"你死了", L"提示", MB_OK);
         // 载入场景
         m_app.LoadScene<HelloScene>();
@@ -607,6 +712,7 @@ void GameScene::updata_menu() noexcept {
     if (KMInput.MKeyDown(DIMOFS_BUTTON1)) {
         // TIME SKIP!
         m_app.SetTimeScale(TIME_ZOOM);
+        m_clip.Ratio(0.5f);
         m_app.SetBackgroundBlur(450, 5.f);
         // 菜单
         SpriteStatus ss;
@@ -630,6 +736,7 @@ void GameScene::updata_menu() noexcept {
     if (KMInput.MTrigger(DIMOFS_BUTTON1)) {
         m_app.SetTimeScale(1.0f);
         m_app.SetBackgroundBlur(450, 0.f);
+        m_clip.Ratio(1.0f);
         // 菜单
         SpriteStatus ss;
         ss.x = m_apSprites[Sprite_MenuA]->x; 
@@ -740,16 +847,43 @@ void GameScene::set_skill_animation() noexcept {
 // 刷新技能
 void GameScene::updata_skill() noexcept {
     if (!m_skillAnimation.id) return;
+    // 火球
     constexpr float FIREBALL_SPPED = 300.f;
+    constexpr float FIREBALL_HALFRANGE = 64.f;
+    //
+    constexpr float AOE_HALFRANGE = 64.f;
+
     switch (Skill(m_skillAnimation.id - 1))
     {
     case GameScene::Skill_FireBall:
         m_skillAnimation->x += this->data.fire_direction * m_fDeltaTime * 
             (FIREBALL_SPPED + this->data.fire_x);
         m_skillAnimation->y += this->data.fire_y * m_fDeltaTime;
-        if (m_skillAnimation->x > 900.f || m_skillAnimation->x < -100.f) {
-            m_skillAnimation.id = 0;
-            m_skillAnimation->SetNewBitmap(nullptr);
+        // 数据
+        {
+            bool hitted = false;
+            D2D1_RECT_F rect = {
+                m_skillAnimation->x - FIREBALL_HALFRANGE,
+                m_skillAnimation->y - FIREBALL_HALFRANGE,
+                m_skillAnimation->x + FIREBALL_HALFRANGE,
+                m_skillAnimation->y + FIREBALL_HALFRANGE,
+            };
+            m_enemy.for_each(
+                [&](GameActor& actor) ->bool {
+                    if (!actor.IsDead() && actor->x >= rect.left &&
+                        actor->y >= rect.top && actor->x < rect.right  && actor->y < rect.bottom) {
+                        actor.Die();
+                        hitted = true;
+                        return true;
+                    }
+                    return false;
+                }
+            );
+            // 检查
+            if (hitted || m_skillAnimation->x > 900.f || m_skillAnimation->x < -100.f) {
+                m_skillAnimation.id = 0;
+                m_skillAnimation->SetNewBitmap(nullptr);
+            }
         }
         break;
     case GameScene::Skill_Heal:
@@ -761,10 +895,27 @@ void GameScene::updata_skill() noexcept {
         }
         break;
     case GameScene::Skill_AoE:
+    {
+        D2D1_RECT_F rect = {
+            m_skillAnimation->x - AOE_HALFRANGE,
+            m_skillAnimation->y - AOE_HALFRANGE,
+            m_skillAnimation->x + AOE_HALFRANGE,
+            m_skillAnimation->y + AOE_HALFRANGE,
+        };
+        m_enemy.for_each(
+            [&](GameActor& actor) ->bool {
+            if (!actor.IsDead() && actor->x >= rect.left &&
+                actor->y >= rect.top && actor->x < rect.right  && actor->y < rect.bottom) {
+                actor.Die();
+            }
+            return false;
+        }
+        );
         if (m_skillAnimation.IsEnd()) {
             m_skillAnimation.id = 0;
             m_skillAnimation->SetNewBitmap(nullptr);
         }
+    }
         break;
     case GameScene::Skill_God:
         m_skillAnimation->x = m_player->x;

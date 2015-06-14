@@ -390,6 +390,56 @@ ImageRenderer::~ImageRenderer() noexcept{
 #endif
 }
 
+// 窗口缩放
+auto ImageRenderer::sindow_scale(float ts) noexcept -> float {
+    assert(ts > 0.f);
+    // 获取大小
+    uint32_t width = uint32_t(float(ThisApp::WINDOW_WIDTH) * ts) & (~3ui32);
+    uint32_t height = uint32_t(float(ThisApp::WINDOW_HEIGHT) * ts) & (~3ui32);
+    // 释放
+    m_pd2dDeviceContext->SetTarget(nullptr);
+    ::SafeRelease(m_pd2dTargetBimtap);
+    ::SafeRelease(m_pTempBitmap);
+    auto hr = S_OK;
+    ::SetWindowPos(m_hwnd, HWND_TOP, 0, 0, width, height, SWP_NOMOVE);
+    IDXGISurface*                        pDxgiBackBuffer = nullptr;
+    // 缩放
+    if (SUCCEEDED(hr)) {
+        hr = m_pSwapChain->ResizeBuffers(2, width, height, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+    }
+    // 利用交换链获取Dxgi表面
+    if (SUCCEEDED(hr)) {
+        hr = m_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pDxgiBackBuffer));
+    }
+    // 创建临时位图
+    if (SUCCEEDED(hr)) {
+        D2D1_BITMAP_PROPERTIES1 bitmapProperties = D2D1::BitmapProperties1(
+            D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+            96.0f,
+            96.0f
+            );
+        hr = m_pd2dDeviceContext->CreateBitmapFromDxgiSurface(
+            pDxgiBackBuffer,
+            &bitmapProperties,
+            &m_pd2dTargetBimtap
+            );
+    }
+    ::SafeRelease(pDxgiBackBuffer);
+    // 创建临时位图
+    if (SUCCEEDED(hr)) {
+        hr = m_pd2dDeviceContext->CreateBitmap(
+            m_pd2dDeviceContext->GetPixelSize(),
+            nullptr, 0,
+            D2D1::BitmapProperties1(D2D1_BITMAP_OPTIONS_NONE,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+                ),
+            &m_pTempBitmap
+            );
+    }
+    return 0.f;
+}
+
 // 关闭动画 - 阻塞动画
 void ImageRenderer::OpenClose(bool open) noexcept {
     m_bMinSize = !open;
@@ -515,7 +565,15 @@ auto ImageRenderer::OnRender(UINT syn) noexcept ->float {
     auto delta = m_timer.Delta_s<float>() * this->time_scalar;
     // 成功就渲染
     if (SUCCEEDED(hr)) {
+        // 设置
         m_pMultithread->Enter();
+        {
+            // 缩放窗口?
+            if (m_fWS != m_fOldWS) {
+                this->sindow_scale(m_fOldWS = m_fWS);
+            }
+            m_pd2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Scale(m_fOldWS, m_fOldWS));
+        }
         ID2D1CommandList* command = nullptr;
         // 更新模糊
         if (m_fBlur != m_fBlurEnd) {
@@ -814,6 +872,7 @@ auto ImageRenderer::OnNCHitTest(int x, int y) noexcept -> LRESULT {
     if (y < CAPTION_HEIGHT) {
         float fx = static_cast<float>(x);
         float fy = static_cast<float>(y);
+
         D2D1_RECT_F rect = {
             m_captionButtons[Button_Min].des_rect.left,
             0.f,

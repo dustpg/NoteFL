@@ -11,15 +11,19 @@ public:
     static constexpr uint32_t WINDOW_HEIGHT = 600;
 public:
     // 构造函数
-    ThisApp() noexcept : m_imageRenderer(*this) {};
+    ThisApp() noexcept;
     // 析构函数
-    ~ThisApp() noexcept {};
+    ~ThisApp() noexcept;
     // 初始化
     auto Initialize(HINSTANCE hInstance, int nCmdShow)noexcept ->HRESULT;
     // 消息处理
     auto MessageHandle(UINT message, WPARAM wParam, LPARAM lParam, LRESULT&) ->bool;
     // 消息循环
     void RunMessageLoop() noexcept;
+    // 获取mruby
+    auto GetMRuby() const noexcept { return m_pMRuby; }
+    // 设置窗口缩放
+    auto WindowScale(float ws = -1.f) noexcept { return m_imageRenderer.WindowScale(ws); };
 public:
     // 读取图片文件
     auto LoadBitmapFromFile(PCWSTR uri, ID2D1Bitmap1 ** ppb) noexcept {
@@ -58,6 +62,8 @@ private:
     std::unique_ptr<BaseScene>  m_spNowScene = nullptr;
     // 场景
     const BaseScene*            m_pOldScene = nullptr;
+    // MRuby 状态(虚拟机)
+    mrb_state*                  m_pMRuby = nullptr;
     // 渲染器
     ImageRenderer               m_imageRenderer;
     // 渲染线程

@@ -65,6 +65,7 @@ HRESULT GameKeyboardMouseInput::Init(const HINSTANCE hInst, const HWND hwnd) noe
 
 // 鼠标更新
 void GameKeyboardMouseInput::Update() noexcept {
+    auto zoom = Sprite::s_pImageRenderer->WindowScale();
     // 更新鼠标状态 还有应对设备丢失情况
     if (m_pDirectInputDeviceMouse) {
         ::memcpy(m_cMouseBuffer, m_cMouseBuffer + 1, sizeof(DIMOUSESTATE));
@@ -74,6 +75,8 @@ void GameKeyboardMouseInput::Update() noexcept {
         m_lMouseDelta = m_cMouseBuffer[1].lZ;
         // 获取鼠标
         ::GetCursorPos(&m_pt); ::ScreenToClient(m_hwnd, &m_pt);
+        m_pt.x = LONG(float(m_pt.x) / float(zoom));
+        m_pt.y = LONG(float(m_pt.y) / float(zoom));
         m_lX = m_cMouseBuffer[1].lX;
         m_lY = m_cMouseBuffer[1].lY;
     }

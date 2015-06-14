@@ -14,7 +14,7 @@ enum class SceneStage : uint32_t {
 class BaseScene {
 public:
     // 构造函数
-    BaseScene(ThisApp& a) noexcept : m_app(a) {  };
+    BaseScene(ThisApp& a) noexcept;
 public:
     // 运行
     virtual void Run() GameExitThrow = 0;
@@ -27,6 +27,8 @@ public:
 protected:
     // 游戏
     ThisApp&                m_app;
+    // MRuby 状态(虚拟机)
+    mrb_state*              m_pMRuby;
 };
 
 
@@ -98,6 +100,8 @@ class TitleScene final : public BaseScene2 {
     };
     // 父类声明
     using Super = BaseScene2;
+    // 片段
+    using Clip = WrapAL::AudioSourceClip;
 public:
     // 构造函数
     TitleScene(ThisApp& g) noexcept : Super(g) {};
@@ -119,6 +123,8 @@ protected:
     Sprite*             m_pBackSE = nullptr;
     // 背景: 窗口缩放
     Sprite*             m_pBackWndZoom = nullptr;
+    // 音乐
+    Clip                m_clip = 0;
     // 游戏按钮
     GameButtonEx        m_buttons[BUTTON_SIZE];
     // 选项区
@@ -128,6 +134,8 @@ protected:
 
 // 游戏场景
 class GameScene final : public BaseScene2 {
+    // 片段
+    using Clip = WrapAL::AudioSourceClip;
     // 父类声明
     using Super = BaseScene2;
     // 精灵
@@ -179,6 +187,8 @@ private:
 private:
     // 背景图片
     Sprite*             m_apSprites[SPRITE_SIZE];
+    // 音乐
+    Clip                m_clip = 0;
     // 技能动画
     AutoAnimation       m_skillAnimation;
     // 玩家
@@ -187,6 +197,8 @@ private:
     ActorData           m_playerData;
     // 地形
     GameTerrain         m_terrain;
+    // 游戏敌人
+    GameEnemy           m_enemy;
     // 技能数据
     union {
         // 火球

@@ -30,6 +30,9 @@
     <Filter Include="Source Files\UI">
       <UniqueIdentifier>{937fb5e8-3ed3-4612-b775-3e864b7dfcd9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Script">
+      <UniqueIdentifier>{e10c3941-0161-4193-a283-d98efae9c876}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="included.h">
@@ -64,6 +67,12 @@
     </ClInclude>
     <ClInclude Include="GameActor.h">
       <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="mruby.h">
+      <Filter>Script</Filter>
+    </ClInclude>
+    <ClInclude Include="mrbconf.h">
+      <Filter>Script</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -7,7 +7,7 @@ static AnimationInfo ANIMATION_INFO[] = {
     { 48, 52,  true, 0.20f },
     { 32, 40,  true, 0.20f },
     {  4, 12,  true, 0.10f },
-    { 12, 16, false, 0.20f },
+    { 12, 16, false, 0.10f },
     { 16, 18, false, 0.20f },
     { 18, 24, false, 0.20f },
     { 24, 28, false, 0.20f },
@@ -22,6 +22,26 @@ GameActor::GameActor(const GameTerrain& terrain) noexcept :m_terrain(terrain) {
     m_pSprite->oy = 64.f;
     //
     this->SetAction(Type_Standby);
+}
+
+// GameActor 移动构造函数
+GameActor::GameActor(GameActor&& actor) noexcept:
+m_pSprite(actor.m_pSprite),
+m_terrain(actor.m_terrain),
+m_nowAction(actor.m_nowAction),
+m_bActed(actor.m_bActed),
+m_bDead(actor.m_bDead),
+m_bUnlanded(actor.m_bUnlanded),
+m_idNowIndex(actor.m_idNowIndex),
+m_fSpeedX(actor.m_fSpeedX),
+m_fSpeedY(actor.m_fSpeedY),
+m_fMAxSpeed(actor.m_fMAxSpeed),
+m_faceRight(actor.m_faceRight),
+m_fDeltaTime(actor.m_fDeltaTime),
+m_fActionTimeRemain(actor.m_fActionTimeRemain),
+m_x(actor.m_x), m_y(actor.m_y){
+    ::memcpy(&m_info, &actor.m_info, sizeof(m_info));
+    actor.m_pSprite = nullptr;
 }
 
 // 设定动作
@@ -47,6 +67,27 @@ void GameActor::Update(float delta) noexcept {
             }
             else {
                 m_idNowIndex = m_idNowIndex - 1;
+                switch (m_nowAction)
+                {
+                case GameActor::Type_Standby:
+                    break;
+                case GameActor::Type_Walk:
+                    break;
+                case GameActor::Type_Run:
+                    break;
+                case GameActor::Type_Attack:
+                    this->Standby();
+                    break;
+                case GameActor::Type_Block:
+                    break;
+                case GameActor::Type_Die:
+                    m_bDead = true;
+                    break;
+                case GameActor::Type_Spell:
+                    break;
+                case GameActor::Type_Jump:
+                    break;
+                }
             }
         }
     }
@@ -66,7 +107,7 @@ void GameActor::Update(float delta) noexcept {
     m_x += real_length;
     m_y += m_fSpeedY * m_fDeltaTime;
     // 检查动作
-    if (!m_bUnlanded) {
+    if (!m_bUnlanded && m_info.loop) {
         if (m_fSpeedX > RUN_THRESHOLD) {
             this->set_action(GameActor::Type_Run);
         }
@@ -121,7 +162,8 @@ void GameActor::Update(float delta) noexcept {
 // 往右跑
 void GameActor::RunRight() noexcept {
     m_bActed = true;
-    if (m_bUnlanded) return;
+    // 无法控制
+    if (m_bUnlanded || m_nowAction == Type_Die) return;
     m_faceRight = 1.f; 
     m_fSpeedX += SPPED_UP * m_fDeltaTime;
     m_fSpeedX = std::min(m_fMAxSpeed, m_fSpeedX);
@@ -130,7 +172,8 @@ void GameActor::RunRight() noexcept {
 // 往左跑
 void GameActor::RunLeft() noexcept {
     m_bActed = true;
-    if (m_bUnlanded) return;
+    // 无法控制
+    if (m_bUnlanded || m_nowAction == Type_Die) return;
     m_faceRight = -1.f;
     m_fSpeedX += SPPED_UP * m_fDeltaTime;
     m_fSpeedX = std::min(m_fMAxSpeed, m_fSpeedX);
@@ -144,6 +187,18 @@ void GameActor::Jump() noexcept {
     m_bUnlanded = true;
     m_fSpeedY = -400.f;
     this->set_action(GameActor::Type_Jump);
+}
+
+// 攻击
+void GameActor::Attack() noexcept {
+    m_bActed = true;
+    this->set_action(GameActor::Type_Attack);
+}
+
+// 死亡
+void GameActor::Die() noexcept {
+    m_bActed = true;
+    this->set_action(GameActor::Type_Die);
 }
 
 // 碰撞检测
@@ -224,14 +279,15 @@ void AutoAnimation::Update(float delta) noexcept {
 
 
 // GameEnemy 构造函数
-GameEnemy::GameEnemy(const GameTerrain& terrain) noexcept: m_terrain(terrain) {
+GameEnemy::GameEnemy(const GameTerrain& terrain, GameActor& hero)
+noexcept: m_terrain(terrain), m_player(hero) {
 
 }
 
 // 添加敌人
 auto GameEnemy::AddEnemy() noexcept -> GameActor* {
     try {
-        m_list.push_back(GameActor(m_terrain));
+        m_list.push_back(std::move(GameActor(m_terrain)));
         auto& back = m_list.back();
         back->LoadNewBitmap(L"resource/enemy.png");
         return &back;

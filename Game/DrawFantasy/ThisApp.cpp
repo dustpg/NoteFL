@@ -1,7 +1,29 @@
 ﻿#include "stdafx.h"
 #include "included.h"
 
+// ThisApp 构造函数
+ThisApp::ThisApp() noexcept: m_imageRenderer(*this)  {
+    // 打开mruby
+    if (m_pMRuby = ::mrb_open()) {
+        FILE* file = ::_wfopen(L"script.rb", L"rb");
+        // 载入脚本
+        if (file) {
+            ::mrb_load_file(m_pMRuby, file);
+            ::fclose(file);
+            file = nullptr;
+        }
+    }
+};
 
+
+// 析构函数
+ThisApp::~ThisApp() noexcept {
+    // 关闭MRuby
+    if (m_pMRuby) {
+        ::mrb_close(m_pMRuby);
+        m_pMRuby = nullptr;
+    }
+};
 
 // 渲染窗口 -- 渲染线程
 auto ThisApp::Render(ThisApp* pThis) noexcept ->HRESULT {
@@ -143,7 +165,7 @@ auto ThisApp::MessageHandle(UINT message, WPARAM wParam, LPARAM lParam, LRESULT 
     case WM_SIZE:
         // 还原
         if (wParam == SIZE_RESTORED) {
-            m_imageRenderer.Open();
+            //m_imageRenderer.Open();
         }
         wasHandled = true;
         break;

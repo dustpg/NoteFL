@@ -37,6 +37,11 @@ public:
     auto SetBackgroundBlur(int32_t z, float b) noexcept { m_zBlur = z; m_fBlurEnd = b; }
     // 设置时间缩放
     auto SetTimeScale(float ts) noexcept { time_scalar = ts; }
+    // 设置窗口缩放
+    auto WindowScale(float ts = -1.f) noexcept { if (ts > 0.f) m_fWS = ts; return  m_fWS; }
+private:
+    // 设置窗口缩放
+    auto sindow_scale(float ts) noexcept ->float;
 public:
     // 标题栏高度
     static constexpr uint32_t CAPTION_HEIGHT = 32;
@@ -158,6 +163,10 @@ private:
     float                           m_fBlur = 0.f;
     // 背景模糊Z阈值
     int32_t                         m_zBlur = 0;
+    // 窗口缩放
+    float                           m_fWS = 1.f;
+    // 窗口缩放
+    float                           m_fOldWS = 1.f;
 public:
     // 时间缩放比
     float                           time_scalar = 1.f;

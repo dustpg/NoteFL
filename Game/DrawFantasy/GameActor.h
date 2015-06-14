@@ -64,6 +64,10 @@ public:
 public:
     // 构造函数
     GameActor(const GameTerrain& terrain) noexcept;
+    // 移动构造函数
+    GameActor(GameActor&&)noexcept;
+    // 复制构造函数
+    GameActor(const GameActor&) =delete;
     // 析构函数
     ~GameActor() { ::SafeRelease(m_pSprite); }
     // ->
@@ -74,6 +78,8 @@ public:
     void Update(float delta) noexcept;
     // 设置基本位置
     auto SetPos(float x, float y) noexcept { m_x = x; m_y = y; }
+    // 设置面向
+    auto SetFaceLeft() noexcept { m_pSprite->zoom_x = -1.f; }
     // 获取面向
     auto GetFaced() const noexcept { return m_faceRight; }
     // 获取速度
@@ -92,8 +98,12 @@ public:
     void RunLeft() noexcept;
     // 跳跃
     void Jump() noexcept;
+    // 攻击
+    void Attack() noexcept;
     // 死亡
-    auto Dead() noexcept { return m_bDead; }
+    auto IsDead() noexcept { return m_bDead; }
+    // 死亡
+    void Die() noexcept;
 private:
     // 精灵
     Sprite*                 m_pSprite = Sprite::New();
@@ -184,13 +194,19 @@ class GameEnemy {
     using EnemyList = std::list<GameActor>;
 public:
     // 构造函数
-    GameEnemy(const GameTerrain&) noexcept;
+    GameEnemy(const GameTerrain&, GameActor&) noexcept;
     // 添加敌人
     auto AddEnemy() noexcept ->GameActor*;
     // 刷新
     void Update(float delta) noexcept;
+    // 遍历
+    template<typename Lam>
+    auto for_each(Lam lam) { for (auto& ememy : m_list) {if (lam(ememy)) break; } }
 private:
+    // 地形
     const GameTerrain&  m_terrain;
+    // 主角
+    GameActor&          m_player;
     // 敌人列表
     EnemyList           m_list;
 };

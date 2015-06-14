@@ -98,3 +98,7 @@ inline void SafeCloseHandle(HANDLE& handle){
 #pragma comment(lib, "d3dcompiler")
 #pragma comment(lib, "d2d1" )
 #pragma comment(lib, "windowscodecs" )
+
+
+#include "mruby.h"
+#include "mruby/compile.h"

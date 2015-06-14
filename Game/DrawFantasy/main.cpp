@@ -340,3 +340,6 @@ private:
     // Shcore
     HMODULE     m_hDllShcore = nullptr;
 } instance;
+
+
+#pragma comment(lib, "libmruby")
