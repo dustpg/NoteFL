@@ -690,7 +690,7 @@ auto ImageRenderer::OnRender(UINT syn) noexcept ->float {
             L"Error",
             MB_ICONERROR
             );
-        this->CreateDeviceResources();
+        this->DiscardDeviceResources();
         hr = S_FALSE;
     }
     assert(SUCCEEDED(hr));
