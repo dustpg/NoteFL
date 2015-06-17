@@ -3,6 +3,7 @@
 #include <Shlwapi.h>
 #include <cstdio>
 #include <cassert>
+#include <ShellScalingApi.h>
 
 // 消息缓冲区大小
 constexpr size_t MSG_BUFFER_LENGTH = 512;
@@ -16,12 +17,12 @@ void receive_file(const char*, int);
 
 // 应用程序入口
 int main(int argc, char* argv[]) {
+    ::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
     ::wprintf(L"help:\r\n\tput <ip> : <port> , to put file\r\n\tget <ip> : <port> , to get file\r\n");
     char op[64];char ipbuf[64]; int port = 0;
     ::scanf("%s %s : %d", op, ipbuf, &port);
     if (!::strcmp(op, "put")) {
         send_file(ipbuf, port);
-
     }
     else if (!::strcmp(op, "get")) {
         receive_file(ipbuf, port);
@@ -32,9 +33,23 @@ int main(int argc, char* argv[]) {
 
 // 发送文件
 void send_file(const char* ip_, int port_) {
+    wchar_t file_path[PATH_BUFFER_LENGTH]; ZeroMemory(file_path, sizeof(file_path));
+    {
+        // 选择文件
+        OPENFILENAMEW ofn; ZeroMemory(&ofn, sizeof(ofn));
+        ofn.lStructSize = sizeof(ofn);
+        ofn.hwndOwner = ::GetConsoleWindow();
+        ofn.lpstrFile = file_path;
+        ofn.nMaxFile = PATH_BUFFER_LENGTH;
+        if (!::GetOpenFileNameW(&ofn)) {
+            return;
+        }
+    }
     WSAData sender_data; ::WSAStartup(MAKEWORD(2, 2), &sender_data);
     SOCKET sender_sock = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);;
     sockaddr_in udp_receiver, udp_sender;
+    //
+
     {
         udp_sender.sin_family = AF_INET;
         ::inet_pton(AF_INET, ip_, &udp_sender.sin_addr.s_addr);
@@ -49,18 +64,12 @@ void send_file(const char* ip_, int port_) {
         char buffer[MSG_BUFFER_LENGTH];
         // 接收待机消息
         int addrlen = sizeof(udp_receiver);;
-        ::Sleep(60);
         status = ::recvfrom(
             sender_sock, buffer, MSG_BUFFER_LENGTH, 0,
             reinterpret_cast<sockaddr*>(&udp_receiver),
             &addrlen
             );
         assert(::strcmp("STANDBY", buffer) == 0 && "failed");
-    }
-    wchar_t file_path[PATH_BUFFER_LENGTH]; ZeroMemory(file_path, sizeof(file_path));
-    {
-        // 选择文件
-
     }
     // 打开文件
     auto file = ::_wfopen(file_path, L"rb");
@@ -121,6 +130,8 @@ void send_file(const char* ip_, int port_) {
         ::fclose(file);
         file = nullptr;
     }
+    ::closesocket(sender_sock);
+    ::WSACleanup();
 }
 
 // 接收文件
@@ -135,6 +146,9 @@ void receive_file(const char* ip_, int port_) {
     ::wprintf(L"waitting for connecting...\r\n");
     int addrle = sizeof(udp_sender);;
     long file_size = 0;
+
+    // 写入数据
+    wchar_t file_path[PATH_BUFFER_LENGTH];
     {
         // 发送一次消息
         {
@@ -155,10 +169,9 @@ void receive_file(const char* ip_, int port_) {
             char ip[64];
             ::inet_ntop(AF_INET, &(udp_sender.sin_addr), ip, INET_ADDRSTRLEN);
             int port = ntohs(udp_sender.sin_port);
-            ::wprintf(L"connect from: %s:%d\r\n", ip, port);
+            ::wprintf(L"connect from: %S:%d\r\n", ip, port);
         }
-        wchar_t file_name[PATH_BUFFER_LENGTH];
-        ::sscanf(buffer, "READY %ld, %ls\r\n", &file_size, file_name);
+        ::sscanf(buffer, "READY %ld, %ls\r\n", &file_size, file_path);
         {
             int a = 9;
         }
@@ -171,7 +184,19 @@ void receive_file(const char* ip_, int port_) {
             );
         int a = 9;
     }
-    // 写入数据
+    {
+        // 选择文件
+        OPENFILENAMEW ofn; ZeroMemory(&ofn, sizeof(ofn));
+        ofn.lStructSize = sizeof(ofn);
+        ofn.hwndOwner = ::GetConsoleWindow();
+        ofn.lpstrFile = file_path;
+        ofn.nMaxFile = PATH_BUFFER_LENGTH;
+        if (!::GetSaveFileNameW(&ofn)) {
+            ::closesocket(receiver_sock);
+            ::WSACleanup();
+            return;
+        }
+    }
     FILE* file = ::_wfopen(L"D:\\22.jpg", L"wb");
     if (file) {
         auto totalReadBytes = 0l;
@@ -199,8 +224,19 @@ void receive_file(const char* ip_, int port_) {
         ::fclose(file);
         file = nullptr;
     }
+
+    ::closesocket(receiver_sock);
+    ::WSACleanup();
 }
 
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"shlwapi.lib")
+#pragma comment(lib,"Shcore.lib")
 
+#ifdef _M_IX86
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='x86' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#elif defined _M_X64
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='amd64' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#else
+#pragma comment(linker,"/manifestdependency:\"type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
