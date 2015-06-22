@@ -1,35 +1,27 @@
 ﻿#include <iostream>
 
-enum XX {
-    XX_1st = 0,
-    XX_2nd,
-    XX_SIZE,
-};
-
-class XXHelper {
+class DDD {
 public:
-    static constexpr auto GetCount() { return static_cast<uint32_t>(XX_SIZE); }
+    DDD() = default;
+    int a = 0;
 };
 
-class XXXHelper {
+
+class MyInterface {
+    friend class DDD;
 public:
-    static constexpr auto GetCount() { return static_cast<uint32_t>(XX_SIZE) +1; }
+    virtual void Release() noexcept = 0;
 };
 
-
-template<class T>
-class TT {
+class CCC : private MyInterface {
+    virtual void Release() noexcept override { int a = 9; };
 public:
-    int     data[T::GetCount()];
+    int ccc;
 };
 
-// main
-int main(int argc, const char* argv[]) {
-    TT<XXHelper> tta;
-    TT<XXXHelper> ttb;
-    constexpr int ttaa = sizeof(tta);
-    constexpr int ttbb = sizeof(ttb);
-    constexpr bool aaa = ttaa == ttbb;
-    (void)std::getchar();
+
+
+int main() {
+    CCC c;
     return EXIT_SUCCESS;
 }
