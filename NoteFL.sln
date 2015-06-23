@@ -29,6 +29,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetworkProgramming", "Netwo
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SenderReceiver", "NetworkProgramming\SenderReceiver\SenderReceiver.vcxproj", "{B691BEC7-80AC-4BF7-B942-62CC89FBC17D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FinalWork", "NetworkProgramming\FinalWork\FinalWork.vcxproj", "{2D23F243-BB6D-4D60-9B16-0FF1753DF192}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -71,6 +73,10 @@ Global
 		{B691BEC7-80AC-4BF7-B942-62CC89FBC17D}.Debug|x86.Build.0 = Debug|Win32
 		{B691BEC7-80AC-4BF7-B942-62CC89FBC17D}.Release|x86.ActiveCfg = Release|Win32
 		{B691BEC7-80AC-4BF7-B942-62CC89FBC17D}.Release|x86.Build.0 = Release|Win32
+		{2D23F243-BB6D-4D60-9B16-0FF1753DF192}.Debug|x86.ActiveCfg = Debug|Win32
+		{2D23F243-BB6D-4D60-9B16-0FF1753DF192}.Debug|x86.Build.0 = Debug|Win32
+		{2D23F243-BB6D-4D60-9B16-0FF1753DF192}.Release|x86.ActiveCfg = Release|Win32
+		{2D23F243-BB6D-4D60-9B16-0FF1753DF192}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -84,5 +90,6 @@ Global
 		{AEA41749-2704-4989-8332-FAF744842DB8} = {2092E3C8-BDCB-4D9B-A5CA-D9084C2E324C}
 		{F5445B77-DD07-437F-95C0-59F25BAB77C5} = {D8583D4B-9EF7-43A0-9902-604235807EC0}
 		{B691BEC7-80AC-4BF7-B942-62CC89FBC17D} = {70E9685B-808A-44F1-8564-FCE45D2CA748}
+		{2D23F243-BB6D-4D60-9B16-0FF1753DF192} = {70E9685B-808A-44F1-8564-FCE45D2CA748}
 	EndGlobalSection
 EndGlobal
