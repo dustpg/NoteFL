@@ -11,18 +11,19 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{76B12B41-F28E-43B0-A145-5A7E2AFC469F}</ProjectGuid>
-    <RootNamespace>GLES_HelloWorld</RootNamespace>
+    <ProjectGuid>{6206A715-B49B-4FEF-84FF-789F73758635}</ProjectGuid>
+    <RootNamespace>libEGL</RootNamespace>
+    <TargetPlatformVersion>10.0.10069.0</TargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -41,16 +42,17 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)OpenGLES\sample_util\;$(SolutionDir)OpenGLES\angle\util;$(SolutionDir)OpenGLES\angle\include;$(SolutionDir)OpenGLES\angle\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)OpenGLES\angle\src;$(SolutionDir)OpenGLES\angle\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)OpenGLES\sample_util\;$(SolutionDir)OpenGLES\angle\util;$(SolutionDir)OpenGLES\angle\include;$(SolutionDir)OpenGLES\angle\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)OpenGLES\angle\src;$(SolutionDir)OpenGLES\angle\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ANGLE_ENABLE_D3D11;LIBGLESV2_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -63,6 +65,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;ANGLE_ENABLE_D3D11;LIBGLESV2_IMPLEMENTATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -71,16 +74,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\angle\util\EGLWindow.cpp" />
-    <ClCompile Include="..\angle\util\OSWindow.cpp" />
-    <ClCompile Include="..\angle\util\random_utils.cpp" />
-    <ClCompile Include="..\angle\util\shader_utils.cpp" />
-    <ClCompile Include="..\angle\util\win32\Win32Pixmap.cpp" />
-    <ClCompile Include="..\angle\util\win32\Win32Timer.cpp" />
-    <ClCompile Include="..\angle\util\win32\Win32Window.cpp" />
-    <ClCompile Include="..\angle\util\win32\Win32_system_utils.cpp" />
-    <ClCompile Include="..\sample_util\SampleApplication.cpp" />
-    <ClCompile Include="main.cpp" />
+    <None Include="..\angle\src\libEGL\libEGL.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\angle\src\libEGL\libEGL.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\angle\src\libEGL\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\angle\src\libEGL\libEGL.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

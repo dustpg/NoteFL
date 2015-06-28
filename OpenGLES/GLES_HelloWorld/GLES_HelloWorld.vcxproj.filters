@@ -2,5 +2,37 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="..\angle\util\OSWindow.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\angle\util\random_utils.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\angle\util\shader_utils.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\angle\util\win32\Win32Window.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\angle\util\win32\Win32_system_utils.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\angle\util\win32\Win32Pixmap.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\angle\util\win32\Win32Timer.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sample_util\SampleApplication.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\angle\util\EGLWindow.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="util">
+      <UniqueIdentifier>{83cce584-820a-44b6-b85e-dfa6089afb0b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

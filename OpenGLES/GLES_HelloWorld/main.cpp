@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 
 
 #ifdef _DEBUG
-#   pragma comment(lib, "../../Debug/angle")
+#   pragma comment(lib, "../../Debug/libGLESv2")
 #else
-#   pragma comment(lib, "../../Release/angle")
+#   pragma comment(lib, "../../Release/libGLESv2")
 #endif
