@@ -116,6 +116,14 @@ int main(int argc, char* argv[]) {
                     if (status == -1) break;
                     // 服务器消息?
                     if (msg.fisrt == SERVER_MESSAGE) {
+                        // 保存到文本文件
+                        {
+                            auto file = ::fopen("saved.txt", "wb");
+                            if (file) {
+                                ::fwrite(msg.buffer, 1, ::strlen(msg.buffer) + 1, file);
+                                ::fclose(file);
+                            }
+                        }
                         std::lock_guard<decltype(g_mutex)> locker(g_mutex);
                         // 分析消息
                         //::printf("SERVER_MESSAGE: %s", msg.buffer);

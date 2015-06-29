@@ -197,7 +197,7 @@ void receive_file(const char* ip_, int port_) {
             return;
         }
     }
-    FILE* file = ::_wfopen(L"D:\\22.jpg", L"wb");
+    FILE* file = ::_wfopen(file_path, L"wb");
     if (file) {
         auto totalReadBytes = 0l;
         // 足够
