@@ -1,4 +1,5 @@
-﻿#include <Ws2tcpip.h>
+﻿#define _CRT_SECURE_NO_WARNINGS
+#include <Ws2tcpip.h>
 #include <Windows.h>
 #include <ShellScalingApi.h>
 #include <Shlwapi.h>
@@ -53,6 +54,11 @@ struct MsgData {
 // 全局数据
 std::vector<MsgData> g_data, g_databackup;
 
+auto save_message(const char* str) {
+    auto file = ::fopen("message.txt", "wb+");
+    ::fprintf(file, "%s\r\n", str);
+    ::fclose(file);
+}
 
 // 应用程序入口
 int main(int argc, char* argv[]) {
@@ -196,6 +202,7 @@ int main(int argc, char* argv[]) {
                         else {
                             // 显示消息
                             printf("收到消息: %s\n", &msg.fisrt);
+                            save_message(&msg.fisrt);
                         }
                     }
                 }
@@ -266,6 +273,7 @@ int main(int argc, char* argv[]) {
                     ::Sleep(100);
                     // 发送
                     {
+                        save_message(src_token);
                         auto status = ::sendto(
                             sock, src_token, ::strlen(src_token)+1, 0,
                             reinterpret_cast<sockaddr*>(&target_client),

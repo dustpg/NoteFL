@@ -1,6 +1,6 @@
 #include <Ws2tcpip.h>
 #include <Windows.h>
-#include <ShellScalingApi.h>
+//#include <ShellScalingApi.h>
 #include <Shlwapi.h>
 #include <algorithm>
 #include <cassert>
@@ -17,7 +17,10 @@
 std::mutex g_mutex;
 
 // 帮助信息
-static const char* HELP_MESSAGE = "[HELP]\r\nlist \trefresh and list the member on the server\r\n";
+static const char* HELP_MESSAGE = "[HELP]\r\nlist     \trefresh and list the member on the server\r\n"
+                                  "send [id] \tsend file to this user\r\n"
+                                  "help    \tshow help info\r\n"
+                                  "tell [id] [msg]\tsend message to this user\r\n";
 // IP地址
 static const char* IP_ADDRESS = "210.41.229.50";
 // 端口
@@ -27,13 +30,13 @@ static constexpr int SEND_MSG_LENGTH_SERVER = 50;
 // 接收大小_SERVER
 static constexpr int RECV_MSG_LENGTH_SERVER = 500;
 // 文件每片大小
-static constexpr int FILE_LEGNTH_IN_EACH_CLIP = 512;
+static constexpr int FILE_LEGNTH_IN_EACH_CLIP = 1024;
 // 服务器消息
 static constexpr int SERVER_MESSAGE = 101;
 // 客户端消息
 static constexpr int CLIENT_MESSAGE = 102;
 // 消息等待超时时间 ms
-static constexpr int MESSAGE_SEND_TIMEOUT = 2000;
+static constexpr int MESSAGE_SEND_TIMEOUT = 233;
 // 输入缓存
 static constexpr int INPUT_BUFFER_SIZE = 128;
 // 输入缓存
@@ -60,7 +63,7 @@ void init_sockaddr_in(sockaddr_in& addr, const char* ip, int port) noexcept;
 
 // 应用程序入口
 int main(int argc, char* argv[]) {
-    ::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
+    //::SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
     g_clientdata.reserve(16);
     g_clientdatabackup.reserve(16);
     // 初始化
@@ -89,6 +92,7 @@ int main(int argc, char* argv[]) {
         uint32_t    file_len;
         sockaddr_in addr;
         char        raw_name_inwide[PATH_BUFFER_LENGTH];
+        CLIENTDATA  data;
     } send_file_info; ::memset(&send_file_info, 0, sizeof(send_file_info));
     // 输入线程
     std::thread input_thread([&loop4ever, &send_file_info]() noexcept {
@@ -155,6 +159,7 @@ int main(int argc, char* argv[]) {
                     send_file_info.file_len = ::ftell(send_file_info.file);
                     ::fseek(send_file_info.file, 0, SEEK_SET);
                     init_sockaddr_in(send_file_info.addr, data.ip, data.port);
+                    send_file_info.data = data;
                 }
             }
 
@@ -173,8 +178,8 @@ int main(int argc, char* argv[]) {
             }
         }
         // update
-        auto Update(SOCKET sock, SFINFO& sfinfo) noexcept {
-            if (m_wEnd) return;
+        bool Update(SOCKET sock, SFINFO& sfinfo) noexcept {
+            if (m_wEnd) return false;
             // 刷新
             auto time = ::timeGetTime();
             if (time - m_dwTime > MESSAGE_SEND_TIMEOUT) {
@@ -182,6 +187,7 @@ int main(int argc, char* argv[]) {
                 m_wSend = true;
             }
             // 初始化
+            bool rcode = false;
             if (m_wSend) {
                 FILEINFO nfinfo;
                 nfinfo.index = m_dwIndex;
@@ -189,6 +195,7 @@ int main(int argc, char* argv[]) {
                 if (m_dwIndex == DWORD(-1)) {
                     ::printf("发送文件信息, 等待接收, 重试%d次\r", int(m_dwRetry));
                     ::memcpy(nfinfo.buffer, sfinfo.raw_name_inwide, sizeof(sfinfo.raw_name_inwide));
+                    if (m_dwRetry) rcode = true;
                     ++m_dwRetry;
                 }
                 // 发送文件数据
@@ -201,7 +208,7 @@ int main(int argc, char* argv[]) {
                         // 不再发送
                         this->End(sfinfo);
                         //this->Start();
-                        return;
+                        return false;
                     }
                     ::fseek(sfinfo.file, FILE_LEGNTH_IN_EACH_CLIP * m_dwIndex, SEEK_SET);
                     ::fread(nfinfo.buffer, 1, FILE_LEGNTH_IN_EACH_CLIP, sfinfo.file);
@@ -215,6 +222,7 @@ int main(int argc, char* argv[]) {
                 status = 0;
             }
             m_wSend = false;
+            return rcode;
         }
         // start mission
         void Start() noexcept {
@@ -271,12 +279,33 @@ int main(int argc, char* argv[]) {
             }
         }
         // 发送文件消息
+        auto sendccctoserver = [&]() {
+            SENDMSGSER ccc; ccc.control = CLIENT_MESSAGE;
+            ::sprintf_s(ccc.buffer, "%s:%d", send_file_info.data.ip, int(send_file_info.data.port));
+            // 发送打洞消息
+            ::sendto(sock, &ccc.control, sizeof(ccc), 0, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr));
+        };
         {
-            AutoLocker;
+            g_mutex.lock();
             if (send_file_info.file && send_file_helper.IsEnd()) {
+                // 先解锁
+                g_mutex.unlock();
+                ::Sleep(0);
+                sendccctoserver();
+                // 等待
+                ::Sleep(100);
+                g_mutex.lock();
                 send_file_helper.Start();
             }
-            send_file_helper.Update(sock, send_file_info);
+            // 刷新
+            if (send_file_helper.Update(sock, send_file_info)) {
+                g_mutex.unlock();
+                ::Sleep(0);
+                sendccctoserver();
+                ::Sleep(100);
+                g_mutex.lock();
+            }
+            g_mutex.unlock();
         }
         // 接收消息
         union { RECVMSGSER msg; FILEINFO fileinfo; } recv_data;
@@ -291,9 +320,7 @@ int main(int argc, char* argv[]) {
             &addrlen
             );
         // 失败
-        if (status == -1) {
-            continue;
-        }
+        if (status == -1)  continue;
         if (status == sizeof(RECVMSGSER)) {
             // 服务器消息?
             if (recv_data.msg.control == SERVER_MESSAGE) {
@@ -329,9 +356,10 @@ int main(int argc, char* argv[]) {
                 sockaddr_in client_addr;;
                 // 发送消息
                 auto end = ::strchr(recv_data.msg.buffer, ':'); *end = 0;
-                init_sockaddr_in(client_addr, recv_data.msg.buffer, ::htons(::atoi(end + 1)));
+                init_sockaddr_in(client_addr, recv_data.msg.buffer, ::atoi(end + 1));
                 // 发送打洞
                 ::sendto(sock, "CCC", 4, 0, reinterpret_cast<sockaddr*>(&client_addr), sizeof(client_addr));
+                //::printf("send CCC to %s:%s\r\n", recv_data.msg.buffer, end + 1);
             }
         }
         // 文件消息
@@ -390,6 +418,9 @@ int main(int argc, char* argv[]) {
                 send_file_helper.Next(index);
             }
         }
+        else if (!::strcmp(reinterpret_cast<char*>(&recv_data), "CCC")) {
+            //::printf("got CCC \r\n");
+        }
     }
     input_thread.join();
     // 扫尾处理
@@ -400,7 +431,7 @@ int main(int argc, char* argv[]) {
 
 #pragma comment(lib,"ws2_32.lib")
 #pragma comment(lib,"shlwapi.lib")
-#pragma comment(lib,"Shcore.lib")
+//#pragma comment(lib,"Shcore.lib")
 #pragma comment(lib,"Winmm.lib")
 
 #ifdef _M_IX86
