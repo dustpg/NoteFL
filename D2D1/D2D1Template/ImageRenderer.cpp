@@ -318,7 +318,7 @@ HRESULT ImageRenderer::OnRender(UINT syn){
     // 成功就渲染
     if (SUCCEEDED(hr)) {
         // 等待事件
-#ifdef _DEBUG
+/*#ifdef _DEBUG
         {
             auto time = ::timeGetTime();
             ::WaitForSingleObject(m_hVSync, INFINITE);
@@ -327,7 +327,7 @@ HRESULT ImageRenderer::OnRender(UINT syn){
         }
 #else
         ::WaitForSingleObject(m_hVSync, INFINITE);
-#endif
+#endif*/
         // 开始渲染
         m_pd2dDeviceContext->BeginDraw();
         // 清屏

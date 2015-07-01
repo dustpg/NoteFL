@@ -13,6 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{76B12B41-F28E-43B0-A145-5A7E2AFC469F}</ProjectGuid>
     <RootNamespace>GLES_HelloWorld</RootNamespace>
+    <TargetPlatformVersion>10.0.10158.0</TargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
