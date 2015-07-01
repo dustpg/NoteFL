@@ -17,10 +17,11 @@
 std::mutex g_mutex;
 
 // 帮助信息
-static const char* HELP_MESSAGE = "[HELP]\r\nlist     \trefresh and list the member on the server\r\n"
-                                  "send [id] \tsend file to this user\r\n"
-                                  "help    \tshow help info\r\n"
-                                  "tell [id] [msg]\tsend message to this user\r\n";
+static const char* HELP_MESSAGE = "[HELP]\r\nlist \t\trefresh and list the member on the server\r\n"
+                                  "send [index] \tsend file to this user\r\n"
+                                  "help         \tshow help info\r\n"
+                                  "rename [id]  \trename to id\r\n"
+                                  "tell [index] [msg]\tsend message to this user\r\n";
 // IP地址
 static const char* IP_ADDRESS = "210.41.229.50";
 // 端口
