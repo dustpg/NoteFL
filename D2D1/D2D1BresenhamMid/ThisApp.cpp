@@ -1,5 +1,6 @@
 ﻿#include "stdafx.h"
 #include "included.h"
+#include <Mmsystem.h>
 
 #define TITLE L"中点Bresenham法画直线"
 
@@ -55,7 +56,15 @@ HRESULT ThisApp::Initialize(HINSTANCE hInstance, int nCmdShow){
             [this]() {
                 ::CoInitialize(nullptr);
                 while (true) {
+#if 0
+                    auto time = ::timeGetTime();
+                    for (int i = 0; i < 6000; ++i) {
+                        m_ImagaRenderer.OnRender(1);
+                    }
+                    time = ::timeGetTime() - time;
+#else 
                     m_ImagaRenderer.OnRender(1);
+#endif
                     if (m_bExit) break;
                 }
                 ::CoUninitialize();

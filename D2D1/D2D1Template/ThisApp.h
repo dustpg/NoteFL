@@ -5,9 +5,9 @@
 class ThisApp{
 public:
     // 构造函数
-    ThisApp(){};
+    ThisApp() {};
     // 析构函数
-    ~ThisApp(){};
+    ~ThisApp() {};
     // 初始化
     HRESULT Initialize(HINSTANCE hInstance, int nCmdShow);
     // 消息循环

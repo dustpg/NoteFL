@@ -3,10 +3,23 @@
 
 #define TITLE L"中点Bresenham算法光栅化画圆"
 
+// 构造函数
+ThisApp::ThisApp() noexcept {
+}
+
+// 析构函数
+ThisApp::~ThisApp() noexcept {
+    if (m_hIconApp) {
+        ::DestroyIcon(m_hIconApp);
+        m_hIconApp = nullptr;
+    }
+}
 
 
 // 初始化
 HRESULT ThisApp::Initialize(HINSTANCE hInstance, int nCmdShow){
+    {
+    }
     HRESULT hr = E_FAIL;
     //register window class
     WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
@@ -144,4 +157,5 @@ LRESULT CALLBACK ThisApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM
     }
     return result;
 }
+
 

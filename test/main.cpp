@@ -1,84 +1,25 @@
-﻿#include <windows.h>
-#include <stdio.h>
-#include <VersionHelpers.h>
+﻿#include <cstdlib>
+#include <cstdio>
+#include <memory>
+#include <ctime>
 
-int
-__cdecl
-wmain(
-    __in int argc,
-    __in_ecount(argc) PCWSTR argv[]
-    )
-{
-    UNREFERENCED_PARAMETER(argc);
-    UNREFERENCED_PARAMETER(argv);
-
-    if (IsWindowsXPOrGreater())
+int main() {
+    const int MAX = 1000000000;        //10亿字节
+    char* a = (char*)malloc(MAX);
+    memset(a, '1', MAX);
+    a[MAX - 1] = '\0';
+    int nIndex = 0;
+    long nBegin = clock();
+    while (a[nIndex])
+        nIndex++;
+    long nIndexTime = clock();
     {
-        printf("XPOrGreater\n");
+        auto itr = a;
+        while (*itr) ++itr;
     }
-
-    if (IsWindowsXPSP1OrGreater())
-    {
-        printf("XPSP1OrGreater\n");
-    }
-
-    if (IsWindowsXPSP2OrGreater())
-    {
-        printf("XPSP2OrGreater\n");
-    }
-
-    if (IsWindowsXPSP3OrGreater())
-    {
-        printf("XPSP3OrGreater\n");
-    }
-
-    if (IsWindowsVistaOrGreater())
-    {
-        printf("VistaOrGreater\n");
-    }
-
-    if (IsWindowsVistaSP1OrGreater())
-    {
-        printf("VistaSP1OrGreater\n");
-    }
-
-    if (IsWindowsVistaSP2OrGreater())
-    {
-        printf("VistaSP2OrGreater\n");
-    }
-
-    if (IsWindows7OrGreater())
-    {
-        printf("Windows7OrGreater\n");
-    }
-
-    if (IsWindows7SP1OrGreater())
-    {
-        printf("Windows7SP1OrGreater\n");
-    }
-
-    if (IsWindows8OrGreater())
-    {
-        printf("Windows8OrGreater\n");
-    }
-
-    if (IsWindows8Point1OrGreater())
-    {
-        printf("Windows8Point1OrGreater\n");
-    }
-
-    if (IsWindows10OrGreater())
-    {
-        printf("Windows10OrGreater\n");
-    }
-
-    if (IsWindowsServer())
-    {
-        printf("Server\n");
-    }
-    else
-    {
-        printf("Client\n");
-    }
+    long nPointerTime = clock();
+    printf("IndexCount: %d ms\n", nIndexTime - nBegin);
+    //IndexCount: 1831 ms
+    printf("PointerCount: %d ms", nPointerTime - nIndexTime);
     return 0;
 }
