@@ -1,25 +1,19 @@
-﻿#include <cstdlib>
-#include <cstdio>
-#include <memory>
-#include <ctime>
+﻿#include <functional>
+#include <algorithm>
+#include <vector>
+#include <map>
 
-int main() {
-    const int MAX = 1000000000;        //10亿字节
-    char* a = (char*)malloc(MAX);
-    memset(a, '1', MAX);
-    a[MAX - 1] = '\0';
-    int nIndex = 0;
-    long nBegin = clock();
-    while (a[nIndex])
-        nIndex++;
-    long nIndexTime = clock();
-    {
-        auto itr = a;
-        while (*itr) ++itr;
+
+/// <summary>
+/// Mains the specified argc.
+/// </summary>
+/// <param name="argc">The count of arguments</param>
+/// <param name="charv">The arguments vector.</param>
+/// <remarks>这条函数在大多数情况下立即返回, 除了等待IO</remarks>
+/// <returns>return 0 if exit successfully</returns>
+int main(int argc, char* charv[]) {
+    for (int i = 0; i < argc; ++i) {
+        printf("%s\r\n", charv[i]);
     }
-    long nPointerTime = clock();
-    printf("IndexCount: %d ms\n", nIndexTime - nBegin);
-    //IndexCount: 1831 ms
-    printf("PointerCount: %d ms", nPointerTime - nIndexTime);
     return 0;
 }
