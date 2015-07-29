@@ -13,7 +13,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D9D80257-6538-4A49-9C32-CC66AF2D2E1C}</ProjectGuid>
     <RootNamespace>D2D1BresenhamMid</RootNamespace>
-    <TargetPlatformVersion>10.0.10158.0</TargetPlatformVersion>
+    <TargetPlatformVersion>10.0.10240.0</TargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

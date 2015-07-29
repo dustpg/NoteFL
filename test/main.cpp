@@ -1,19 +1,19 @@
-﻿#include <functional>
-#include <algorithm>
-#include <vector>
-#include <map>
+﻿#include    <iostream>
+using namespace std;
 
+class A
+{
+public:
+    A(int a) :aa(a) {};
+    int aa;
+    virtual void __stdcall fun1() { cout << "this is fun1" << endl; }
+    virtual void __stdcall fun2() { cout << "this is fun2" << endl; }
+};
 
-/// <summary>
-/// Mains the specified argc.
-/// </summary>
-/// <param name="argc">The count of arguments</param>
-/// <param name="charv">The arguments vector.</param>
-/// <remarks>这条函数在大多数情况下立即返回, 除了等待IO</remarks>
-/// <returns>return 0 if exit successfully</returns>
-int main(int argc, char* charv[]) {
-    for (int i = 0; i < argc; ++i) {
-        printf("%s\r\n", charv[i]);
-    }
-    return 0;
+typedef void(A::*FUN)();
+using FUN2 = void(A::*)();
+int main()
+{
+    sizeof(&A::fun1);
+    return 1;
 }
