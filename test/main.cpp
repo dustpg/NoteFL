@@ -51,16 +51,42 @@ int main(int argc, char* argv[]) {
     CoUninitialize();
     return 0;
 }*/
+# include <stdio.h>
 
-#include <iostream>
-#include <string>
-#include <bitset>
+void action1(int x, int y);
+void action2(int x, int y);//声明不带形参会出现错误
+int main(void)
+{
+    char ch = '\n';
+    int a, b;
 
-int main() {
-    int a = 0;
-    (a += 1) += 1;
-    using namespace std;
-    bitset<8> bit(0b101);
-    cout << bit << "  " << bit.to_ulong() << endl;
+    printf("请输入你要处理的两个数据，中间以空格隔开。\n");
+    scanf("%d %d", &a, &b);
+    printf("请输入你要对数据的处理方式，若为加法请输入A ,若为乘法请输入B或者C。\n");
+    while(ch == '\n') scanf("%c", &ch);
+
+    switch(ch)
+    {
+    case'A':
+        action1(a, b);
+        break;
+    case'B':
+    case'C':
+        action2(a, b);
+        break;
+    default:
+        putchar('\a');//输入其它字符发出警告
+
+    }
+
     return 0;
+}
+
+void action1(int x, int y)
+{
+    printf("x + y = %d\n",x+y);
+}
+void action2(int x, int y)//与action1中变量不冲突
+{
+    printf("x * y = %d\n",x*y);
 }

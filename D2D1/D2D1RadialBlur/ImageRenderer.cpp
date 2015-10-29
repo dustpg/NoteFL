@@ -1,19 +1,16 @@
 ﻿#include "stdafx.h"
 #include "included.h"
 
-
 // ImageRenderer类构造函数
-ImageRenderer::ImageRenderer() {
+ImageRenderer::ImageRenderer() noexcept {
     m_parameters.DirtyRectsCount = 0;
     m_parameters.pDirtyRects = nullptr;
     m_parameters.pScrollRect = nullptr;
     m_parameters.pScrollOffset = nullptr;
-    ::InitializeCriticalSection(&m_cs);
 }
 
-
 // 创建设备无关资源
-HRESULT ImageRenderer::CreateDeviceIndependentResources() {
+HRESULT ImageRenderer::CreateDeviceIndependentResources() noexcept {
     // 创建D2D工厂
     D2D1_FACTORY_OPTIONS options = { D2D1_DEBUG_LEVEL_NONE };
 #ifdef _DEBUG
@@ -45,29 +42,33 @@ HRESULT ImageRenderer::CreateDeviceIndependentResources() {
     // 创建正文文本格式.
     if (SUCCEEDED(hr)) {
         hr = m_pDWriteFactory->CreateTextFormat(
-            L"Arial",
+            L"Courier New",
+            //L"Fixedsys",
             nullptr,
             DWRITE_FONT_WEIGHT_NORMAL,
             DWRITE_FONT_STYLE_NORMAL,
             DWRITE_FONT_STRETCH_NORMAL,
-            22.f,
-            L"", //locale
+            32.f,
+            L"en-us",
             &m_pTextFormatMain
             );
-        if (m_pTextFormatMain) {
-            m_pTextFormatMain->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-            m_pTextFormatMain->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        }
     }
+    // 注册特效
+    if (SUCCEEDED(hr)){
+        hr = RadialBlurEffect::Register(m_pd2dFactory);
+    }
+    // 错误
+    assert(SUCCEEDED(hr) && "CreateDeviceIndependentResources failed");
     return hr;
 }
 
 
 // 创建设备资源
-HRESULT ImageRenderer::CreateDeviceResources() {
+HRESULT ImageRenderer::CreateDeviceResources() noexcept {
     HRESULT hr = S_OK;
     // DXGI Surface 后台缓冲
-    IDXGISurface*                        pDxgiBackBuffer = nullptr;
+    IDXGISurface*                   pDxgiBackBuffer = nullptr;
+    IDXGISwapChain1*                pSwapChain = nullptr;
     // 创建 D3D11设备与设备上下文 
     if (SUCCEEDED(hr)) {
         // D3D11 创建flag 
@@ -92,9 +93,9 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             // 设为空指针选择默认设备
             nullptr,
             // 强行指定硬件渲染
-            //D3D_DRIVER_TYPE_HARDWARE,
+            D3D_DRIVER_TYPE_HARDWARE,
             // 强行指定WARP渲染
-            D3D_DRIVER_TYPE_WARP,
+            //D3D_DRIVER_TYPE_WARP,
             // 没有软件接口
             nullptr,
             // 创建flag
@@ -116,7 +117,7 @@ HRESULT ImageRenderer::CreateDeviceResources() {
 #ifdef _DEBUG
     // 创建 ID3D11Debug
     if (SUCCEEDED(hr)) {
-        //hr = m_pd3dDevice->QueryInterface(IID_PPV_ARGS(&m_pd3dDebug));
+        hr = m_pd3dDevice->QueryInterface(IID_PPV_ARGS(&m_pd3dDebug));
     }
 #endif
     // 创建 IDXGIDevice
@@ -168,12 +169,12 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             m_pDxgiDevice,
             &swapChainDesc,
             nullptr,
-            &m_pSwapChain
+            &pSwapChain
             );
 #else
         // 一般桌面应用程序
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+        swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
         // 利用窗口句柄创建交换链
         hr = m_pDxgiFactory->CreateSwapChainForHwnd(
             m_pd3dDevice,
@@ -181,9 +182,16 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             &swapChainDesc,
             nullptr,
             nullptr,
-            &m_pSwapChain
+            &pSwapChain
             );
 #endif
+    }
+    // 获取接口
+    if (SUCCEEDED(hr)) {
+        hr = pSwapChain->QueryInterface(
+            IID_IDXGISwapChain2,
+            reinterpret_cast<void**>(&m_pSwapChain)
+            );
     }
     // 确保DXGI队列里边不会超过一帧
     if (SUCCEEDED(hr)) {
@@ -206,10 +214,6 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             &bitmapProperties,
             &m_pd2dTargetBimtap
             );
-    }
-    // 创建笔刷
-    if (SUCCEEDED(hr)) {
-        hr = m_pd2dDeviceContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &m_pBlackBrush);
     }
     // 设置
     if (SUCCEEDED(hr)) {
@@ -249,81 +253,195 @@ HRESULT ImageRenderer::CreateDeviceResources() {
         hr = m_pDcompDevice->Commit();
     }
 #endif
+    // 载入图片
+    if (SUCCEEDED(hr)){
+        hr = this->LoadBitmapFromFile(
+            m_pd2dDeviceContext, 
+            m_pWICFactory,
+            L"leopard-253688.jpg", 
+            0, 0,
+            &m_pTestBitmap
+            );
+        assert(SUCCEEDED(hr) && "Failed to call LoadBitmapFromFile");
+    }
+    // 创建特效
+    if (SUCCEEDED(hr)){
+        hr = m_pd2dDeviceContext->CreateEffect(
+            CLSID_DustPG_RadialBlurEffect, 
+            &m_pRadialBlurEffect
+            );
+    }
+#ifdef _DEBUG
+    // 调试: 再创建特效
+    if (SUCCEEDED(hr)){
+        ::SafeRelease(m_pRadialBlurEffect);
+        hr = m_pd2dDeviceContext->CreateEffect(
+            CLSID_DustPG_RadialBlurEffect, 
+            &m_pRadialBlurEffect
+            );
+    }
+#endif
+    // 设置输入
+    if (SUCCEEDED(hr)){
+        m_pRadialBlurEffect->SetInput(0, m_pTestBitmap);
+    }
+    // 获取输出接口
+    if (SUCCEEDED(hr)) {
+        m_pRadialBlurEffect->GetOutput(&m_pRadialBlurOutput);
+    }
+    // 创建笔刷
+    if (SUCCEEDED(hr)) {
+        hr = m_pd2dDeviceContext->CreateSolidColorBrush(
+            D2D1::ColorF(D2D1::ColorF::Black),
+            &m_pBaiscBrush
+            );
+    }
     ::SafeRelease(pDxgiBackBuffer);
+    ::SafeRelease(pSwapChain);
     return hr;
 }
 
 // ImageRenderer析构函数
-ImageRenderer::~ImageRenderer(){
+ImageRenderer::~ImageRenderer() noexcept {
     this->DiscardDeviceResources();
-
     ::SafeRelease(m_pd2dFactory);
     ::SafeRelease(m_pWICFactory);
     ::SafeRelease(m_pDWriteFactory);
     ::SafeRelease(m_pTextFormatMain);
+    ::SafeRelease(m_pFPSLayout);
     // 调试
 #ifdef _DEBUG
     if (m_pd3dDebug) {
-        m_pd3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+        m_pd3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+        auto c = m_pd3dDebug->Release();
+        ::OutputDebugStringW(L"Sad\r\n");
     }
-    ::SafeRelease(m_pd3dDebug);
+    //::SafeRelease(m_pd3dDebug);
 #endif
-    ::DeleteCriticalSection(&m_cs);
 }
 
 // 丢弃设备相关资源
-void ImageRenderer::DiscardDeviceResources(){
-    ::SafeRelease(m_pd3dDevice);
-    ::SafeRelease(m_pd3dDeviceContext);
-    ::SafeRelease(m_pd2dDevice);
-    ::SafeRelease(m_pd2dDeviceContext);
-    ::SafeRelease(m_pDxgiFactory);
-    ::SafeRelease(m_pDxgiDevice);
-    ::SafeRelease(m_pDxgiAdapter);
-    ::SafeRelease(m_pSwapChain);
-    ::SafeRelease(m_pd2dTargetBimtap);
-    ::SafeRelease(m_pBlackBrush);
-
-    // DirectComposition
+void ImageRenderer::DiscardDeviceResources() noexcept {
 #ifdef USING_DirectComposition
     ::SafeRelease(m_pDcompDevice);
     ::SafeRelease(m_pDcompTarget);
     ::SafeRelease(m_pDcompVisual);
 #endif
+    ::SafeRelease(m_pTestBitmap);
+    ::SafeRelease(m_pRadialBlurOutput);
+    ::SafeRelease(m_pRadialBlurEffect);
+    ::SafeRelease(m_pBaiscBrush);
+    ::SafeRelease(m_pd2dTargetBimtap);
+    ::SafeRelease(m_pSwapChain);
+    ::SafeRelease(m_pd3dDeviceContext);
+    ::SafeRelease(m_pd2dDeviceContext);
+    ::SafeRelease(m_pDxgiAdapter);
+    ::SafeRelease(m_pd3dDevice);
+    ::SafeRelease(m_pd2dDevice);
+    ::SafeRelease(m_pDxgiFactory);
+    ::SafeRelease(m_pDxgiDevice);
+}
+
+// 重建FPS布局
+void ImageRenderer::recreate_fps_layout() noexcept {
+    ++m_cFrameCount;
+    constexpr size_t BUFFER_COUNT = 64;
+    // 计算FPS
+    m_fDelta = m_oTimerH.Delta_s<float>();
+    m_oTimerH.MovStartEnd();
+    // 释放数据
+    ::SafeRelease(m_pFPSLayout);
+    assert(m_pTextFormatMain && "bad initialize");
+    wchar_t buffer[BUFFER_COUNT];
+    // 平均FPS
+    if (!(m_cFrameCount % m_cRefreshCount)) {
+        m_fFramePerSec = static_cast<float>(m_cRefreshCount) / m_oTimerM.Delta_s<float>();
+        m_oTimerH.RefreshFrequency();
+        m_oTimerM.RefreshFrequency();
+        m_oTimerM.MovStartEnd();
+    }
+    // 格式化
+    auto c = std::swprintf(
+        buffer, BUFFER_COUNT,
+        L"%6.2f fps(c) %6.2f fps(m) @%ld",
+        1.f / m_fDelta, 
+        m_fFramePerSec,
+        long(m_cFrameCount)
+        );
+    assert(c > 0 && "bad std::swprintf call");
+    // 生成文本布局
+    auto size = m_pd2dTargetBimtap->GetSize();
+    m_pDWriteFactory->CreateTextLayout(
+        buffer, static_cast<UINT32>(c),
+        m_pTextFormatMain,
+        size.width, size.height,
+        &m_pFPSLayout
+        );
+}
+
+// 设置径向模糊参数
+void ImageRenderer::config_blur_properties() noexcept {
+    // 设置特性
+    const int NAMELESS = 400;
+    const int NAMELESS_2 = NAMELESS / 2;
+    {
+        // 计算中心点
+        POINT pt; ::GetCursorPos(&pt);
+        ::ScreenToClient(m_hwnd, &pt);
+        auto size = m_pTestBitmap->GetSize();
+        size.width = float(pt.x) / size.width;
+        size.height = float(pt.y) / size.height;
+        // 计算强度
+        auto magnitude = static_cast<float>(int(m_cFrameCount) % NAMELESS - NAMELESS_2) 
+            / static_cast<float>(NAMELESS_2);
+        magnitude = std::abs(magnitude) * 2.f - 1.f;
+        // 计算采样量
+        float sam = 64.f;
+        // 设置数据
+        m_pRadialBlurEffect->SetValue(RadialBlurEffect::Properties_CenterPoint, size);
+        m_pRadialBlurEffect->SetValue(RadialBlurEffect::PROPERTIES_Magnitude, magnitude);
+        m_pRadialBlurEffect->SetValue(RadialBlurEffect::PROPERTIES_Samples, sam);
+    }
 }
 
 // 渲染图形图像
-HRESULT ImageRenderer::OnRender(UINT syn){
+HRESULT ImageRenderer::OnRender(UINT syn) noexcept {
     HRESULT hr = S_OK;
     // 没有就创建
     if (!m_pd2dDeviceContext) {
         hr = this->CreateDeviceResources();
+        assert(SUCCEEDED(hr));
+        m_oTimerH.Start();
+        m_oTimerM.Start();
     }
-    // 加锁
-    this->Lock();
-    D2D1_POINT_2F tpoints[] = {
-        this->points[0], this->points[1],
-    };
-    auto tpushed = this->pushed;
-    this->Unlock();
     // 成功就渲染
     if (SUCCEEDED(hr)) {
+        // 设置
+        this->config_blur_properties();
+        // 重建
+        this->recreate_fps_layout();
+        // 回退
+        m_pd2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
         // 开始渲染
         m_pd2dDeviceContext->BeginDraw();
-        // 重置转换
-        m_pd2dDeviceContext->SetTransform(D2D1::Matrix3x2F::Identity());
         // 清屏
-        m_pd2dDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::White));
-        // 正式刻画.........
-        if (tpushed) {
-            // 默认画线
-            m_pd2dDeviceContext->DrawLine(this->points[0], this->points[1], m_pBlackBrush);
-            // 中点Bresenham
-            MidpointBresenhamDrawLine(
-                static_cast<int>(tpoints[0].x) + 10,
-                static_cast<int>(tpoints[0].y),
-                static_cast<int>(tpoints[1].x) + 10,
-                static_cast<int>(tpoints[1].y));
+        m_pd2dDeviceContext->Clear(D2D1::ColorF(0x66CCFF, 0.5f));
+        // 渲染特效
+       {
+            D2D1_RECT_F rect;
+            rect.left = rect.top = 0.f;
+            auto size = m_pTestBitmap->GetSize();
+            rect.right = size.width ;
+            rect.bottom = size.height ;
+            m_pd2dDeviceContext->DrawImage(m_pRadialBlurOutput, nullptr, &rect);
+        };
+        // 渲染FPS
+        if (m_pFPSLayout) {
+            m_pd2dDeviceContext->DrawTextLayout(
+                D2D1::Point2F(),
+                m_pFPSLayout,
+                m_pBaiscBrush
+                );
         }
         // 结束渲染
         m_pd2dDeviceContext->EndDraw();
@@ -338,59 +456,16 @@ HRESULT ImageRenderer::OnRender(UINT syn){
     return hr;
 }
 
-// 中点 Bresenham 
-void ImageRenderer::MidpointBresenhamDrawLine(int x1, int y1, int x2, int y2) {
-    // 放置像素点
-    auto putpixel = [this](int x, int y) {
-        D2D1_RECT_F rect;
-        rect.left = static_cast<float>(x);
-        rect.top = static_cast<float>(y);
-        rect.right = rect.left + 1.f;
-        rect.bottom = rect.top + 1.f;
-        m_pd2dDeviceContext->DrawRectangle(&rect, m_pBlackBrush);
-    };
-    //
-    m_pd2dDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-    //
-    float k = float(y2 - y1) / float(x2 - x1);
-    int flag = 0;
-    if (k > 1 || k < -1) {
-        flag = 1;
-        x1 ^= y1 ^= x1 ^= y1;
-        x2 ^= y2 ^= x2 ^= y2;
-        k = float(y2 - y1) / float(x2 - x1);
-    }
-    float d = 0.5f - k;
-    if (x1 > x2) {
-        x1 ^= x2 ^= x1 ^= x2;
-        y1 ^= y2 ^= y1 ^= y2;
-    }
-    while (x1 != x2)
-    {
-        if (k > 0 && d < 0) {
-            ++y1, ++d;
-        }
-        else if (k < 0 && d > 0) {
-            --y1, --d;
-        }
-        d -= k;
-        ++x1;
-        if (flag) putpixel(y1, x1);
-        else putpixel(x1, y1);
-    }
-    //
-    m_pd2dDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
-}
 
 // 从文件读取位图
-HRESULT ImageRenderer::LoadBitmapFromFile(
-    ID2D1DeviceContext *pRenderTarget,
-    IWICImagingFactory2 *pIWICFactory,
-    PCWSTR uri,
-    UINT width,
-    UINT height,
-    ID2D1Bitmap1 **ppBitmap
-    ){
+auto ImageRenderer::LoadBitmapFromFile(
+    ID2D1DeviceContext* IN pRenderTarget,
+    IWICImagingFactory2* IN pIWICFactory,
+    PCWSTR IN uri,
+    UINT OPTIONAL width,
+    UINT OPTIONAL height,
+    ID2D1Bitmap1** OUT ppBitmap
+    ) noexcept -> HRESULT {
     IWICBitmapDecoder *pDecoder = nullptr;
     IWICBitmapFrameDecode *pSource = nullptr;
     IWICStream *pStream = nullptr;
@@ -436,7 +511,7 @@ HRESULT ImageRenderer::LoadBitmapFromFile(
                         WICBitmapInterpolationModeCubic
                         );
                 }
-                if (SUCCEEDED(hr))  {
+                if (SUCCEEDED(hr)) {
                     hr = pConverter->Initialize(
                         pScaler,
                         GUID_WICPixelFormat32bppPBGRA,
@@ -459,27 +534,20 @@ HRESULT ImageRenderer::LoadBitmapFromFile(
                 );
         }
     }
-    if (SUCCEEDED(hr))  {
+    if (SUCCEEDED(hr)) {
         hr = pRenderTarget->CreateBitmapFromWicBitmap(
             pConverter,
             nullptr,
             ppBitmap
             );
     }
-
     ::SafeRelease(pDecoder);
     ::SafeRelease(pSource);
     ::SafeRelease(pStream);
     ::SafeRelease(pConverter);
     ::SafeRelease(pScaler);
-
     return hr;
 }
 
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxguid.lib")
 #pragma comment(lib, "Winmm.lib")
-#pragma comment(lib, "dwrite.lib" )
-#pragma comment(lib, "d3dcompiler.lib")
-#pragma comment(lib, "d2d1.lib" )
-#pragma comment(lib, "windowscodecs.lib" )

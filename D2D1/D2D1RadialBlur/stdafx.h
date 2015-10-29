@@ -62,6 +62,9 @@ inline void SafeCloseHandle(HANDLE& handle){
 #include <D3D11.h>
 #include <d2d1_1.h>
 #include <d2d1_1helper.h>
+#include <d2d1effects.h>
+#include <d2d1effectauthor.h>
+#include <d2d1effecthelpers.h>
 #include <dwrite_2.h>
 #include <wincodec.h>
 

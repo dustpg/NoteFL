@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "included.h"
 
-#undef  PixelFormat
+
 // ImageRenderer类构造函数
 ImageRenderer::ImageRenderer() {
     m_parameters.DirtyRectsCount = 0;
@@ -348,8 +348,8 @@ HRESULT ImageRenderer::LoadBitmapFromFile(
     ID2D1DeviceContext *pRenderTarget,
     IWICImagingFactory2 *pIWICFactory,
     PCWSTR uri,
-    UINT destinationWidth,
-    UINT destinationHeight,
+    UINT width,
+    UINT height,
     ID2D1Bitmap1 **ppBitmap
     ){
     IWICBitmapDecoder *pDecoder = nullptr;
@@ -375,25 +375,25 @@ HRESULT ImageRenderer::LoadBitmapFromFile(
 
 
     if (SUCCEEDED(hr)) {
-        if (destinationWidth != 0 || destinationHeight != 0) {
+        if (width != 0 || height != 0) {
             UINT originalWidth, originalHeight;
             hr = pSource->GetSize(&originalWidth, &originalHeight);
             if (SUCCEEDED(hr)) {
-                if (destinationWidth == 0) {
-                    FLOAT scalar = static_cast<FLOAT>(destinationHeight) / static_cast<FLOAT>(originalHeight);
-                    destinationWidth = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
+                if (width == 0) {
+                    FLOAT scalar = static_cast<FLOAT>(height) / static_cast<FLOAT>(originalHeight);
+                    width = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
                 }
-                else if (destinationHeight == 0) {
-                    FLOAT scalar = static_cast<FLOAT>(destinationWidth) / static_cast<FLOAT>(originalWidth);
-                    destinationHeight = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
+                else if (height == 0) {
+                    FLOAT scalar = static_cast<FLOAT>(width) / static_cast<FLOAT>(originalWidth);
+                    height = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
                 }
 
                 hr = pIWICFactory->CreateBitmapScaler(&pScaler);
                 if (SUCCEEDED(hr)) {
                     hr = pScaler->Initialize(
                         pSource,
-                        destinationWidth,
-                        destinationHeight,
+                        width,
+                        height,
                         WICBitmapInterpolationModeCubic
                         );
                 }

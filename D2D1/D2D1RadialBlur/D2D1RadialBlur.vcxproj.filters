@@ -18,6 +18,9 @@
     <Filter Include="Source Files\程序逻辑">
       <UniqueIdentifier>{f623c5a6-6d52-4921-92e7-fcf4e57fe4ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="D2D Effect">
+      <UniqueIdentifier>{14270bac-3a5d-414f-8c7d-5e09b93f6f21}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="included.h">
@@ -35,6 +38,9 @@
     <ClInclude Include="timer.h">
       <Filter>Header Files\杂项</Filter>
     </ClInclude>
+    <ClInclude Include="RadialBlurEffect.h">
+      <Filter>D2D Effect</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -49,5 +55,16 @@
     <ClCompile Include="ThisApp.cpp">
       <Filter>Source Files\程序逻辑</Filter>
     </ClCompile>
+    <ClCompile Include="RadialBlurEffect.cpp">
+      <Filter>D2D Effect</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="RadialBlurEffect.hlsl">
+      <Filter>D2D Effect</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="leopard-253688.jpg" />
   </ItemGroup>
 </Project>

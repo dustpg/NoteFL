@@ -29,6 +29,8 @@ public:
 private:
     // 重建fps文本布局
     void recreate_fps_layout() noexcept;
+    // 设置径向模糊参数
+    void config_blur_properties() noexcept;
 private:
     // D2D 工厂
     ID2D1Factory1*                      m_pd2dFactory = nullptr;
@@ -77,6 +79,12 @@ private:
     ID2D1Bitmap1*                       m_pd2dTargetBimtap = nullptr;
     // 纯色笔刷
     ID2D1SolidColorBrush*               m_pBaiscBrush = nullptr;
+    // 测试位图
+    ID2D1Bitmap1*                       m_pTestBitmap = nullptr;
+    // 径向模糊特效
+    ID2D1Effect*                        m_pRadialBlurEffect = nullptr;
+    // 径向模糊特效 输出接口
+    ID2D1Image*                         m_pRadialBlurOutput = nullptr;
 #ifdef USING_DirectComposition
     // Direct Composition Device
     IDCompositionDevice*                m_pDcompDevice = nullptr;

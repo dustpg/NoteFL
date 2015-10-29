@@ -703,8 +703,8 @@ auto ImageRenderer::LoadBitmapFromFile(
     ID2D1DeviceContext *pRenderTarget,
     IWICImagingFactory2 *pIWICFactory,
     PCWSTR uri,
-    UINT destinationWidth,
-    UINT destinationHeight,
+    UINT width,
+    UINT height,
     ID2D1Bitmap1 **ppBitmap
     ) noexcept ->HRESULT {
     IWICBitmapDecoder *pDecoder = nullptr;
@@ -730,19 +730,19 @@ auto ImageRenderer::LoadBitmapFromFile(
 
 
     if (SUCCEEDED(hr)) {
-        if (destinationWidth != 0 || destinationHeight != 0) {
+        if (width != 0 || height != 0) {
             UINT originalWidth, originalHeight;
             hr = pSource->GetSize(&originalWidth, &originalHeight);
             if (SUCCEEDED(hr))  {
-                if (destinationWidth == 0)
+                if (width == 0)
                 {
-                    FLOAT scalar = static_cast<FLOAT>(destinationHeight) / static_cast<FLOAT>(originalHeight);
-                    destinationWidth = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
+                    FLOAT scalar = static_cast<FLOAT>(height) / static_cast<FLOAT>(originalHeight);
+                    width = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
                 }
-                else if (destinationHeight == 0)
+                else if (height == 0)
                 {
-                    FLOAT scalar = static_cast<FLOAT>(destinationWidth) / static_cast<FLOAT>(originalWidth);
-                    destinationHeight = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
+                    FLOAT scalar = static_cast<FLOAT>(width) / static_cast<FLOAT>(originalWidth);
+                    height = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
                 }
 
                 hr = pIWICFactory->CreateBitmapScaler(&pScaler);
@@ -750,8 +750,8 @@ auto ImageRenderer::LoadBitmapFromFile(
                 {
                     hr = pScaler->Initialize(
                         pSource,
-                        destinationWidth,
-                        destinationHeight,
+                        width,
+                        height,
                         WICBitmapInterpolationModeCubic
                         );
                 }

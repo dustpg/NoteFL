@@ -44,7 +44,6 @@ public:
         // >= Win8.1 ?
         if (::IsWindows8OrGreater()) {
             m_hDllShcore = ::LoadLibraryW(L"Shcore.dll");
-            assert(m_hDllShcore);
             if (m_hDllShcore) {
                 auto setProcessDpiAwareness =
                     reinterpret_cast<decltype(&InitializeLibrary::SetProcessDpiAwarenessF)>(

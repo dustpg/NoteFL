@@ -1,34 +1,26 @@
 ﻿// ImageRenderer类 主管图形图像渲染
+
 #pragma once
 
-class ImageRenderer {
+class ImageRenderer{
 public:
     // 构造函数
-    ImageRenderer() noexcept;
+    ImageRenderer();
     // 析构函数
-    ~ImageRenderer() noexcept;
+    ~ImageRenderer();
     // 渲染帧
-    auto OnRender(UINT syn) noexcept ->HRESULT;
+    HRESULT OnRender(UINT syn);
     // 设置窗口句柄
-    auto SetHwnd(HWND hwnd) noexcept {  m_hwnd = hwnd; return CreateDeviceIndependentResources();}
-    // 创建设备无关资源
-    auto CreateDeviceIndependentResources() noexcept ->HRESULT;
-    // 创建设备有关资源
-    auto CreateDeviceResources() noexcept ->HRESULT;
-    // 丢弃设备有关资源
-    void DiscardDeviceResources() noexcept;
-    // 从文件读取位图
-    static auto LoadBitmapFromFile(
-        ID2D1DeviceContext* IN pRenderTarget, 
-        IWICImagingFactory2* IN pIWICFactory, 
-        PCWSTR IN uri, 
-        UINT OPTIONAL width, 
-        UINT OPTIONAL height,
-        ID2D1Bitmap1** OUT ppBitmap
-        ) noexcept ->HRESULT;
+    HRESULT SetHwnd(HWND hwnd) {  m_hwnd = hwnd; return CreateDeviceIndependentResources();}
 private:
-    // 重建fps文本布局
-    void recreate_fps_layout() noexcept;
+    // 创建设备无关资源
+    HRESULT CreateDeviceIndependentResources();
+    // 创建设备有关资源
+    HRESULT CreateDeviceResources();
+    // 丢弃设备有关资源
+    void DiscardDeviceResources();
+    // 从文件读取位图
+    HRESULT LoadBitmapFromFile(ID2D1DeviceContext*, IWICImagingFactory2 *, PCWSTR uri, UINT, UINT, ID2D1Bitmap1 **);
 private:
     // D2D 工厂
     ID2D1Factory1*                      m_pd2dFactory = nullptr;
@@ -38,20 +30,6 @@ private:
     IDWriteFactory1*                    m_pDWriteFactory = nullptr;
     // 正文文本渲染格式
     IDWriteTextFormat*                  m_pTextFormatMain = nullptr;
-    // FPS 显示
-    IDWriteTextLayout*                  m_pFPSLayout = nullptr;
-    // 高精度计时器
-    HTimer                              m_oTimerH;
-    // 中精度计时器
-    MTimer                              m_oTimerM;
-    // 帧计数器
-    uint32_t                            m_cFrameCount = 0;
-    // 帧结算单位
-    uint32_t                            m_cRefreshCount = 30;
-    // 间隔时间
-    float                               m_fDelta = 0.f;
-    // 平均 FPS
-    float                               m_fFramePerSec = 1.f;
 private:
     // D3D 设备
     ID3D11Device*                       m_pd3dDevice = nullptr;
@@ -75,8 +53,6 @@ private:
     IDXGISwapChain2*                    m_pSwapChain = nullptr;
     // D2D 位图 储存当前显示的位图
     ID2D1Bitmap1*                       m_pd2dTargetBimtap = nullptr;
-    // 纯色笔刷
-    ID2D1SolidColorBrush*               m_pBaiscBrush = nullptr;
 #ifdef USING_DirectComposition
     // Direct Composition Device
     IDCompositionDevice*                m_pDcompDevice = nullptr;

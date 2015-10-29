@@ -1,6 +1,5 @@
 #include <Ws2tcpip.h>
 #include <Windows.h>
-//#include <ShellScalingApi.h>
 #include <Shlwapi.h>
 #include <algorithm>
 #include <cassert>
@@ -313,7 +312,6 @@ int main(int argc, char* argv[]) {
         static_assert(sizeof(RECVMSGSER) != sizeof(FILEINFO), "coded via length");
         sockaddr_in target_addr; int addrlen = sizeof(target_addr);
         // ÒªÇóÒì²½
-        //u_long flag = 1; ::ioctlsocket(sock, FIONBIO, &flag);
         int time_out = SLEEP_TIME; ::setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&time_out), sizeof(time_out));
         auto status = ::recvfrom(
             sock, &recv_data.msg.control, sizeof(recv_data), 0,

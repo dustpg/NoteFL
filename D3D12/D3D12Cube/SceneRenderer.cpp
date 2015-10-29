@@ -639,6 +639,7 @@ auto SceneRenderer::CreateDeviceResources() noexcept ->HRESULT {
                 "ColorVertexShader", "vs_5_0", flag, 0,
                 &vs, &info
                 );
+            assert(SUCCEEDED(hr) && "Failed to D3DCompileFromFile");
         }
         // 编译PS
         if (SUCCEEDED(hr)) {
@@ -648,6 +649,7 @@ auto SceneRenderer::CreateDeviceResources() noexcept ->HRESULT {
                 "ColorPixelShader", "ps_5_0", flag, 0, 
                 &ps, &info
                 );
+            assert(SUCCEEDED(hr) && "Failed to D3DCompileFromFile");
         }
         // 创建PSO
         if (SUCCEEDED(hr)) {
@@ -921,7 +923,7 @@ auto SceneRenderer::OnRender(UINT syn) noexcept->HRESULT {
     // 没有就创建
     if (!m_pd3dDevice) {
         hr = this->CreateDeviceResources();
-        assert(SUCCEEDED(hr));
+        assert(SUCCEEDED(hr) && "Failed to call CreateDeviceResources");
 #ifdef _DEBUG
         static bool first = true;
         if(!first) ::MessageBoxW(m_hwnd, L"Create SUCCEEDED", L"Tips", MB_OK);

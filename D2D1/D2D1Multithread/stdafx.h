@@ -1,9 +1,7 @@
 ﻿#pragma once
 
 // 用途:  包含不再修改头文件,生成预编译文件
-#ifndef _DEBUG
-#define NDEBUG
-#endif
+
 
 #define USING_DirectComposition
 // 使用固定DPI(PPI)

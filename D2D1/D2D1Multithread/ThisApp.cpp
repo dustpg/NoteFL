@@ -3,15 +3,17 @@
 
 #define TITLE L"Title"
 
+
+
 // 初始化
-auto ThisApp::Initialize(HINSTANCE hInstance, int nCmdShow) noexcept ->HRESULT {
+HRESULT ThisApp::Initialize(HINSTANCE hInstance, int nCmdShow){
     HRESULT hr = E_FAIL;
     //register window class
     WNDCLASSEX wcex = { sizeof(WNDCLASSEX) };
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = ThisApp::WndProc;
     wcex.cbClsExtra = 0;
-    wcex.cbWndExtra = sizeof(void*);
+    wcex.cbWndExtra = sizeof(LONG_PTR);
     wcex.hInstance = hInstance;
     wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wcex.hbrBackground = nullptr;
@@ -42,28 +44,24 @@ auto ThisApp::Initialize(HINSTANCE hInstance, int nCmdShow) noexcept ->HRESULT {
     hr = m_hwnd ? S_OK : E_FAIL;
     // 设置窗口句柄
     if (SUCCEEDED(hr)) {
-        hr = m_oImagaRenderer.SetHwnd(m_hwnd);
+        hr = m_ImagaRenderer.SetHwnd(m_hwnd);
     }
     // 显示窗口
     if (SUCCEEDED(hr)) {
         ::ShowWindow(m_hwnd, nCmdShow);
         ::UpdateWindow(m_hwnd);
-        // 异常
-        try {
-            m_threadRender.std::thread::~thread();
-            m_threadRender.std::thread::thread([this]() noexcept {
+        m_threadRender.std::thread::~thread();
+        m_threadRender.std::thread::thread(
+            [this]() {
                 ::CoInitialize(nullptr);
                 while (true) {
-                    m_oImagaRenderer.OnRender(1);
+                    m_ImagaRenderer.OnRender(1);
                     if (m_bExit) break;
                 }
                 ::CoUninitialize();
-            });
-        }
-        // 失败
-        catch (...) {
-            hr = E_FAIL;
-        }
+                return S_OK;
+            }
+            );
     }
     return hr;
 }
@@ -71,8 +69,9 @@ auto ThisApp::Initialize(HINSTANCE hInstance, int nCmdShow) noexcept ->HRESULT {
 
 
 // 消息循环
-void ThisApp::RunMessageLoop() noexcept {
+void ThisApp::RunMessageLoop(){
     MSG msg;
+
     while (::GetMessageW(&msg, nullptr, 0, 0)) {
         ::TranslateMessage(&msg);
         ::DispatchMessageW(&msg);
@@ -81,7 +80,7 @@ void ThisApp::RunMessageLoop() noexcept {
 
 
 // 窗口过程函数
-auto CALLBACK ThisApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) noexcept -> LRESULT {
+LRESULT CALLBACK ThisApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
     LRESULT result = 0;
     // 创建时 设置指针
     if (message == WM_CREATE) {
@@ -100,7 +99,12 @@ auto CALLBACK ThisApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
             switch (message)
             {
             case WM_CLOSE:
-                result = pOurApp->OnClose();
+                // 将收尾操作(如结束全部子线程)放在这里
+                pOurApp->m_bExit = TRUE;
+                // join
+                pOurApp->m_threadRender.join();
+                ::DestroyWindow(hwnd);
+                result = 1;
                 wasHandled = true;
                 break;
             case WM_DESTROY:
@@ -118,15 +122,3 @@ auto CALLBACK ThisApp::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
     return result;
 }
 
-
-// 关闭时候
-auto ThisApp::OnClose() noexcept ->LRESULT {
-    // 将收尾操作(如结束全部子线程)放在这里
-    m_bExit = TRUE;
-    // 等待线程退出
-    try { m_threadRender.join(); }
-    catch (...) {}
-    // 摧毁窗口
-    ::DestroyWindow(m_hwnd);
-    return LRESULT(1);
-}

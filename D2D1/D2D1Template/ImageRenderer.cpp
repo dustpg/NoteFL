@@ -1,9 +1,9 @@
 ﻿#include "stdafx.h"
 #include "included.h"
 
-#undef  PixelFormat
+
 // ImageRenderer类构造函数
-ImageRenderer::ImageRenderer() {
+ImageRenderer::ImageRenderer() noexcept {
     m_parameters.DirtyRectsCount = 0;
     m_parameters.pDirtyRects = nullptr;
     m_parameters.pScrollRect = nullptr;
@@ -12,7 +12,7 @@ ImageRenderer::ImageRenderer() {
 
 
 // 创建设备无关资源
-HRESULT ImageRenderer::CreateDeviceIndependentResources() {
+HRESULT ImageRenderer::CreateDeviceIndependentResources() noexcept {
     // 创建D2D工厂
     D2D1_FACTORY_OPTIONS options = { D2D1_DEBUG_LEVEL_NONE };
 #ifdef _DEBUG
@@ -44,26 +44,23 @@ HRESULT ImageRenderer::CreateDeviceIndependentResources() {
     // 创建正文文本格式.
     if (SUCCEEDED(hr)) {
         hr = m_pDWriteFactory->CreateTextFormat(
-            L"Arial",
+            L"Courier New",
+            //L"Fixedsys",
             nullptr,
             DWRITE_FONT_WEIGHT_NORMAL,
             DWRITE_FONT_STYLE_NORMAL,
             DWRITE_FONT_STRETCH_NORMAL,
             22.f,
-            L"", //locale
+            L"en-us",
             &m_pTextFormatMain
             );
-        if (m_pTextFormatMain) {
-            m_pTextFormatMain->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-            m_pTextFormatMain->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        }
     }
     return hr;
 }
 
 
 // 创建设备资源
-HRESULT ImageRenderer::CreateDeviceResources() {
+HRESULT ImageRenderer::CreateDeviceResources() noexcept {
     HRESULT hr = S_OK;
     // DXGI Surface 后台缓冲
     IDXGISurface*                   pDxgiBackBuffer = nullptr;
@@ -92,9 +89,9 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             // 设为空指针选择默认设备
             nullptr,
             // 强行指定硬件渲染
-            //D3D_DRIVER_TYPE_HARDWARE,
+            D3D_DRIVER_TYPE_HARDWARE,
             // 强行指定WARP渲染
-            D3D_DRIVER_TYPE_WARP,
+            //D3D_DRIVER_TYPE_WARP,
             // 没有软件接口
             nullptr,
             // 创建flag
@@ -116,7 +113,7 @@ HRESULT ImageRenderer::CreateDeviceResources() {
 #ifdef _DEBUG
     // 创建 ID3D11Debug
     if (SUCCEEDED(hr)) {
-        //hr = m_pd3dDevice->QueryInterface(IID_PPV_ARGS(&m_pd3dDebug));
+        hr = m_pd3dDevice->QueryInterface(IID_PPV_ARGS(&m_pd3dDebug));
     }
 #endif
     // 创建 IDXGIDevice
@@ -158,7 +155,7 @@ HRESULT ImageRenderer::CreateDeviceResources() {
         swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         swapChainDesc.BufferCount = 2;
         swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-        swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+        swapChainDesc.Flags = 0;
 #ifdef USING_DirectComposition
         // DirectComposition桌面应用程序
         swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_PREMULTIPLIED;
@@ -191,10 +188,6 @@ HRESULT ImageRenderer::CreateDeviceResources() {
             IID_IDXGISwapChain2,
             reinterpret_cast<void**>(&m_pSwapChain)
             );
-    }
-    // 获取等待事件
-    if (SUCCEEDED(hr)) {
-        m_hVSync = m_pSwapChain->GetFrameLatencyWaitableObject();
     }
     // 确保DXGI队列里边不会超过一帧
     if (SUCCEEDED(hr)) {
@@ -256,99 +249,123 @@ HRESULT ImageRenderer::CreateDeviceResources() {
         hr = m_pDcompDevice->Commit();
     }
 #endif
+    // 创建笔刷
+    if (SUCCEEDED(hr)) {
+        hr = m_pd2dDeviceContext->CreateSolidColorBrush(
+            D2D1::ColorF(D2D1::ColorF::Black),
+            &m_pBaiscBrush
+            );
+    }
     ::SafeRelease(pDxgiBackBuffer);
     ::SafeRelease(pSwapChain);
     return hr;
 }
 
 // ImageRenderer析构函数
-ImageRenderer::~ImageRenderer(){
+ImageRenderer::~ImageRenderer() noexcept {
     this->DiscardDeviceResources();
-
     ::SafeRelease(m_pd2dFactory);
     ::SafeRelease(m_pWICFactory);
     ::SafeRelease(m_pDWriteFactory);
     ::SafeRelease(m_pTextFormatMain);
+    ::SafeRelease(m_pFPSLayout);
     // 调试
 #ifdef _DEBUG
     if (m_pd3dDebug) {
-        m_pd3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+        m_pd3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+        auto c = m_pd3dDebug->Release();
+        ::OutputDebugStringW(L"Sad\r\n");
     }
-    ::SafeRelease(m_pd3dDebug);
+    //::SafeRelease(m_pd3dDebug);
 #endif
 }
 
 // 丢弃设备相关资源
-void ImageRenderer::DiscardDeviceResources(){
-    if (m_hVSync) {
-        ::CloseHandle(m_hVSync);
-        m_hVSync = nullptr;
-    }
-
-    ::SafeRelease(m_pd3dDevice);
-    ::SafeRelease(m_pd3dDeviceContext);
-    ::SafeRelease(m_pd2dDevice);
-    ::SafeRelease(m_pd2dDeviceContext);
-    ::SafeRelease(m_pDxgiFactory);
-    ::SafeRelease(m_pDxgiDevice);
-    ::SafeRelease(m_pDxgiAdapter);
-    ::SafeRelease(m_pSwapChain);
-    ::SafeRelease(m_pd2dTargetBimtap);
-
-    // DirectComposition
+void ImageRenderer::DiscardDeviceResources() noexcept {
 #ifdef USING_DirectComposition
     ::SafeRelease(m_pDcompDevice);
     ::SafeRelease(m_pDcompTarget);
     ::SafeRelease(m_pDcompVisual);
 #endif
+    ::SafeRelease(m_pBaiscBrush);
+    ::SafeRelease(m_pd2dTargetBimtap);
+    ::SafeRelease(m_pSwapChain);
+    ::SafeRelease(m_pd3dDeviceContext);
+    ::SafeRelease(m_pd2dDeviceContext);
+    ::SafeRelease(m_pDxgiAdapter);
+    ::SafeRelease(m_pd3dDevice);
+    ::SafeRelease(m_pd2dDevice);
+    ::SafeRelease(m_pDxgiFactory);
+    ::SafeRelease(m_pDxgiDevice);
 }
 
-#include <Mmsystem.h>
-#pragma comment(lib, "Winmm.lib")
-#pragma comment(lib, "dxguid.lib")
+// 重建FPS布局
+void ImageRenderer::recreate_fps_layout() noexcept {
+    ++m_cFrameCount;
+    constexpr size_t BUFFER_COUNT = 64;
+    // 计算FPS
+    m_fDelta = m_oTimerH.Delta_s<float>();
+    m_oTimerH.MovStartEnd();
+    // 释放数据
+    ::SafeRelease(m_pFPSLayout);
+    assert(m_pTextFormatMain && "bad initialize");
+    wchar_t buffer[BUFFER_COUNT];
+    // 平均FPS
+    if (!(m_cFrameCount % m_cRefreshCount)) {
+        m_fFramePerSec = static_cast<float>(m_cRefreshCount) / m_oTimerM.Delta_s<float>();
+        m_oTimerH.RefreshFrequency();
+        m_oTimerM.RefreshFrequency();
+        m_oTimerM.MovStartEnd();
+    }
+    // 格式化
+    auto c = std::swprintf(
+        buffer, BUFFER_COUNT,
+        L"%6.2f fps(c) %6.2f fps(m) @%ld",
+        1.f / m_fDelta, 
+        m_fFramePerSec,
+        long(m_cFrameCount)
+        );
+    assert(c > 0 && "bad std::swprintf call");
+    // 生成文本布局
+    auto size = m_pd2dTargetBimtap->GetSize();
+    m_pDWriteFactory->CreateTextLayout(
+        buffer, static_cast<UINT32>(c),
+        m_pTextFormatMain,
+        size.width, size.height,
+        &m_pFPSLayout
+        );
+}
 
 // 渲染图形图像
-HRESULT ImageRenderer::OnRender(UINT syn){
+HRESULT ImageRenderer::OnRender(UINT syn) noexcept {
     HRESULT hr = S_OK;
     // 没有就创建
     if (!m_pd2dDeviceContext) {
         hr = this->CreateDeviceResources();
         assert(SUCCEEDED(hr));
+        m_oTimerH.Start();
+        m_oTimerM.Start();
     }
     // 成功就渲染
     if (SUCCEEDED(hr)) {
-        // 等待事件
-/*#ifdef _DEBUG
-        {
-            auto time = ::timeGetTime();
-            ::WaitForSingleObject(m_hVSync, INFINITE);
-            time = ::timeGetTime() - time;
-            ::_cwprintf(L"Time:%2d ms  ", time);
-        }
-#else
-        ::WaitForSingleObject(m_hVSync, INFINITE);
-#endif*/
+        // 重建
+        this->recreate_fps_layout();
         // 开始渲染
         m_pd2dDeviceContext->BeginDraw();
         // 清屏
         m_pd2dDeviceContext->Clear(D2D1::ColorF(0x66CCFF, 0.5f));
+        // 渲染FPS
+        if (m_pFPSLayout) {
+            m_pd2dDeviceContext->DrawTextLayout(
+                D2D1::Point2F(),
+                m_pFPSLayout,
+                m_pBaiscBrush
+                );
+        }
         // 结束渲染
         m_pd2dDeviceContext->EndDraw();
         // 呈现目标
-#ifdef _DEBUG
-        {
-            auto time = ::timeGetTime();
-            static int a = 0;
-            if (a <= 10) {
-                hr = m_pSwapChain->Present(syn, 0);
-                ++a;
-            }
-            time = ::timeGetTime() - time;
-            ::_cwprintf(L"Time:%2d ms \n", time);
-        }
-#else
         hr = m_pSwapChain->Present(syn, 0);
-#endif
     }
     // 设备丢失?
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET) {
@@ -360,14 +377,14 @@ HRESULT ImageRenderer::OnRender(UINT syn){
 
 
 // 从文件读取位图
-HRESULT ImageRenderer::LoadBitmapFromFile(
-    ID2D1DeviceContext *pRenderTarget,
-    IWICImagingFactory2 *pIWICFactory,
-    PCWSTR uri,
-    UINT destinationWidth,
-    UINT destinationHeight,
-    ID2D1Bitmap1 **ppBitmap
-    ){
+auto ImageRenderer::LoadBitmapFromFile(
+    ID2D1DeviceContext* IN pRenderTarget,
+    IWICImagingFactory2* IN pIWICFactory,
+    PCWSTR IN uri,
+    UINT OPTIONAL width,
+    UINT OPTIONAL height,
+    ID2D1Bitmap1** OUT ppBitmap
+    ) noexcept -> HRESULT {
     IWICBitmapDecoder *pDecoder = nullptr;
     IWICBitmapFrameDecode *pSource = nullptr;
     IWICStream *pStream = nullptr;
@@ -391,25 +408,25 @@ HRESULT ImageRenderer::LoadBitmapFromFile(
 
 
     if (SUCCEEDED(hr)) {
-        if (destinationWidth != 0 || destinationHeight != 0) {
+        if (width != 0 || height != 0) {
             UINT originalWidth, originalHeight;
             hr = pSource->GetSize(&originalWidth, &originalHeight);
             if (SUCCEEDED(hr)) {
-                if (destinationWidth == 0) {
-                    FLOAT scalar = static_cast<FLOAT>(destinationHeight) / static_cast<FLOAT>(originalHeight);
-                    destinationWidth = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
+                if (width == 0) {
+                    FLOAT scalar = static_cast<FLOAT>(height) / static_cast<FLOAT>(originalHeight);
+                    width = static_cast<UINT>(scalar * static_cast<FLOAT>(originalWidth));
                 }
-                else if (destinationHeight == 0) {
-                    FLOAT scalar = static_cast<FLOAT>(destinationWidth) / static_cast<FLOAT>(originalWidth);
-                    destinationHeight = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
+                else if (height == 0) {
+                    FLOAT scalar = static_cast<FLOAT>(width) / static_cast<FLOAT>(originalWidth);
+                    height = static_cast<UINT>(scalar * static_cast<FLOAT>(originalHeight));
                 }
 
                 hr = pIWICFactory->CreateBitmapScaler(&pScaler);
                 if (SUCCEEDED(hr)) {
                     hr = pScaler->Initialize(
                         pSource,
-                        destinationWidth,
-                        destinationHeight,
+                        width,
+                        height,
                         WICBitmapInterpolationModeCubic
                         );
                 }
@@ -453,3 +470,5 @@ HRESULT ImageRenderer::LoadBitmapFromFile(
     return hr;
 }
 
+#pragma comment(lib, "dxguid.lib")
+#pragma comment(lib, "Winmm.lib")

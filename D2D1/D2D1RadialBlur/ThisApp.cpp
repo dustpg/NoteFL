@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 #include "included.h"
 
-#define TITLE L"Title"
+#define TITLE L"径向模糊 基本"
 
 // 初始化
 auto ThisApp::Initialize(HINSTANCE hInstance, int nCmdShow) noexcept ->HRESULT {
