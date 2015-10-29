@@ -11,7 +11,7 @@ static const GUID GUID_DustPG_RadialBlurShader = {
     0x63dce15f, 0x2edf, 0x4c3a, { 0xb8, 0x1b, 0x53, 0x81, 0x42, 0xe4, 0x61, 0x3f } 
 };
 
-
+// DIY Version
 #define MY_D2D1_VALUE_TYPE_BINDING(CLASS, TYPE, NAME)\
     {\
         L#NAME, [](IUnknown* obj, const BYTE* data, UINT32 len) noexcept {\

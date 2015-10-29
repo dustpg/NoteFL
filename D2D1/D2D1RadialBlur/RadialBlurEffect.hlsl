@@ -18,14 +18,12 @@ float4 main(
     ) : SV_Target {
     // 初始化
     float4 color = 0;
+    // 计算步进值
+    float2 step = (center - texelSpaceInput0.xy) / samples * magnitude;
     // 遍历每个采样点
     for(float i = 0; i < samples; ++i)  {
-        // 当前采样进度
-        float rate = i / (samples - 1.0);
-        // 计算缩放位置比例
-        float scale = 1.0f + magnitude * rate;
         // 计算采样地点
-        float2 pos = center + (texelSpaceInput0.xy - center) * scale;
+        float2 pos = texelSpaceInput0.xy + step * i;
         // 添加采样数据
         color += InputTexture.Sample(InputSampler, pos);
     }
