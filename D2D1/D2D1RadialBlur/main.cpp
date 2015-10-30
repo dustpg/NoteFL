@@ -27,6 +27,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return 0;
 }
 
+// IID_IDXGISwapChain2
+extern __declspec(selectany) const GUID IID_IDXGISwapChain2 = {
+    0xa8be2ac4, 0x199f, 0x4946,{ 0xb3, 0x31, 0x79, 0x59, 0x9f, 0xb9, 0x8d, 0xe7 }
+};
+
 #include <VersionHelpers.h>
 
 // 初始化库

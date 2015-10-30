@@ -39,7 +39,7 @@ auto RadialBlurEffect::Register(ID2D1Factory1* factory) noexcept ->HRESULT {
     assert(factory && "bad argment");
     const WCHAR* pszXml = LR"xml(<?xml version = "1.0" ?>
 <Effect>
-    <Property name = "DisplayName" type = "string" value = "RadiaBlurEffect" />
+    <Property name = "DisplayName" type = "string" value = "RadialBlurEffect" />
     <Property name = "Author" type = "string" value = "dustpg" />
     <Property name = "Category" type = "string" value = "Transform" />
     <Property name = "Description" type = "string" value = "径向模糊" />

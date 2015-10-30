@@ -312,7 +312,8 @@ ImageRenderer::~ImageRenderer() noexcept {
     // 调试
 #ifdef _DEBUG
     if (m_pd3dDebug) {
-        m_pd3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+        //m_pd3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL | D3D11_RLDO_IGNORE_INTERNAL);
+        m_pd3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_FLAGS( 2 | 4));
         auto c = m_pd3dDebug->Release();
         ::OutputDebugStringW(L"Sad\r\n");
     }
@@ -382,7 +383,7 @@ void ImageRenderer::recreate_fps_layout() noexcept {
 // 设置径向模糊参数
 void ImageRenderer::config_blur_properties() noexcept {
     // 设置特性
-    const int NAMELESS = 400;
+    const int NAMELESS = 4000;
     const int NAMELESS_2 = NAMELESS / 2;
     {
         // 计算中心点
@@ -396,11 +397,11 @@ void ImageRenderer::config_blur_properties() noexcept {
             / static_cast<float>(NAMELESS_2);
         magnitude = std::abs(magnitude) * 2.f - 1.f;
         // 计算采样量
-        float sam = 64.f;
+        float sam = 48.f;
         // 设置数据
         m_pRadialBlurEffect->SetValue(RadialBlurEffect::Properties_CenterPoint, size);
-        m_pRadialBlurEffect->SetValue(RadialBlurEffect::PROPERTIES_Magnitude, magnitude);
-        m_pRadialBlurEffect->SetValue(RadialBlurEffect::PROPERTIES_Samples, sam);
+        m_pRadialBlurEffect->SetValue(RadialBlurEffect::Properties_Magnitude, magnitude);
+        m_pRadialBlurEffect->SetValue(RadialBlurEffect::Properties_Samples, sam);
     }
 }
 

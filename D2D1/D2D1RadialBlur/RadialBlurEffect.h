@@ -11,9 +11,9 @@ public:
         // D2D1_POINT_2F
         Properties_CenterPoint = 0,
         // float
-        PROPERTIES_Magnitude,
+        Properties_Magnitude,
         // float
-        PROPERTIES_Samples
+        Properties_Samples
     };
 public:
     // ID2D1EffectImpl
