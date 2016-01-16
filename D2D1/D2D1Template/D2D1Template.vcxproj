@@ -14,7 +14,7 @@
     <ProjectGuid>{7B1DA6E7-5D89-471F-8B7F-52A0920FA173}</ProjectGuid>
     <RootNamespace>D2D1Template</RootNamespace>
     <TargetPlatformVersion>10.0.10240.0</TargetPlatformVersion>
-    <WindowsTargetPlatformVersion>10.0.10240.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
