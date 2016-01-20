@@ -576,7 +576,10 @@ void Demo::ImageRenderer::render_map() noexcept {
         );
     m_pd2dDeviceContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
     if (m_bSpriteMode) {
-        m_pd2dDeviceContext->DrawSpriteBatch(m_pSpriteBatch, m_pMapAsset);
+        m_pd2dDeviceContext->DrawSpriteBatch(
+            m_pSpriteBatch, m_pMapAsset,
+            D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
+            );
     }
     else {
         auto draw = [this](Demo::Map* map) noexcept {
@@ -601,7 +604,7 @@ void Demo::ImageRenderer::render_map() noexcept {
                 m_pd2dDeviceContext->DrawBitmap(
                     m_pMapAsset,
                     &des_rect, 1.f,
-                    D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+                    D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
                     &src_rect
                     );
             }
