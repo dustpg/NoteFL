@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ResourceCompile Include="icon.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="pfdWndView.cpp">
+      <Filter>程序</Filter>
+    </ClCompile>
+    <ClCompile Include="pfdUiMap.cpp">
+      <Filter>地图</Filter>
+    </ClCompile>
+    <ClCompile Include="Dungeon1.cpp">
+      <Filter>迷宫</Filter>
+    </ClCompile>
+    <ClCompile Include="pfdAStar.cpp">
+      <Filter>算法</Filter>
+    </ClCompile>
+    <ClCompile Include="pfdCharacter.cpp">
+      <Filter>角色</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="Application.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="地图">
+      <UniqueIdentifier>{72f689d9-f788-4c90-b3c6-94f733db74d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="算法">
+      <UniqueIdentifier>{659f4b15-5658-4037-97f6-8549b8114016}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="程序">
+      <UniqueIdentifier>{edf9bf54-f5f9-404c-bcf2-a4732188f107}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="迷宫">
+      <UniqueIdentifier>{3ffce937-f8df-467e-9654-da6372f2f9b5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="角色">
+      <UniqueIdentifier>{51867a5b-d18e-47f3-a634-71eaf291be2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="实用">
+      <UniqueIdentifier>{29bd755a-2d12-4ca9-b686-b4b043026bb2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pfdConfig.h">
+      <Filter>程序</Filter>
+    </ClInclude>
+    <ClInclude Include="pfdWndView.h">
+      <Filter>程序</Filter>
+    </ClInclude>
+    <ClInclude Include="pfdUiMap.h">
+      <Filter>地图</Filter>
+    </ClInclude>
+    <ClInclude Include="pfdAlgorithm.h">
+      <Filter>算法</Filter>
+    </ClInclude>
+    <ClInclude Include="pfdCharacter.h">
+      <Filter>角色</Filter>
+    </ClInclude>
+    <ClInclude Include="pfdUtil.h">
+      <Filter>实用</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\..\LongUI\LongUI\longui.natvis">
+      <Filter>程序</Filter>
+    </Natvis>
+  </ItemGroup>
+</Project>
