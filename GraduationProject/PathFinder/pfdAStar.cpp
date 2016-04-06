@@ -1,6 +1,7 @@
 #include "pfdAlgorithm.h"
 #include <algorithm>
 #include <cassert>
+#include <thread>
 #include <memory>
 #include <list>
 #include <new>
@@ -102,12 +103,18 @@ namespace PathFD {
         void Dispose() noexcept override { delete this; };
         // 执行算法, 返回路径(成功的话), 需要调用者调用std::free释放
         auto Execute(const PathFD::Finder& fd) noexcept->Path* override;
-        // 可视化
-        bool Visualization(const PathFD::Finder& fd) noexcept override;
+        // 可视化步进
+        void BeginStep(const PathFD::Finder& fd) noexcept override;
+        // 可视化步进
+        void NextStep() noexcept override;
+        // 结束可视化步进
+        void EndStep() noexcept override;
     private:
         // 析构函数
         ~CFDAStar() noexcept {}
     private:
+        // 执行线程
+        std::thread             m_thdStep;
     };
 }
 
@@ -130,9 +137,9 @@ PathFD::CFDAStar::CFDAStar() noexcept {
 
 
 // pathfd::impl 命名空间
-namespace PathFD { namespace impl{
+namespace PathFD { namespace impl {
     // 找到路径
-    inline auto path_found(PathFD::CFDAStar::List& close_list) noexcept {
+    auto path_found(PathFD::CFDAStar::List& close_list) noexcept {
         assert(!close_list.empty());
         size_t size = size_t(close_list.front().gn);
 #ifdef _DEBUG
@@ -167,18 +174,13 @@ namespace PathFD { namespace impl{
             return path;
         }
     }
-}}
-
-
-// 执行算法
-auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
-    // 起点终点数据
-    const int16_t sx = fd.startx;
-    const int16_t sy = fd.starty;
-    const int16_t gx = fd.goalx;
-    const int16_t gy = fd.goaly;
-    // 正式处理
-    try {
+    // 寻找路径
+    auto a_star_find(const PathFD::Finder& fd) -> PathFD::Path* {
+        // 起点终点数据
+        const int16_t sx = fd.startx;
+        const int16_t sy = fd.starty;
+        const int16_t gx = fd.goalx;
+        const int16_t gy = fd.goaly;
         // 遍历过数据
         auto visited = std::make_unique<uint8_t[]>(fd.width * fd.height);
         std::memset(visited.get(), 0, sizeof(uint8_t) * fd.width * fd.height);
@@ -220,7 +222,7 @@ auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Pat
         start.parent = nullptr;
         end.x = gx; end.y = gy;
         // 起点加入OPEN表
-        List open, close; open.push_back(start);
+        CFDAStar::List open, close; open.push_back(start);
         mark_visited(start.x, start.y);
         // 为空算法失败
         while (!open.empty()) {
@@ -236,7 +238,7 @@ auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Pat
             }
             // 移动
             auto moveto = [&](int16_t xplus, int16_t yplus) {
-                NODE tmp; 
+                CFDAStar::NODE tmp; 
                 tmp.x = node.x + xplus; 
                 tmp.y = node.y + yplus; 
                 // 可以通行 并且没有遍历过
@@ -277,15 +279,35 @@ auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Pat
         }
         return nullptr;
     }
+}}
+
+// 执行算法
+auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
+    // 正式处理
+    try { return impl::a_star_find(fd);  }
     // 出现异常
-    catch (...) {
-        return nullptr;
-    }
+    catch (...) { return nullptr; }
 }
 
-// 可视化
-bool PathFD::CFDAStar::Visualization(const PathFD::Finder& fd) noexcept {
+// 可视化步进
+void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
+    assert(m_thdStep.joinable() == false);
     assert(!"NOIMPL");
-    return false;
+    m_thdStep.std::thread::~thread();
+    m_thdStep.std::thread::thread();
+}
+// 可视化步进
+void PathFD::CFDAStar::NextStep() noexcept {
+    assert(!"NOIMPL");
 }
 
+// 结束可视化步进
+void PathFD::CFDAStar::EndStep() noexcept {
+    assert(m_thdStep.joinable());
+    try { 
+        m_thdStep.join();
+        m_thdStep.std::thread::~thread();
+        m_thdStep.std::thread::thread();
+    }
+    catch (...) { }
+}

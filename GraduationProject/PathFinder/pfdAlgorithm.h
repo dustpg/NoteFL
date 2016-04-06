@@ -44,8 +44,12 @@ namespace PathFD {
     struct PATHFD_NOVTABLE IFDAlgorithm : IFDInterface {
         // 执行算法, 返回路径(成功的话), 需要调用者调用std::free释放
         virtual auto Execute(const PathFD::Finder& fd) noexcept->Path* = 0;
-        // 可视化
-        virtual bool Visualization(const PathFD::Finder& fd) noexcept = 0;
+        // 可视化步进
+        virtual void BeginStep(const PathFD::Finder& fd) noexcept = 0;
+        // 可视化步进
+        virtual void NextStep() noexcept = 0;
+        // 结束可视化步进
+        virtual void EndStep() noexcept = 0;
     };
     // 创建A*算法
     auto CreateAStarAlgorithm() noexcept ->IFDAlgorithm*;

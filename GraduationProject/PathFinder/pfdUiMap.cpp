@@ -1,8 +1,12 @@
 #include "pfdUIMap.h"
+#include "pfdAlgorithm.h"
+// longui api
 #include <Control/UIContainer.h>
+#include <Platonly/luiPoFile.h>
 #include <Core/luiManager.h>
-#include  "pfdAlgorithm.h"
-
+// windows api
+#include <Shobjidl.h>
+#include <Shlwapi.h>
 
 
 /// <summary>
@@ -49,9 +53,60 @@ void PathFD::UIMapControl::initialize(pugi::xml_node node) noexcept {
         m_uMapIcon = static_cast<uint16_t>(LongUI::AtoI(str));
     }
     assert(m_uCharBitmap && m_uMapBitmap && m_uMapIcon);
+    assert(!m_pFileOpenDialog);
+    assert(!m_pFileSaveDialog);
+    auto hr = S_OK;
+    // 创建文本对话框
+    if (SUCCEEDED(hr)) {
+        hr = ::CoCreateInstance(
+            CLSID_FileOpenDialog,
+            nullptr,
+            CLSCTX_INPROC_SERVER,
+            IID_IFileDialog,
+            reinterpret_cast<void**>(&m_pFileOpenDialog)
+        );
+    }
+    // 创建文本对话框
+    if (SUCCEEDED(hr)) {
+        hr = ::CoCreateInstance(
+            CLSID_FileSaveDialog,
+            nullptr,
+            CLSCTX_INPROC_SERVER,
+            IID_IFileDialog,
+            reinterpret_cast<void**>(&m_pFileSaveDialog)
+        );
+    }
+    // 设置确定标签
+    if (SUCCEEDED(hr)) {
+        hr = m_pFileSaveDialog->SetOkButtonLabel(L"保存地图文件");
+    }
+    // 设置标题
+    if (SUCCEEDED(hr)) {
+        hr = m_pFileSaveDialog->SetTitle(L"PathFD - 选择保存的文件");
+    }
+    // 设置确定标签
+    if (SUCCEEDED(hr)) {
+        hr = m_pFileOpenDialog->SetOkButtonLabel(L"打开地图文件");
+    }
+    // 设置标题
+    if (SUCCEEDED(hr)) {
+        hr = m_pFileOpenDialog->SetTitle(L"PathFD - 选择打开的文件");
+    }
+    // 设置文件类型
+    if (SUCCEEDED(hr)) {
+        COMDLG_FILTERSPEC filter = { L"PathFD 地图文件", L"*.map" };
+        hr = m_pFileSaveDialog->SetFileTypes(1, &filter);
+    }
+    // 设置扩展名
+    if (SUCCEEDED(hr)) {
+        hr = m_pFileSaveDialog->SetDefaultExtension(L"map");
+    }
+    // 检查错误
+    if (FAILED(hr)) {
+        assert(!"HR!");
+        UIManager.ShowError(hr);
+    }
 }
-
-
 
 // ------------------------- 地图逻辑
 
@@ -71,7 +126,32 @@ void PathFD::UIMapControl::ResizeCellSize(uint32_t width, uint32_t height) noexc
 /// <param name="height">The height.</param>
 /// <returns></returns>
 void PathFD::UIMapControl::GenerateMap(uint32_t width, uint32_t height) noexcept {
+    // 无效的SB
     if (!m_pMapSpriteBatch) return;
+    // 内存不足
+    if (!this->require_mapdata(width, height)) return;
+    // 清空
+    std::memset(m_pMapCells, 0, sizeof(m_pMapCells[0]) * (width * height));
+    uint32_t pos[2] = { 0 };
+    // 生成地图
+    m_fnGeneration(m_pMapCells, width, height, pos);
+    m_dataMap.map_data = m_pMapCells;
+    m_dataMap.char_x = pos[0] % m_dataMap.map_width;
+    m_dataMap.char_y = pos[0] / m_dataMap.map_width;
+    m_uGoalX = pos[1] % m_dataMap.map_width;
+    m_uGoalY = pos[1] / m_dataMap.map_width;
+    // 重置地图
+    this->reset_map();
+}
+
+
+/// <summary>
+/// 保存地图有效性
+/// </summary>
+/// <param name="width">The width.</param>
+/// <param name="height">The height.</param>
+/// <returns></returns>
+bool PathFD::UIMapControl::require_mapdata(int32_t width, uint32_t height) noexcept {
     assert(width > 1 && height > 1 && "bad arguments");
     assert(width <= MAX_WIDTH && height <= MAX_HEIGHT && "bad arguments");
     m_dataMap.map_width = width;
@@ -82,8 +162,8 @@ void PathFD::UIMapControl::GenerateMap(uint32_t width, uint32_t height) noexcept
         LongUI::NormalFree(m_pMapCells);
         m_pMapCells = LongUI::NormalAllocT<uint8_t>(sz);
         // 内存不足
-        if (!m_pMapCells) return assert(!"ERROR");
-        auto added = sz -m_uMapSpriteCount ;
+        if (!m_pMapCells) return false;
+        auto added = sz - m_uMapSpriteCount ;
         D2D1_RECT_F rect = { 0.f };
         // 申请精灵
         auto hr = m_pMapSpriteBatch->AddSprites(
@@ -96,35 +176,28 @@ void PathFD::UIMapControl::GenerateMap(uint32_t width, uint32_t height) noexcept
             m_pMapSpriteBatch->Release();
             m_pMapSpriteBatch = nullptr;
             UIManager.ShowError(hr);
-            return;
+            return false;
         }
         m_uMapSpriteCount = sz;
     }
-    // 清空
-    std::memset(m_pMapCells, 0, sz);
-    uint32_t pos[2] = { 0 };
-    // 生成地图
-    m_fnGeneration(m_pMapCells, width, height, pos);
+    return true;
+}
+
+/// <summary>
+/// 重置地图
+/// <returns></returns>
+void PathFD::UIMapControl::reset_map() noexcept {
     // 重置角色地图
-    {
-        m_dataMap.map_data = m_pMapCells;
-        m_dataMap.char_x = pos[0] % m_dataMap.map_width;
-        m_dataMap.char_y = pos[0] / m_dataMap.map_width;
-        m_char.ResetMap(m_dataMap);
-        // 终点
-        m_uGoalX = pos[1] % m_dataMap.map_width;
-        m_uGoalY = pos[1] / m_dataMap.map_width;
-    }
+    m_char.ResetMap(m_dataMap);
     // 设置控件大小
-    this->SetWidth(float(m_dataMap.cell_width * width));
-    this->SetHeight(float(m_dataMap.cell_height * height));
+    this->SetWidth(float(m_dataMap.cell_width * m_dataMap.map_width));
+    this->SetHeight(float(m_dataMap.cell_height * m_dataMap.map_height));
     // 重置地图精灵
     this->reset_sprites();
     // 重绘地图
     this->parent->SetControlLayoutChanged();
     this->parent->InvalidateThis();
 }
-
 
 /// <summary>
 /// 重置精灵
@@ -204,7 +277,9 @@ void PathFD::UIMapControl::release_resource() noexcept {
 /// </summary>
 /// <returns></returns>
 PathFD::UIMapControl::~UIMapControl() noexcept {
-    this->release_resource(); 
+    this->release_resource();
+    LongUI::SafeRelease(m_pFileOpenDialog);
+    LongUI::SafeRelease(m_pFileSaveDialog);
     if (m_pMapCells) {
         LongUI::NormalFree(m_pMapCells);
         m_pMapCells = nullptr;
@@ -269,8 +344,8 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
         des.bottom = des.top + float(m_dataMap.cell_height);
         // 源矩形
         D2D1_RECT_F src;
-        src.left = 0.f;
-        src.top = float(m_dataMap.cell_height);
+        src.left = float(m_dataMap.cell_height) * 2.f;
+        src.top = 0.f;
         src.right = src.left + float(m_dataMap.cell_width);
         src.bottom = src.top + float(m_dataMap.cell_height);
         // 刻画
@@ -293,8 +368,8 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
         des.bottom = des.top + float(m_dataMap.cell_height);
         // 源矩形
         D2D1_RECT_F src;
-        src.left = float(m_dataMap.cell_width);
-        src.top = float(m_dataMap.cell_height);
+        src.left = float(m_dataMap.cell_height) * 3.f;
+        src.top = 0.f;
         src.right = src.left + float(m_dataMap.cell_width);
         src.bottom = src.top + float(m_dataMap.cell_height);
         // 刻画
@@ -366,6 +441,7 @@ void PathFD::UIMapControl::Render() const noexcept {
 /// </summary>
 /// <returns></returns>
 auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
+    if (!m_pFileOpenDialog || !m_pFileSaveDialog) return E_FAIL;
     // 初始化
     HRESULT hr = S_OK;
     ID2D1Bitmap1* pCellBitmapBoundary = nullptr;
@@ -390,6 +466,10 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE,
             &pBitmapRenderTarget
         );
+    }
+    // 父类重建
+    if (SUCCEEDED(hr)) {
+        hr = Super::Recreate();
     }
     // 创建地图单元分界线位图
     if (SUCCEEDED(hr)) {
@@ -437,58 +517,12 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         assert(m_pMapSkin && "bad action");
         if (!m_pMapSkin) hr = E_NOT_SET;
     }
-#if 1
     // 设置图标位图
     if (SUCCEEDED(hr)) {
         m_pMapIcon = UIManager.GetBitmap(m_uMapIcon);
         assert(m_pMapSkin && "bad action");
         if (!m_pMapSkin) hr = E_NOT_SET;
     }
-#else
-    // 写入颜色
-    if (SUCCEEDED(hr)) {
-        // 使用数据集
-        const D2D1_COLOR_F colors[] = {
-            D2D1::ColorF(D2D1::ColorF::Black),
-            D2D1::ColorF(D2D1::ColorF::White),
-            D2D1::ColorF(D2D1::ColorF::Blue),
-            D2D1::ColorF(D2D1::ColorF::Red),
-        };
-        const float w = float(m_dataMap.cell_width);
-        const float h = float(m_dataMap.cell_height);
-        const D2D1_RECT_F rects[] = {
-            { w * 0.f, h * 0.f, w * 1.f, h * 1.f },
-            { w * 1.f, h * 0.f, w * 2.f, h * 1.f },
-            { w * 0.f, h * 1.f, w * 1.f, h * 2.f },
-            { w * 1.f, h * 1.f, w * 2.f, h * 2.f },
-        };
-        static_assert(
-            sizeof(colors) / sizeof(colors[0]) == sizeof(rects) / sizeof(rects[0]),
-            "bad size of them"
-            );
-        // 渲染颜色
-        pBitmapRenderTarget->BeginDraw();
-        constexpr int size = sizeof(colors) / sizeof(colors[0]);
-        for (int i = 0; i != size; ++i) {
-            pBitmapRenderTarget->PushAxisAlignedClip(rects + i, D2D1_ANTIALIAS_MODE_ALIASED);
-            pBitmapRenderTarget->Clear(colors + i);
-            pBitmapRenderTarget->PopAxisAlignedClip();
-        }
-        pBitmapRenderTarget->DrawBitmap(m_pMapSkin);
-        hr = pBitmapRenderTarget->EndDraw();
-    }
-    // 创建皮肤位图
-    if (SUCCEEDED(hr)) {
-        ID2D1Bitmap* bitmap = nullptr;
-        hr = pBitmapRenderTarget->GetBitmap(&bitmap);
-        // 尝试获取位图
-        if (SUCCEEDED(hr)) {
-            hr = bitmap->QueryInterface(IID_ID2D1Bitmap1, reinterpret_cast<void**>(&m_pMapIcon));
-        }
-        // 创建皮肤位图
-        LongUI::SafeRelease(bitmap);
-    }
-#endif
     // 设置笔刷透明度
     if (SUCCEEDED(hr)) {
         m_pCellBoundaryBrush->SetOpacity(0.25f);
@@ -555,10 +589,6 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             hr = E_NOT_SET;
         }
     }
-    // 父类重建
-    if (SUCCEEDED(hr)) {
-        hr = Super::Recreate();
-    }
     LongUI::SafeRelease(pCellBitmapBoundary);
     LongUI::SafeRelease(pBitmapRenderTarget);
     return hr;
@@ -588,6 +618,30 @@ bool PathFD::UIMapControl::DoMouseEvent(const LongUI::MouseEventArgument& arg) n
     D2D1_POINT_2F pt4self = LongUI::TransformPointInverse(
         this->world, D2D1::Point2F(arg.ptx,  arg.pty)
     );
+    // ------------------------------- 鼠标移动
+    auto on_mouse_lbhold = [pt4self, this]() noexcept {
+        auto x = uint32_t(pt4self.x) / m_dataMap.cell_width;
+        auto y = uint32_t(pt4self.y) / m_dataMap.cell_height;
+        switch (m_typeClicked)
+        {
+        case PathFD::UIMapControl::Type_Cell:
+            break;
+        case PathFD::UIMapControl::Type_Charactar:
+            break;
+        case PathFD::UIMapControl::Type_Start:
+            if (x != m_dataMap.char_x || y != m_dataMap.char_y) {
+                m_dataMap.char_x = x; m_dataMap.char_y = y;
+                this->InvalidateThis();
+            }
+            break;
+        case PathFD::UIMapControl::Type_Goal:
+            if (x != m_uGoalX || y != m_uGoalY) {
+                m_uGoalX = x; m_uGoalY = y;
+                this->InvalidateThis();
+            }
+        break;
+        }
+    };
     // ------------------------------- 鼠标左键
     auto on_lbutton_down = [pt4self, this]() noexcept {
         // 双击
@@ -605,8 +659,18 @@ bool PathFD::UIMapControl::DoMouseEvent(const LongUI::MouseEventArgument& arg) n
         }
         // 单击
         else {
+            m_typeClicked = UIMapControl::Type_Cell;
             auto x = uint32_t(pt4self.x) / m_dataMap.cell_width;
             auto y = uint32_t(pt4self.y) / m_dataMap.cell_height;
+            // 点击起点
+            if (x == m_dataMap.char_x && y == m_dataMap.char_y) {
+                m_typeClicked = UIMapControl::Type_Start;
+            }
+            // 点击终点
+            else if (x == m_uGoalX && y == m_uGoalY) {
+                m_typeClicked = UIMapControl::Type_Goal;
+            }
+            // 地图选择
             if (m_uClickX != x || m_uClickY != y) {
                 m_uClickX = x; m_uClickY = y;
                 this->InvalidateThis();
@@ -642,11 +706,16 @@ bool PathFD::UIMapControl::DoMouseEvent(const LongUI::MouseEventArgument& arg) n
     case LongUI::MouseEvent::Event_MouseHover:
         break;
     case LongUI::MouseEvent::Event_MouseMove:
+        if(UIInput.IsMbPressed(UIInput.MB_L)) on_mouse_lbhold();
         break;
     case LongUI::MouseEvent::Event_LButtonDown:
         on_lbutton_down();
         break;
     case LongUI::MouseEvent::Event_LButtonUp:
+        if (m_typeClicked != UIMapControl::Type_Cell) {
+            m_typeClicked = UIMapControl::Type_Cell;
+            this->reset_sprites();
+        }
         break;
     case LongUI::MouseEvent::Event_RButtonDown:
         break;
@@ -759,6 +828,156 @@ void PathFD::UIMapControl::Update() noexcept {
     if (m_char.Update()) {
         this->InvalidateThis();
     }
+}
+
+// PathFD 命名空间
+namespace PathFD {
+    // 文件头数据
+    static constexpr char PathFdHd[8] = { 'P','a','t','h','F','d','H','d' };
+    // 地图文件头数据
+    struct MapFileDataHeader {
+        // 文件头标识 'PathFdHd'
+        char            header[8];
+        // 地图宽度
+        uint32_t        width;
+        // 地图高度
+        uint32_t        height;
+        // 起点位置X
+        uint32_t        startx;
+        // 起点位置Y
+        uint32_t        starty;
+        // 终点位置X
+        uint32_t        goalx;
+        // 终点位置Y
+        uint32_t        goaly;
+        // 接下来就是地图数据
+        //uint8_t         data[0];
+    };
+}
+
+/// <summary>
+/// 保存地图
+/// </summary>
+/// <returns></returns>
+void PathFD::UIMapControl::SaveMap() noexcept {
+    if (!m_pMapCells) return;
+    assert(m_pFileSaveDialog);
+    IShellItem* item = nullptr;
+    wchar_t* filename = nullptr;
+    // 显示窗口
+    auto hr = m_pFileSaveDialog->Show(m_pWindow->GetHwnd());
+    // 获取结果
+    if (SUCCEEDED(hr)) {
+        hr = m_pFileSaveDialog->GetResult(&item);
+    }
+    // 获取显示名称
+    if (SUCCEEDED(hr)) {
+        hr = item->GetDisplayName(SIGDN_FILESYSPATH, &filename);
+    }
+    // 保存文件
+    if (SUCCEEDED(hr)) {
+        this->SaveMap(filename);
+    }
+    LongUI::SafeRelease(item);
+    if (filename) {
+        ::CoTaskMemFree(filename);
+        filename = nullptr;
+    }
+}
+
+/// <summary>
+/// 载入地图
+/// </summary>
+/// <returns></returns>
+void PathFD::UIMapControl::LoadMap() noexcept {
+    assert(m_pFileOpenDialog);
+    IShellItem* item = nullptr;
+    wchar_t* filename = nullptr;
+    // 显示窗口
+    auto hr = m_pFileOpenDialog->Show(m_pWindow->GetHwnd());
+    // 获取结果
+    if (SUCCEEDED(hr)) {
+        hr = m_pFileOpenDialog->GetResult(&item);
+    }
+    // 获取显示名称
+    if (SUCCEEDED(hr)) {
+        hr = item->GetDisplayName(SIGDN_FILESYSPATH, &filename);
+    }
+    // 保存文件
+    if (SUCCEEDED(hr)) {
+        this->LoadMap(filename);
+    }
+    LongUI::SafeRelease(item);
+    if (filename) {
+        ::CoTaskMemFree(filename);
+        filename = nullptr;
+    }
+}
+
+/// <summary>
+/// 使用指定的文件名载入地图
+/// </summary>
+/// <param name="filename">The filename.</param>
+/// <returns></returns>
+void PathFD::UIMapControl::LoadMap(const wchar_t* filename) noexcept {
+    assert(filename && "bad file name");
+    LongUI::CUIFile* empty = nullptr;
+    LongUI::CUIFile file(filename, empty->Flag_Read);
+    // 文件打开失败
+    if (!file.IsOk()) {
+        UIManager.ShowError(L"文件打开失败", filename);
+        return;
+    }
+    // 文件头
+    MapFileDataHeader header;
+    auto read = file.Read(&header, sizeof(header));
+    // 不符合要求
+    if (read != sizeof(header) ||
+        std::memcmp(header.header, PathFdHd, sizeof(PathFdHd))) {
+        UIManager.ShowError(L"非法文件", filename);
+        return;
+    }
+    // 保证地图有效
+    if (!this->require_mapdata(header.width, header.height)) return;
+    uint32_t len = sizeof(m_pMapCells[0]) * (header.width * header.height);
+    // 清空
+    std::memset(m_pMapCells, 0, len);
+    // 写入数据
+    m_dataMap.map_data = m_pMapCells;
+    m_dataMap.char_x = header.startx;
+    m_dataMap.char_y = header.starty;
+    m_uGoalX = header.goalx;
+    m_uGoalY = header.goaly;
+    // 写入地图
+    file.Read(m_pMapCells, len);
+    // 重置地图
+    this->reset_map();
+}
+
+
+// 保存数据
+void PathFD::UIMapControl::SaveMap(const wchar_t* filename) noexcept {
+    assert(filename && "bad file name");
+    LongUI::CUIFile* empty = nullptr;
+    LongUI::CUIFile file(filename, empty->Flag_CreateAlways | empty->Flag_Write);
+    // 文件打开失败
+    if (!file.IsOk()) {
+        UIManager.ShowError(L"文件保存失败", filename);
+        return;
+    }
+    // 写入文件头
+    MapFileDataHeader header;
+    std::memcpy(&header.header, PathFdHd, sizeof(PathFdHd));
+    header.width = m_dataMap.map_width;
+    header.height = m_dataMap.map_height;
+    header.startx = m_dataMap.char_x;
+    header.starty = m_dataMap.char_y;
+    header.goalx = m_uGoalX;
+    header.goaly = m_uGoalY;
+    // 写入文件
+    file.Write(&header, sizeof(header));
+    // 写入地图
+    file.Write(m_pMapCells, sizeof(m_pMapCells[0]) * header.width * header.height);
 }
 
 /// <summary>

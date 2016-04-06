@@ -6,6 +6,9 @@
 #include <Platonly/luiPoHlper.h>
 #include "pfdCharacter.h"
 
+// 文件对话框
+struct IFileDialog;
+
 // pathfd 命名空间
 namespace PathFD {
     // 路径
@@ -18,6 +21,13 @@ namespace PathFD {
     bool DefaultGeneration(uint8_t* data, uint32_t w, uint32_t h, uint32_t []) noexcept;
     // 地图控件
     class UIMapControl final : public LongUI::UIControl {
+        // 点击
+        enum ClickinType : uint16_t {
+            Type_Cell = 0,      // 单元格
+            Type_Charactar,     // 角色格
+            Type_Start,         // 起点格
+            Type_Goal,          // 终点格
+        };
         // 父类
         using Super = UIControl;
         // 清除控件
@@ -33,6 +43,8 @@ namespace PathFD {
         static constexpr uint32_t CELL_WIDTH_INIT= 32;
         // 地图单位高度初始化值
         static constexpr uint32_t CELL_HEIGHT_INIT= 32;
+        // 路径权重节点宽度
+        static constexpr uint32_t WEIGHT_NODE_BITMAP_WH = 1024;
         // 选择框宽度
         static constexpr float  CEEL_SELECT_WIDTH = 4.f;
     public:
@@ -47,6 +59,14 @@ namespace PathFD {
         // 重建
         virtual auto Recreate() noexcept ->HRESULT override;
     public:
+        // 载入地图
+        void LoadMap() noexcept;
+        // 载入地图
+        void LoadMap(const wchar_t* filename) noexcept;
+        // 保存地图
+        void SaveMap() noexcept;
+        // 保存地图
+        void SaveMap(const wchar_t* filename) noexcept;
         // 地图
         void GenerateMap(uint32_t width, uint32_t height) noexcept;
         // 重置地图单位大小
@@ -63,18 +83,22 @@ namespace PathFD {
     protected:
         // 析构函数
         ~UIMapControl() noexcept;
-        // render chain -> background
+        // 渲染链: 渲染背景
         void render_chain_background() const noexcept;
-        // render chain -> mainground
+        // 渲染链: 渲染主体
         void render_chain_main() const noexcept;
-        // render chain -> foreground
+        // 渲染链: 渲染背景
         void render_chain_foreground() const noexcept;
-        // something must do before deleted
+        // 删除前调用
         void before_deleted() noexcept { Super::before_deleted(); }
-        // init with xml-node
+        // 初始化
         void initialize(pugi::xml_node node) noexcept;
+        // 保证数据有效
+        bool require_mapdata(int32_t width, uint32_t height) noexcept;
         // 重建设备资源
         void release_resource() noexcept;
+        // 重置地图
+        void reset_map() noexcept;
         // 重置精灵
         void reset_sprites() noexcept;
         // 获取角色数据
@@ -85,6 +109,10 @@ namespace PathFD {
         virtual bool debug_do_event(const LongUI::DebugEventInformation&) const noexcept override;
 #endif
     private:
+        // 文件打开对话框
+        IFileDialog*            m_pFileOpenDialog = nullptr;
+        // 文件保存对话框
+        IFileDialog*            m_pFileSaveDialog = nullptr;
         // 地图分界线笔刷
         ID2D1BitmapBrush*       m_pCellBoundaryBrush = nullptr;
         // 地图精灵集
@@ -121,6 +149,8 @@ namespace PathFD {
         uint32_t                m_uGoalX = 0;
         // 终点x位置
         uint32_t                m_uGoalY = 0;
+        // 鼠标点击类型
+        ClickinType             m_typeClicked = Type_Cell;
         // 角色位图
         uint16_t                m_uCharBitmap = 0;
         // 地图位图
@@ -128,7 +158,7 @@ namespace PathFD {
         // 图标位图
         uint16_t                m_uMapIcon = 0;
         // 未使用
-        uint16_t                m_unused_u16_map[3];
+        uint16_t                m_unused_u16_map[2];
         // 角色数据缓存 :目前只需要4个动作
         char                    m_bufCharData[sizeof(CharData) + sizeof(CharData::action[0]) * 4];
     };

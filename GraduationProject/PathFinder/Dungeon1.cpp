@@ -419,7 +419,7 @@ namespace PathFD {
                     *itr = true;
                     break;
                 case Dungeon::OpenDoor:
-                    *itr = true;
+                    *itr = false;
                     break;
                 case Dungeon::UpStairs:
                     *itr = true;

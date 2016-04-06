@@ -22,10 +22,10 @@ void PathFD::CFDWndView::cleanup() noexcept {
 /// </summary>
 /// <param name="arg">The argument.</param>
 /// <returns></returns>
-bool  PathFD::CFDWndView::DoEvent(const LongUI::EventArgument& arg) noexcept {
+bool PathFD::CFDWndView::DoEvent(const LongUI::EventArgument& arg) noexcept {
     switch (arg.event)
     {
-    case LongUI::Event::Event_TreeBulidingFinished:
+    case LongUI::Event::Event_TreeBuildingFinished:
         this->init_wndview();
         __fallthrough;
     default:
@@ -58,6 +58,24 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             auto w = LongUI::AtoI(wc->GetText());
             auto h = LongUI::AtoI(wh->GetText());
             map->GenerateMap(uint32_t(w), uint32_t(h));
+            return true;
+        }, LongUI::SubEvent::Event_ItemClicked);
+    }
+    // 保存地图
+    ctrl = m_pWindow->FindControl("btnMapSave");
+    {
+        auto map = m_pMapControl;
+        ctrl->AddEventCall([map](LongUI::UIControl*) noexcept {
+            map->SaveMap();
+            return true;
+        }, LongUI::SubEvent::Event_ItemClicked);
+    }
+    // 载入地图
+    ctrl = m_pWindow->FindControl("btnMapLoad");
+    {
+        auto map = m_pMapControl;
+        ctrl->AddEventCall([map](LongUI::UIControl*) noexcept {
+            map->LoadMap();
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
