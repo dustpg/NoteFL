@@ -105,6 +105,21 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
+    // 开始演示
+    ctrl =  m_pWindow->FindControl("btnFinderShow");
+    {
+
+    }
+    // 步进演示
+    ctrl =  m_pWindow->FindControl("btnFinderStep");
+    {
+
+    }
+    // 暂停演示
+    ctrl =  m_pWindow->FindControl("btnFinderPause");
+    {
+
+    }
 }
 
 // pathfd 命名空间

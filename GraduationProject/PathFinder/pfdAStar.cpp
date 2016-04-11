@@ -278,6 +278,113 @@ namespace PathFD { namespace impl {
             moveto( 0,-1);
         }
         return nullptr;
+    }    // 寻找路径
+    template<typename operator_class>
+    void a_star_find_t(const PathFD::Finder& fd) {
+        // 起点终点数据
+        const int16_t sx = fd.startx;
+        const int16_t sy = fd.starty;
+        const int16_t gx = fd.goalx;
+        const int16_t gy = fd.goaly;
+        // 遍历过数据
+        auto visited = std::make_unique<uint8_t[]>(fd.width * fd.height);
+        std::memset(visited.get(), 0, sizeof(uint8_t) * fd.width * fd.height);
+        // 标记需要数据
+        auto mk_ptr = visited.get(); int16_t mk_width = fd.width;
+        // 标记遍历
+        auto mark_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
+            mk_ptr[x + y * mk_width] = true;
+        };
+        // 检查标记
+        auto check_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
+            return mk_ptr[x + y * mk_width];
+        };
+        // 估值函数 f(n)=g(n)+h(n)
+        auto hn = [=](int16_t x, int16_t y) noexcept -> int16_t {
+#if 0
+            auto xxx = std::abs(x - gx);
+            auto yyy = std::abs(y - gy);
+            auto maxone = std::max(xxx, yyy);
+            auto minone = std::min(xxx, yyy);
+            return minone * 3 + (maxone - minone) * 2;
+#else
+            return std::abs(x - gx) + std::abs(y - gy);
+#endif
+        };
+        // 检查通行
+        auto cp_ptr = fd.data; int16_t cp_width = fd.width; int16_t cp_height = fd.height;
+        auto check_pass = [cp_ptr, cp_width, cp_height](int16_t x, int16_t y) noexcept {
+            if (x >= 0 && x < cp_width && y >= 0 && y < cp_height) {
+                return !!cp_ptr[x + y * cp_width];
+            }
+            return false;
+        };
+        // 起点终点数据
+        CFDAStar::NODE start, end; 
+        start.x = sx; start.y = sy;
+        start.gn = 0;
+        start.fx = hn(start.x, start.y);
+        start.parent = nullptr;
+        end.x = gx; end.y = gy;
+        // 起点加入OPEN表
+        CFDAStar::List open, close; open.push_back(start);
+        mark_visited(start.x, start.y);
+        // 为空算法失败
+        while (!open.empty()) {
+            // 从表头取一个结点 添加到CLOSE表
+            close.push_front(open.front());
+            // 事件处理
+            operator_class::get_node(close.front());
+            // 弹出
+            open.pop_front();
+            // 获取
+            const auto& node = close.front();
+            // 目标解
+            if (node.x == end.x && node.y == end.y) {
+                return impl::path_found(close);
+            }
+            // 移动
+            auto moveto = [&](int16_t xplus, int16_t yplus) {
+                CFDAStar::NODE tmp; 
+                tmp.x = node.x + xplus; 
+                tmp.y = node.y + yplus; 
+                // 可以通行 并且没有遍历过
+                if (check_pass(tmp.x, tmp.y) && !check_visited(tmp.x, tmp.y)) {
+                    // 标记
+                    mark_visited(tmp.x, tmp.y);
+                    // 记录父节点位置
+                    tmp.parent = &node;
+                    // 计算g(n)
+                    tmp.gn = node.gn + 1;
+                    // f(n) = g(n) + h(n)
+                    tmp.fx = tmp.gn + hn(tmp.x, tmp.y);
+                    // 比最后的都大?
+                    if (open.empty() || tmp.fx >= open.back().fx) {
+                        // 添加到最后
+                        open.push_back(tmp);
+                        return;
+                    }
+                    // 添加节点
+                    for (auto itr = open.begin(); itr != open.end(); ++itr) {
+                        if (tmp.fx < itr->fx) {
+                            open.insert(itr, tmp);
+                            return;
+                        }
+                    }
+                    // 不可能
+                    assert(!"Impossible ");
+                }
+            };
+            // 南
+            moveto( 0,+1);
+            // 西
+            moveto(-1, 0);
+            // 东
+            moveto(+1, 0);
+            // 北
+            moveto( 0,-1);
+        }
+        operator_class::failed();
     }
 }}
 
@@ -293,8 +400,13 @@ auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Pat
 void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
     assert(m_thdStep.joinable() == false);
     assert(!"NOIMPL");
-    m_thdStep.std::thread::~thread();
-    m_thdStep.std::thread::thread();
+    try {
+        m_thdStep.std::thread::~thread();
+        m_thdStep.std::thread::thread([]() {
+            assert(!"NOIMPL");
+        });
+    }
+    catch (...) { }
 }
 // 可视化步进
 void PathFD::CFDAStar::NextStep() noexcept {
