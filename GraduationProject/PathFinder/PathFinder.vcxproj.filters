@@ -63,6 +63,9 @@
     <ClInclude Include="pfdUtil.h">
       <Filter>实用</Filter>
     </ClInclude>
+    <ClInclude Include="pdfImpl.h">
+      <Filter>算法</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="..\..\..\LongUI\LongUI\longui.natvis">

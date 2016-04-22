@@ -46,8 +46,8 @@ namespace PathFD {
         virtual auto Execute(const PathFD::Finder& fd) noexcept->Path* = 0;
         // 可视化步进
         virtual void BeginStep(const PathFD::Finder& fd) noexcept = 0;
-        // 可视化步进
-        virtual void NextStep() noexcept = 0;
+        // 可视化步进, 写入可视化数据(保证访问安全), 返回true表示结束
+        virtual bool NextStep(void* cells) noexcept = 0;
         // 结束可视化步进
         virtual void EndStep() noexcept = 0;
     };

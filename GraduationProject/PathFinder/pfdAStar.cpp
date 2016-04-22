@@ -1,6 +1,9 @@
 #include "pfdAlgorithm.h"
+#include "pdfImpl.h"
+
 #include <algorithm>
 #include <cassert>
+#include <atomic>
 #include <thread>
 #include <memory>
 #include <list>
@@ -23,9 +26,66 @@ A*算法流程：
 
 // pathfd 命名空间
 namespace PathFD {
-#ifdef _DEBUG
-    void outputdebug(const wchar_t* a);
-#endif
+    // impl
+    namespace impl {
+        // 步进操作类
+        template<typename T> struct astar_step_op {
+            // 设置OPEN表
+            template<typename Y>inline void set_open_list(Y& list) {
+                openlist = &list;
+            }
+            // 设置CLOSE表
+            template<typename Y>inline void set_close_list(Y& list) {
+                closelist = &list;
+            }
+            // 获取一个节点
+            template<typename Y> inline void get_node(const Y& node) {
+                int bk = 9;
+            }
+            // 路径已经找到
+            template<typename Y> inline void found(const Y& list) {
+                parent.SetFinished();
+            }
+            // 是否继续寻找
+            inline bool go_on() {
+                return !parent.IsExit();
+            }
+            // 寻找路径失败
+            inline void failed() {
+                parent.SetFinished();
+            }
+            // 提示继续执行
+            inline void signal() {
+                impl::signal(ev);
+            }
+            // 等待下一步骤
+            inline void wait() {
+                impl::wait(ev);
+            }
+            // 为表操作加锁
+            inline void lock() {
+                impl::lock(mx);
+            }
+            // 为表操作解锁
+            inline void unlock() {
+                impl::unlock(mx);
+            }
+            // 构造本类函数
+            astar_step_op(T& parent) : parent(parent) {}
+            // 构造本类函数
+            ~astar_step_op() { impl::destroy(ev); impl::destroy(mx);}
+            // 事件
+            event               ev = impl::create_event();
+            // 访问锁
+            mutex               mx = impl::create_mutex();
+            // 父对象
+            T&                  parent;
+            // OPEN表
+            typename T::List*   openlist = nullptr;
+            // CLOSE表
+            typename T::List*   closelist = nullptr;
+        };
+    }
     // 自定义分配器
     template<typename T> class Allocator {
     public : 
@@ -96,6 +156,8 @@ namespace PathFD {
         };
         // 列表
         using List = std::list<CFDAStar::NODE, Allocator<CFDAStar::NODE>>;
+        // 操作
+        using StepOp = impl::astar_step_op<CFDAStar>;
     public:
         // 构造函数
         CFDAStar() noexcept;
@@ -106,15 +168,28 @@ namespace PathFD {
         // 可视化步进
         void BeginStep(const PathFD::Finder& fd) noexcept override;
         // 可视化步进
-        void NextStep() noexcept override;
+        bool NextStep(void* cells) noexcept override;
         // 结束可视化步进
         void EndStep() noexcept override;
+    public:
+        // 退出
+        bool IsExit() const { return m_bExit; }
+        // 完成
+        void SetFinished() { m_bFinished = true; }
     private:
         // 析构函数
-        ~CFDAStar() noexcept {}
+        ~CFDAStar() noexcept;
     private:
+        // 操作数据
+        StepOp                  m_opStep;
+        // 线程数据
+        PathFD::Finder          m_fdData;
         // 执行线程
         std::thread             m_thdStep;
+        // 退出信号
+        std::atomic_bool        m_bExit = false;
+        // 退出信号
+        std::atomic_bool        m_bFinished = false;
     };
 }
 
@@ -131,7 +206,7 @@ auto PathFD::CreateAStarAlgorithm() noexcept -> IFDAlgorithm* {
 /// <summary>
 /// <see cref="CFDAStar"/> 类构造函数
 /// </summary>
-PathFD::CFDAStar::CFDAStar() noexcept {
+PathFD::CFDAStar::CFDAStar() noexcept : m_opStep(*this) {
 
 }
 
@@ -278,9 +353,9 @@ namespace PathFD { namespace impl {
             moveto( 0,-1);
         }
         return nullptr;
-    }    // 寻找路径
-    template<typename operator_class>
-    void a_star_find_t(const PathFD::Finder& fd) {
+    }
+    // 寻找路径ex
+    auto a_star_find_ex(CFDAStar::StepOp& op, const PathFD::Finder& fd) {
         // 起点终点数据
         const int16_t sx = fd.startx;
         const int16_t sy = fd.starty;
@@ -329,19 +404,26 @@ namespace PathFD { namespace impl {
         // 起点加入OPEN表
         CFDAStar::List open, close; open.push_back(start);
         mark_visited(start.x, start.y);
+        // 为操作设置表数据
+        op.set_open_list(open); op.set_close_list(close);
         // 为空算法失败
-        while (!open.empty()) {
+        while (!open.empty() && op.go_on()) {
+            // 加锁
+            op.lock();
             // 从表头取一个结点 添加到CLOSE表
             close.push_front(open.front());
             // 事件处理
-            operator_class::get_node(close.front());
+            op.get_node(close.front());
             // 弹出
             open.pop_front();
             // 获取
             const auto& node = close.front();
+            // 解锁
+            op.unlock();
             // 目标解
             if (node.x == end.x && node.y == end.y) {
-                return impl::path_found(close);
+                op.found(close);
+                return;
             }
             // 移动
             auto moveto = [&](int16_t xplus, int16_t yplus) {
@@ -358,16 +440,22 @@ namespace PathFD { namespace impl {
                     tmp.gn = node.gn + 1;
                     // f(n) = g(n) + h(n)
                     tmp.fx = tmp.gn + hn(tmp.x, tmp.y);
+                    // 加锁
+                    op.lock();
                     // 比最后的都大?
                     if (open.empty() || tmp.fx >= open.back().fx) {
                         // 添加到最后
                         open.push_back(tmp);
+                        // 解锁
+                        op.unlock();
                         return;
                     }
                     // 添加节点
                     for (auto itr = open.begin(); itr != open.end(); ++itr) {
                         if (tmp.fx < itr->fx) {
                             open.insert(itr, tmp);
+                            // 解锁
+                            op.unlock();
                             return;
                         }
                     }
@@ -383,10 +471,13 @@ namespace PathFD { namespace impl {
             moveto(+1, 0);
             // 北
             moveto( 0,-1);
+            // 等待一步
+            op.wait();
         }
-        operator_class::failed();
+        return op.failed();
     }
 }}
+
 
 // 执行算法
 auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
@@ -399,27 +490,74 @@ auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Pat
 // 可视化步进
 void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
     assert(m_thdStep.joinable() == false);
-    assert(!"NOIMPL");
+    std::this_thread::yield();
+    m_fdData = fd;
     try {
+        auto& data = m_fdData;
+        auto& op = m_opStep;
         m_thdStep.std::thread::~thread();
-        m_thdStep.std::thread::thread([]() {
-            assert(!"NOIMPL");
+        m_thdStep.std::thread::thread([&op, &data]() {
+            impl::a_star_find_ex(op, data);
         });
     }
-    catch (...) { }
+    catch (...) { m_opStep.failed(); }
 }
 // 可视化步进
-void PathFD::CFDAStar::NextStep() noexcept {
-    assert(!"NOIMPL");
+bool PathFD::CFDAStar::NextStep(void* cells) noexcept {
+    assert(cells && "bad pointer");
+    // 结束就提前返回
+    if (m_bFinished) return true;
+    //auto count = m_fdData.width * m_fdData.height;
+    impl::color red;
+    red.r = 1.f; red.g = 0.f; red.b = 0.f; red.a = 1.f;
+    impl::color green;
+    green.r = 0.f; green.g = 1.f; green.b = 0.f; green.a = 1.f;
+    impl::color white;
+    white.r = white.g = white.b = white.a = 1.4f;
+    // 读取数据
+    m_opStep.lock();
+    {
+        assert(m_opStep.openlist && m_opStep.closelist);
+        // 为OPEN表添加红色
+        for (const auto& node : (*m_opStep.openlist)) {
+            uint32_t index = node.x + node.y * m_fdData.width;
+            impl::set_cell_color(cells, index, red);
+        }
+        // 为CLOSE表添加绿色
+        for (const auto& node : (*m_opStep.closelist)) {
+            uint32_t index = node.x + node.y * m_fdData.width;
+            impl::set_cell_color(cells, index, green);
+        }
+        // 为OPEN表头添加蓝色
+        if (!m_opStep.openlist->empty()) {
+            const auto& node = m_opStep.openlist->front();
+            uint32_t index = node.x + node.y * m_fdData.width;
+            impl::set_cell_color(cells, index, white);
+        }
+    }
+    // 解数据访问锁
+    m_opStep.unlock();
+    // 提示下一步
+    m_opStep.signal();
+    return false;
 }
 
 // 结束可视化步进
 void PathFD::CFDAStar::EndStep() noexcept {
     assert(m_thdStep.joinable());
+    m_bExit = true;
+    m_opStep.signal();
     try { 
         m_thdStep.join();
         m_thdStep.std::thread::~thread();
         m_thdStep.std::thread::thread();
     }
     catch (...) { }
+}
+
+// 析构函数
+PathFD::CFDAStar::~CFDAStar() noexcept {
+    m_opStep.signal();
+    m_bExit = true;
+    if (m_thdStep.joinable()) m_thdStep.join();
 }

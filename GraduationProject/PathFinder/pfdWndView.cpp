@@ -108,19 +108,35 @@ void PathFD::CFDWndView::init_wndview() noexcept {
     // 开始演示
     ctrl =  m_pWindow->FindControl("btnFinderShow");
     {
-
+        auto map = m_pMapControl;
+        ctrl->AddEventCall([map](LongUI::UIControl*) noexcept {
+            auto* algorithm = PathFD::CreateAStarAlgorithm();
+            map->BeginShow(std::move(algorithm));
+            assert(algorithm == nullptr);
+            return true;
+        }, LongUI::SubEvent::Event_ItemClicked);
     }
     // 步进演示
     ctrl =  m_pWindow->FindControl("btnFinderStep");
     {
-
+        auto map = m_pMapControl;
+        ctrl->AddEventCall([map](LongUI::UIControl*) noexcept {
+            map->ExeNextStep();
+            return true;
+        }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // 暂停演示
-    ctrl =  m_pWindow->FindControl("btnFinderPause");
+    // 暂停/恢复
+    ctrl =  m_pWindow->FindControl("btnFinderPaRe");
     {
-
+        auto map = m_pMapControl;
+        ctrl->AddEventCall([map](LongUI::UIControl*) noexcept {
+            map->PauseResume();
+            return true;
+        }, LongUI::SubEvent::Event_ItemClicked);
     }
 }
+
+#include "pdfImpl.h"
 
 // pathfd 命名空间
 namespace PathFD {
@@ -163,10 +179,79 @@ namespace PathFD {
         { 0, 1}, {-1, 0}, { 1, 0}, { 0,-1},
         {-1, 1}, { 1, 1}, {-1,-1}, { 1,-1},
     };
+    // impl 命名空间
+    namespace impl {
 #ifdef _DEBUG
-    // 调试输出
-    void outputdebug(const wchar_t* a) {
-        UIManager << DL_Log << a << LongUI::endl;
-    }
+        // 调试输出
+        void outputdebug(const wchar_t* a) noexcept {
+            UIManager << DL_Log << a << LongUI::endl;
+        }
 #endif
+        // mutex
+        struct mutex_impl { CRITICAL_SECTION cs; };
+        // 创建互斥锁
+        auto create_mutex() noexcept ->mutex {
+            auto ptr = reinterpret_cast<mutex_impl*>(PathFD::AllocSmall(sizeof(mutex_impl)));
+            if (ptr) ::InitializeCriticalSection(&ptr->cs);
+            return ptr;
+        }
+        // 摧毁互斥锁
+        void destroy(mutex& mx) noexcept {
+            if (mx) {
+                ::DeleteCriticalSection(&mx->cs);
+                PathFD::FreeSmall(mx);
+            }
+            mx = nullptr;
+        }
+        // 上互斥锁
+        void lock(mutex mx) noexcept {
+            assert(mx && "bad argment");
+            ::EnterCriticalSection(&mx->cs);
+        }
+        // 下互斥锁
+        void unlock(mutex mx) noexcept {
+            assert(mx && "bad argment");
+            ::LeaveCriticalSection(&mx->cs);
+        }
+        // windows
+        auto windows(event ev) noexcept { return reinterpret_cast<HANDLE>(ev); }
+        // pathfd
+        auto pathfd(HANDLE ev) noexcept { return reinterpret_cast<event>(ev); }
+        // 设置颜色
+        void set_cell_color(void* sprite, uint32_t index, const color& c) noexcept {
+            assert(sprite && "bad argument");
+            auto* sb = reinterpret_cast<ID2D1SpriteBatch*>(sprite);
+            assert(sb->GetSpriteCount() > index && "out fo range");
+            sb->SetSprites(
+                index, 1,
+                nullptr,
+                nullptr,
+                reinterpret_cast<const D2D1_COLOR_F*>(&c),
+                nullptr,
+                0, 0, 0, 0
+            );
+        }
+        // 创建事件
+        auto create_event() noexcept->event {
+            static_assert(sizeof(HANDLE) == sizeof(event), "bad action");
+            return pathfd(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
+        }
+        // 激活事件
+        void signal(event ev) noexcept {
+            assert(ev && "bad argment");
+            ::SetEvent(windows(ev));
+        }
+        // 等待事件
+        void wait(event ev) noexcept {
+            assert(ev && "bad argment");
+            ::WaitForSingleObject(windows(ev), 1000);
+        }
+        // 摧毁事件
+        void destroy(event& ev) noexcept {
+            if (ev) {
+                ::CloseHandle(windows(ev));
+                ev = nullptr;
+            }
+        }
+    }
 }

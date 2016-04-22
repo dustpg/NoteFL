@@ -35,18 +35,35 @@ namespace PathFD {
         // 双击帮助器
         using DoubleClickHelper = LongUI::Helper::DoubleClick;
     public:
-        // 地图最大宽度
-        static constexpr uint32_t MAX_WIDTH = 1024;
-        // 地图最大高度
-        static constexpr uint32_t MAX_HEIGHT = 1024;
-        // 地图单位宽度初始化值
-        static constexpr uint32_t CELL_WIDTH_INIT= 32;
-        // 地图单位高度初始化值
-        static constexpr uint32_t CELL_HEIGHT_INIT= 32;
-        // 路径权重节点宽度
-        static constexpr uint32_t WEIGHT_NODE_BITMAP_WH = 1024;
         // 选择框宽度
         static constexpr float  CEEL_SELECT_WIDTH = 4.f;
+        // 常量
+        enum : uint32_t {
+            // 地图最大宽度
+            MAX_WIDTH = 1024,
+            // 地图最大高度
+            MAX_HEIGHT = 1024,
+            // 地图单位宽度初始化值
+            CELL_WIDTH_INIT = 32,
+            // 地图单位高度初始化值
+            CELL_HEIGHT_INIT = 32,
+            // 路径权重节点宽度
+            WEIGHT_NODE_BITMAP_WH = 1024,
+            // 数字源X偏移(像素)
+            DIGNUMNER_SRCX_OFFSET = 0,
+            // 数字源Y偏移(像素)
+            DIGNUMNER_SRCY_OFFSET = 32 * 2,
+            // 数字宽度(像素)
+            DIGNUMNER_WIDTH = 4,
+            // 数字高度(像素)
+            DIGNUMNER_HEIGHT = 8,
+            // 数字位数
+            NUMCOUNT = 4,
+            // 数字表宽度(像素)
+            NUMBERTABLE_WIDTH = 1024,
+            // 数字表高度(像素)
+            NUMBERTABLE_HEIGHT = 1024,
+        };
     public:
         // 渲染 
         virtual void Render() const noexcept override;
@@ -75,6 +92,14 @@ namespace PathFD {
         void ZoomMapTo(float zoom, float time) noexcept;
         // 执行寻路
         void Execute(IFDAlgorithm* algorithm, LongUI::CUIString& info) noexcept;
+        // 开始演示
+        void BeginShow(IFDAlgorithm*&& algorithm) noexcept;
+        // 执行下一步
+        void ExeNextStep() noexcept;
+        // 暂停恢复
+        void PauseResume() noexcept;
+        // 设置步进间隔时间
+        void SetStepDeltaTime(float time) noexcept { m_fAlgorithmStepTimeAll = time; }
     public:
         // 构造函数
         UIMapControl(LongUI::UIContainer* cp) noexcept;
@@ -103,12 +128,16 @@ namespace PathFD {
         void reset_sprites() noexcept;
         // 获取角色数据
         auto&get_char_data() noexcept { return *reinterpret_cast<CharData*>(m_bufCharData); }
+        // 执行下一步
+        void exe_next_step() noexcept;
 #ifdef LongUIDebugEvent
     protected:
         // debug infomation
         virtual bool debug_do_event(const LongUI::DebugEventInformation&) const noexcept override;
 #endif
     private:
+        // 当前算法
+        IFDAlgorithm*           m_pAlgorithm = nullptr;
         // 文件打开对话框
         IFileDialog*            m_pFileOpenDialog = nullptr;
         // 文件保存对话框
@@ -125,6 +154,8 @@ namespace PathFD {
         ID2D1Bitmap1*           m_pMapSkin = nullptr;
         // 地图相关图标
         ID2D1Bitmap1*           m_pMapIcon = nullptr;
+        // 数字表位图
+        ID2D1Bitmap1*           m_pNumnberTable = nullptr;
         // 地图数据
         uint8_t*                m_pMapCells = nullptr;
         // 路径信息
@@ -149,14 +180,18 @@ namespace PathFD {
         uint32_t                m_uGoalX = 0;
         // 终点x位置
         uint32_t                m_uGoalY = 0;
+        // 算法 总共间隔时间
+        float                   m_fAlgorithmStepTimeAll = 0.3f;
+        // 算法 当前间隔时间
+        float                   m_fAlgorithmStepTimeNow = 0.f;
         // 鼠标点击类型
         ClickinType             m_typeClicked = Type_Cell;
         // 角色位图
         uint16_t                m_uCharBitmap = 0;
         // 地图位图
         uint16_t                m_uMapBitmap = 0;
-        // 图标位图
-        uint16_t                m_uMapIcon = 0;
+        // 图标位图id
+        uint16_t                m_idMapIcon = 0;
         // 未使用
         uint16_t                m_unused_u16_map[2];
         // 角色数据缓存 :目前只需要4个动作

@@ -40,6 +40,10 @@ void PathFD::UIMapControl::initialize(pugi::xml_node node) noexcept {
     // 链式调用
     Super::initialize(node);
     const char* str = nullptr;
+    // 获取步进时间
+    if ((str = node.attribute("steptime").value())) {
+        this->SetStepDeltaTime(LongUI::AtoF(str));
+    }
     // 获取
     if ((str = node.attribute("charbitmap").value())) {
         m_uCharBitmap = static_cast<uint16_t>(LongUI::AtoI(str));
@@ -50,9 +54,9 @@ void PathFD::UIMapControl::initialize(pugi::xml_node node) noexcept {
     }
     // 获取
     if ((str = node.attribute("mapicon").value())) {
-        m_uMapIcon = static_cast<uint16_t>(LongUI::AtoI(str));
+        m_idMapIcon = static_cast<uint16_t>(LongUI::AtoI(str));
     }
-    assert(m_uCharBitmap && m_uMapBitmap && m_uMapIcon);
+    assert(m_uCharBitmap && m_uMapBitmap && m_idMapIcon);
     assert(!m_pFileOpenDialog);
     assert(!m_pFileSaveDialog);
     auto hr = S_OK;
@@ -267,9 +271,11 @@ void PathFD::UIMapControl::release_resource() noexcept {
     LongUI::SafeRelease(m_pCellBoundaryBrush);
     LongUI::SafeRelease(m_pMapSpriteBatch);
     LongUI::SafeRelease(m_pAutoTileCache);
+    LongUI::SafeRelease(m_pNumnberTable);
     LongUI::SafeRelease(m_pPathDisplay);
     LongUI::SafeRelease(m_pMapIcon);
     LongUI::SafeRelease(m_pMapSkin);
+    
 }
 
 /// <summary>
@@ -277,13 +283,22 @@ void PathFD::UIMapControl::release_resource() noexcept {
 /// </summary>
 /// <returns></returns>
 PathFD::UIMapControl::~UIMapControl() noexcept {
+    // 释放资源
     this->release_resource();
+    // 释放对话框
     LongUI::SafeRelease(m_pFileOpenDialog);
     LongUI::SafeRelease(m_pFileSaveDialog);
+    // 释放算法
+    if (m_pAlgorithm) {
+        m_pAlgorithm->Dispose();
+        m_pAlgorithm = nullptr;
+    }
+    // 释放数据
     if (m_pMapCells) {
         LongUI::NormalFree(m_pMapCells);
         m_pMapCells = nullptr;
     }
+    // 释放路径
     if (m_pPath) {
         std::free(m_pPath);
         m_pPath = nullptr;
@@ -403,6 +418,7 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
 #ifdef PATHFD_ALIGNED
     UIManager_RenderTarget->SetTransform(&transform1);
 #endif
+    UIManager_RenderTarget->DrawBitmap(m_pNumnberTable);
 }
 
 
@@ -519,7 +535,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
     }
     // 设置图标位图
     if (SUCCEEDED(hr)) {
-        m_pMapIcon = UIManager.GetBitmap(m_uMapIcon);
+        m_pMapIcon = UIManager.GetBitmap(m_idMapIcon);
         assert(m_pMapSkin && "bad action");
         if (!m_pMapSkin) hr = E_NOT_SET;
     }
@@ -575,6 +591,64 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
 
         }*/
         m_pAutoTileCache->CopyFromBitmap(&des, m_pMapSkin, &src);
+    }
+    // 创建数字表
+    if (SUCCEEDED(hr)) {
+        hr = UIManager_RenderTarget->CreateBitmap(
+            D2D1::SizeU(NUMBERTABLE_WIDTH, NUMBERTABLE_HEIGHT),
+            nullptr, 0,
+            D2D1::BitmapProperties1(
+                D2D1_BITMAP_OPTIONS_NONE,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            ),
+            &m_pNumnberTable
+        );
+    }
+    // 设置数字表
+    if (SUCCEEDED(hr)) {
+        constexpr int LINECOUNT = NUMBERTABLE_WIDTH / NUMCOUNT / DIGNUMNER_WIDTH;
+        constexpr int END = LINECOUNT * (NUMBERTABLE_HEIGHT/DIGNUMNER_HEIGHT);
+        auto bmpd = m_pNumnberTable;
+        auto bmps = m_pMapIcon;
+        // 复制
+        auto copybmp = [=](int i, int num, int no) noexcept {
+            // 计算坐标
+            auto x = (i % LINECOUNT) * DIGNUMNER_WIDTH * NUMCOUNT;
+            auto y = (i / LINECOUNT) * DIGNUMNER_HEIGHT;
+            D2D1_POINT_2U des = D2D1::Point2U(x + num*DIGNUMNER_WIDTH, y);
+            D2D1_RECT_U src;
+            src.left = DIGNUMNER_SRCX_OFFSET + no * DIGNUMNER_WIDTH;
+            src.top = DIGNUMNER_SRCY_OFFSET;
+            src.right = src.left + DIGNUMNER_WIDTH;
+            src.bottom = src.top + DIGNUMNER_HEIGHT;
+            // 复制第一位
+            bmpd->CopyFromBitmap(&des, bmps, &src);
+        };
+#ifdef _DEBUG
+        LongUI::CUITimeMeterH tm; tm.Start();
+        auto tick = ::timeGetTime();
+#endif
+        // 遍历
+        for (int i = 0; i < END; ++i) {
+            // 第1位
+            copybmp(i, 0, i / 1000);
+            // 第2位
+            copybmp(i, 1, i / 100 % 10);
+            // 第3位
+            copybmp(i, 2, i / 10 % 10);
+            // 第4位
+            copybmp(i, 3, i  % 10);
+        }
+#ifdef _DEBUG
+        auto time = tm.Delta_ms<float>();
+        tick = ::timeGetTime() - tick;
+        UIManager << DL_Log
+            << L"Took "
+            << time << L'('
+            << long(tick)
+            << L")ms to set number table"
+            << LongUI::endl;
+#endif
     }
     // 设置角色
     if (SUCCEEDED(hr)) {
@@ -814,6 +888,32 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
 }
 
 /// <summary>
+/// 开始演示
+/// </summary>
+/// <param name="algorithm">The algorithm.</param>
+/// <returns></returns>
+void PathFD::UIMapControl::BeginShow(IFDAlgorithm*&& algorithm) noexcept {
+    assert(algorithm && "bad argument");
+    // 重置数据
+    m_fAlgorithmStepTimeNow = 0.f;
+    this->reset_map();
+    // 释放旧的算法
+    if (m_pAlgorithm) m_pAlgorithm->Dispose();
+    // 嫁接新的算法
+    m_pAlgorithm = algorithm; algorithm = nullptr;
+    // 执行算法
+    PathFD::Finder finder;
+    finder.data = m_pMapCells;
+    finder.width = m_dataMap.map_width;
+    finder.height = m_dataMap.map_height;
+    finder.startx = int16_t(m_dataMap.char_x);
+    finder.starty = int16_t(m_dataMap.char_y);
+    finder.goalx = int16_t(m_uGoalX);
+    finder.goaly = int16_t(m_uGoalY);
+    m_pAlgorithm->BeginStep(finder);
+}
+
+/// <summary>
 /// U刷新控件
 /// </summary>
 /// <returns></returns>
@@ -822,12 +922,64 @@ void PathFD::UIMapControl::Update() noexcept {
     Super::Update();
     // 地图有效
     if (!m_dataMap.map_width) return;
+    // 步进算法
+    if (m_pAlgorithm && m_fAlgorithmStepTimeNow >= 0.f) {
+        m_fAlgorithmStepTimeNow += UIManager.GetDeltaTime();
+#ifdef _DEBUG
+        //m_fAlgorithmStepTimeAll = 0.5f;
+#endif
+        // 需要刷新
+        if (m_fAlgorithmStepTimeNow > m_fAlgorithmStepTimeAll) {
+            m_fAlgorithmStepTimeNow = 0.f;
+            this->exe_next_step();
+        }
+    }
     // 接受输入
     m_char.Input(PathFD::InputCheck());
     // 刷新角色
     if (m_char.Update()) {
         this->InvalidateThis();
     }
+}
+
+
+
+// 暂停恢复
+void PathFD::UIMapControl::PauseResume() noexcept {
+    if (m_fAlgorithmStepTimeNow < 0.f) {
+        m_fAlgorithmStepTimeNow = 0.f;
+    }
+    else {
+        m_fAlgorithmStepTimeNow = -1.f;
+    }
+    UIManager << DL_Log 
+        << "m_fAlgorithmStepTimeNow" 
+        << m_fAlgorithmStepTimeNow 
+        << LongUI::endl;
+}
+
+// 执行下一步
+void PathFD::UIMapControl::ExeNextStep() noexcept {
+    // 数据有效
+    if (m_pAlgorithm) {
+        // 暂停步进显示
+        m_fAlgorithmStepTimeNow = -1.f;
+        // 下一步
+        this->exe_next_step();
+    }
+;}
+
+// 执行下一步
+void PathFD::UIMapControl::exe_next_step() noexcept {
+    assert(m_pAlgorithm && "bad action");
+    auto end = m_pAlgorithm->NextStep(m_pMapSpriteBatch);
+    // 结束搜寻?
+    if (end) {
+        m_pAlgorithm->EndStep();
+        m_pAlgorithm->Dispose();
+        m_pAlgorithm = nullptr;
+    }
+    this->InvalidateThis();
 }
 
 // PathFD 命名空间

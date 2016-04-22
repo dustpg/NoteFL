@@ -9,7 +9,7 @@ u8R"(<?xml version="1.0" encoding="utf-8"?>
         <Single weight="3" margin="4,4,4,4" borderwidth="1" bgbrush="1">
             <ScrollBarA wheelstep="128" marginal="bottom"/>
             <ScrollBarA wheelstep="128" marginal="right"/>
-            <PathMap size="32, 32" name="mapPathFD" mapicon="6"
+            <PathMap size="32, 32" name="mapPathFD" mapicon="6" steptime="0.1"
                 charbitmap="4" mapbitmap="5"/>
         </Single>
         <VerticalLayout templatesize="256, 0" bgbrush="2" hostposterity="true">
@@ -58,7 +58,7 @@ u8R"(<?xml version="1.0" encoding="utf-8"?>
             </HorizontalLayout>
             <HorizontalLayout>
                 <Button templateid="3" text="步进演示" name="btnFinderStep"/>
-                <Button templateid="3" text="暂停演示" name="btnFinderPause"/>
+                <Button templateid="3" text="暂停/恢复" name="btnFinderPaRe"/>
             </HorizontalLayout>
             <Text text="----" name="txtDisplay"/>
         </VerticalLayout>

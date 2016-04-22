@@ -155,6 +155,7 @@
     <Manifest Include="Application.manifest" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="pdfImpl.h" />
     <ClInclude Include="pfdAlgorithm.h" />
     <ClInclude Include="pfdCharacter.h" />
     <ClInclude Include="pfdConfig.h" />
