@@ -40,7 +40,8 @@ namespace PathFD {
             }
             // 获取一个节点
             template<typename Y> inline void get_node(const Y& node) {
-                int bk = 9;
+                nodex = node.x;
+                nodey = node.y;
             }
             // 路径已经找到
             template<typename Y> inline void found(const Y& list) {
@@ -84,6 +85,35 @@ namespace PathFD {
             typename T::List*   openlist = nullptr;
             // CLOSE表
             typename T::List*   closelist = nullptr;
+            // 选择节点X
+            uint32_t            nodex = 0;
+            // 选择节点Y
+            uint32_t            nodey = 0;
+        };
+        // 操作类
+        struct astar_op {
+            // 设置OPEN表
+            template<typename Y> inline void set_open_list(Y& list) {  }
+            // 设置CLOSE表
+            template<typename Y> inline void set_close_list(Y& list) { }
+            // 获取一个节点
+            template<typename Y> inline void get_node(const Y& node) { }
+            // 路径已经找到
+            template<typename Y> inline auto found(const Y& list) {
+                return impl::path_found(list);
+            }
+            // 是否继续寻找
+            inline bool go_on() { return true; }
+            // 寻找路径失败
+            inline auto failed() ->Path* { return nullptr; }
+            // 提示继续执行
+            inline void signal() { }
+            // 等待下一步骤
+            inline void wait() { }
+            // 为表操作加锁
+            inline void lock() { }
+            // 为表操作解锁
+            inline void unlock() { }
         };
     }
     // 自定义分配器
@@ -168,7 +198,7 @@ namespace PathFD {
         // 可视化步进
         void BeginStep(const PathFD::Finder& fd) noexcept override;
         // 可视化步进
-        bool NextStep(void* cells) noexcept override;
+        bool NextStep(void* cells, void* num) noexcept override;
         // 结束可视化步进
         void EndStep() noexcept override;
     public:
@@ -190,6 +220,8 @@ namespace PathFD {
         std::atomic_bool        m_bExit = false;
         // 退出信号
         std::atomic_bool        m_bFinished = false;
+        // 可视化阶段
+        uint16_t                m_uPhase = 0;
     };
 }
 
@@ -214,7 +246,7 @@ PathFD::CFDAStar::CFDAStar() noexcept : m_opStep(*this) {
 // pathfd::impl 命名空间
 namespace PathFD { namespace impl {
     // 找到路径
-    auto path_found(PathFD::CFDAStar::List& close_list) noexcept {
+    auto path_found(const PathFD::CFDAStar::List& close_list) noexcept {
         assert(!close_list.empty());
         size_t size = size_t(close_list.front().gn);
 #ifdef _DEBUG
@@ -249,6 +281,7 @@ namespace PathFD { namespace impl {
             return path;
         }
     }
+#if 0
     // 寻找路径
     auto a_star_find(const PathFD::Finder& fd) -> PathFD::Path* {
         // 起点终点数据
@@ -354,8 +387,10 @@ namespace PathFD { namespace impl {
         }
         return nullptr;
     }
+#endif
     // 寻找路径ex
-    auto a_star_find_ex(CFDAStar::StepOp& op, const PathFD::Finder& fd) {
+    template<typename OP>
+    auto a_star_find_ex(OP& op, const PathFD::Finder& fd) {
         // 起点终点数据
         const int16_t sx = fd.startx;
         const int16_t sy = fd.starty;
@@ -422,8 +457,7 @@ namespace PathFD { namespace impl {
             op.unlock();
             // 目标解
             if (node.x == end.x && node.y == end.y) {
-                op.found(close);
-                return;
+                return op.found(close);
             }
             // 移动
             auto moveto = [&](int16_t xplus, int16_t yplus) {
@@ -482,7 +516,7 @@ namespace PathFD { namespace impl {
 // 执行算法
 auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
     // 正式处理
-    try { return impl::a_star_find(fd);  }
+    try { impl::astar_op op; return impl::a_star_find_ex(op, fd); }
     // 出现异常
     catch (...) { return nullptr; }
 }
@@ -503,42 +537,69 @@ void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
     catch (...) { m_opStep.failed(); }
 }
 // 可视化步进
-bool PathFD::CFDAStar::NextStep(void* cells) noexcept {
+bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
     assert(cells && "bad pointer");
     // 结束就提前返回
     if (m_bFinished) return true;
-    //auto count = m_fdData.width * m_fdData.height;
-    impl::color red;
-    red.r = 1.f; red.g = 0.f; red.b = 0.f; red.a = 1.f;
-    impl::color green;
-    green.r = 0.f; green.g = 1.f; green.b = 0.f; green.a = 1.f;
-    impl::color white;
-    white.r = white.g = white.b = white.a = 1.4f;
-    // 读取数据
-    m_opStep.lock();
-    {
-        assert(m_opStep.openlist && m_opStep.closelist);
-        // 为OPEN表添加红色
-        for (const auto& node : (*m_opStep.openlist)) {
-            uint32_t index = node.x + node.y * m_fdData.width;
-            impl::set_cell_color(cells, index, red);
+    // 阶段0: 显示
+    if (m_uPhase == 0) {
+        //auto count = m_fdData.width * m_fdData.height;
+        impl::color red;
+        red.r = 1.f; red.g = 0.f; red.b = 0.f; red.a = 1.f;
+        impl::color green;
+        green.r = 0.f; green.g = 1.f; green.b = 0.f; green.a = 1.f;
+        // 读取数据
+        m_opStep.lock();
+        {
+            assert(m_opStep.openlist && m_opStep.closelist);
+            static uint32_t s_index;
+            s_index = 0;
+            // 显示节点数据
+            auto nodedisplay = [num](const NODE& node) noexcept {
+                // fx, gn, hn => 3
+                constexpr uint32_t COUNT = 3;
+                char buffer[sizeof(NodeDisplay) + sizeof(uint32_t) * COUNT];
+                auto& numdis = reinterpret_cast<NodeDisplay&>(*buffer);
+                // 设置
+                numdis.x = node.x;
+                numdis.y = node.y;
+                numdis.i = s_index++;
+                numdis.argc = COUNT;
+                // fx = 
+                numdis.argv[0] = node.fx;
+                // gn = 
+                numdis.argv[1] = node.gn;
+                // hn = 
+                numdis.argv[2] =  node.fx - node.gn;
+                // 显示数字
+                impl::set_node_display(num, &numdis);
+            };
+            // 为OPEN表添加红色
+            for (const auto& node : (*m_opStep.openlist)) {
+                uint32_t index = node.x + node.y * m_fdData.width;
+                impl::set_cell_color(cells, index, red);
+                nodedisplay(node);
+            }
+            // 为CLOSE表添加绿色
+            for (const auto& node : (*m_opStep.closelist)) {
+                uint32_t index = node.x + node.y * m_fdData.width;
+                impl::set_cell_color(cells, index, green);
+                nodedisplay(node);
+            }
         }
-        // 为CLOSE表添加绿色
-        for (const auto& node : (*m_opStep.closelist)) {
-            uint32_t index = node.x + node.y * m_fdData.width;
-            impl::set_cell_color(cells, index, green);
-        }
-        // 为OPEN表头添加蓝色
-        if (!m_opStep.openlist->empty()) {
-            const auto& node = m_opStep.openlist->front();
-            uint32_t index = node.x + node.y * m_fdData.width;
-            impl::set_cell_color(cells, index, white);
-        }
+        // 解数据访问锁
+        m_opStep.unlock();
+        // 提示下一步
+        m_opStep.signal();
     }
-    // 解数据访问锁
-    m_opStep.unlock();
-    // 提示下一步
-    m_opStep.signal();
+    else {
+        impl::color blue;
+        blue.r = 1.f; blue.g = 1.f;  blue.b = 2.f; blue.a = 1.0f;
+        uint32_t index = m_opStep.nodex + m_opStep.nodey * m_fdData.width;
+        impl::set_cell_color(cells, index, blue);
+    }
+    // 更换阶段
+    m_uPhase = !m_uPhase;
     return false;
 }
 

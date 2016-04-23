@@ -22,6 +22,8 @@ namespace PathFD { namespace impl {
     struct color { float r, g, b, a; };
     // 设定指定单元格附加颜色
     void set_cell_color(void* sprite, uint32_t index, const color& c) noexcept;
+    // 设置数字显示
+    void set_node_display(void* num, void* display) noexcept;
     // 创建事件
     auto create_event() noexcept->event;
     // 激活事件

@@ -63,6 +63,8 @@ namespace PathFD {
             NUMBERTABLE_WIDTH = 1024,
             // 数字表高度(像素)
             NUMBERTABLE_HEIGHT = 1024,
+            // 数字表行个数
+            LINECOUNT = NUMBERTABLE_WIDTH / NUMCOUNT / DIGNUMNER_WIDTH,
         };
     public:
         // 渲染 
@@ -100,6 +102,8 @@ namespace PathFD {
         void PauseResume() noexcept;
         // 设置步进间隔时间
         void SetStepDeltaTime(float time) noexcept { m_fAlgorithmStepTimeAll = time; }
+        // 设置节点显示
+        void SetNodeDisplay(const NodeDisplay& num) noexcept;
     public:
         // 构造函数
         UIMapControl(LongUI::UIContainer* cp) noexcept;
@@ -146,6 +150,8 @@ namespace PathFD {
         ID2D1BitmapBrush*       m_pCellBoundaryBrush = nullptr;
         // 地图精灵集
         ID2D1SpriteBatch*       m_pMapSpriteBatch = nullptr;
+        // 数字显示精灵集
+        ID2D1SpriteBatch*       m_pNumberDisplay = nullptr;
         // 路径显示精灵集
         ID2D1SpriteBatch*       m_pPathDisplay = nullptr;
         // 地图自动瓦片地图缓存
@@ -172,6 +178,8 @@ namespace PathFD {
         uint32_t                m_uMapSpriteCount = 0;
         // 路径当前精灵数量
         //uint32_t                m_uPathSpriteCount = 0;
+        // 数字当前精灵数量
+        uint32_t                m_uNumberSpriteCount = 0;
         // 选中点x位置
         uint32_t                m_uClickX = uint32_t(-1);
         // 选中点x位置
@@ -193,7 +201,7 @@ namespace PathFD {
         // 图标位图id
         uint16_t                m_idMapIcon = 0;
         // 未使用
-        uint16_t                m_unused_u16_map[2];
+        //uint16_t                m_unused_u16_map[2];
         // 角色数据缓存 :目前只需要4个动作
         char                    m_bufCharData[sizeof(CharData) + sizeof(CharData::action[0]) * 4];
     };

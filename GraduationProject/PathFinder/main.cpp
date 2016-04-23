@@ -42,7 +42,11 @@ u8R"(<?xml version="1.0" encoding="utf-8"?>
                 <RadioButton text="通行方格"/>
                 <RadioButton text="地图视图" checked="true"/>
             </HorizontalLayout>
-            <Null weight="1.1"/>
+            <Null weight="0.5"/>
+            <HorizontalLayout >
+                <Text weight="0.6" text="步进间隔:" />
+                <Edit bgbrush="3" templateid="4" text="0.1" name="edtMapStep"/>
+            </HorizontalLayout>
             <HorizontalLayout>
                 <Text weight="0.6" text="寻路算法:"/>
                 <ComboBox drawdownarrow="true" textoffsetx="4" name="cbbAlgPath" align="left" templateid="3" >
@@ -106,8 +110,11 @@ u8R"(<?xml version="1.0" encoding="utf-8"?>
         textnumber="true" textmax="1024" textmin="2"/>
     <!-- 编号 2 -->
     <Control desc="类系统钮" margin="4,4,4,4" borderwidth="1"/>
-    <!-- Index 2 -->
+    <!-- 编号 3 -->
     <Control desc="btn.png 按钮" margin="4,4,4,4" metagroup="1,2,3,4"/>
+    <!-- 编号 4 -->
+    <Control desc="一般输入" margin="4,4,4,4" borderwidth="1" 
+        textmax="1024" textmin="2"/>
 </Template>
 )";
 

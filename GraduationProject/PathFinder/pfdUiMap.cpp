@@ -208,6 +208,7 @@ void PathFD::UIMapControl::reset_map() noexcept {
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::reset_sprites() noexcept {
+    m_uNumberSpriteCount = 0;
     // 无效
     if (!m_pMapSpriteBatch) return;
     float cllw = float(m_dataMap.cell_width);
@@ -270,12 +271,12 @@ void PathFD::UIMapControl::cleanup() noexcept {
 void PathFD::UIMapControl::release_resource() noexcept {
     LongUI::SafeRelease(m_pCellBoundaryBrush);
     LongUI::SafeRelease(m_pMapSpriteBatch);
+    LongUI::SafeRelease(m_pNumberDisplay);
     LongUI::SafeRelease(m_pAutoTileCache);
     LongUI::SafeRelease(m_pNumnberTable);
     LongUI::SafeRelease(m_pPathDisplay);
     LongUI::SafeRelease(m_pMapIcon);
     LongUI::SafeRelease(m_pMapSkin);
-    
 }
 
 /// <summary>
@@ -312,8 +313,6 @@ PathFD::UIMapControl::~UIMapControl() noexcept {
 void PathFD::UIMapControl::render_chain_background() const noexcept {
     // 父类背景
     Super::render_chain_background();
-    // 强行刷新
-    UIManager_RenderTarget->Flush();
     // 本类背景
     if (!m_pMapSpriteBatch || !m_uMapSpriteCount) return;
     // 对齐网格
@@ -330,6 +329,8 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
 #endif
     UIManager_RenderTarget->SetTransform(&transform2);
 #endif
+    // 强行刷新
+    UIManager_RenderTarget->Flush();
     // 精灵集需要取消抗锯齿模式
     UIManager_RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
     // 渲染精灵集
@@ -399,6 +400,17 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
     }
     // 渲染角色
     m_char.Render();
+    // 渲染数字(看得清的情况下才显示)
+    if (this->world._11 >= 1.f) {
+        // 强行刷新
+        UIManager_RenderTarget->Flush();
+        UIManager_RenderTarget->DrawSpriteBatch(
+            m_pNumberDisplay,
+            0, m_uNumberSpriteCount,
+            m_pNumnberTable,
+            D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
+        );
+    }
     // 渲染选择框
     if (m_uClickX < m_dataMap.map_width && m_uClickY < m_dataMap.map_height) {
         D2D1_RECT_F rect;
@@ -418,7 +430,6 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
 #ifdef PATHFD_ALIGNED
     UIManager_RenderTarget->SetTransform(&transform1);
 #endif
-    UIManager_RenderTarget->DrawBitmap(m_pNumnberTable);
 }
 
 
@@ -551,6 +562,10 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pPathDisplay);
     }
+    // 创建精灵集3
+    if (SUCCEEDED(hr)) {
+        hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pNumberDisplay);
+    }
     // 创建自动瓦片位图缓存
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateBitmap(
@@ -606,7 +621,6 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
     }
     // 设置数字表
     if (SUCCEEDED(hr)) {
-        constexpr int LINECOUNT = NUMBERTABLE_WIDTH / NUMCOUNT / DIGNUMNER_WIDTH;
         constexpr int END = LINECOUNT * (NUMBERTABLE_HEIGHT/DIGNUMNER_HEIGHT);
         auto bmpd = m_pNumnberTable;
         auto bmps = m_pMapIcon;
@@ -828,6 +842,8 @@ void PathFD::UIMapControl::ZoomMapTo(float zoom, float time) noexcept {
 /// <returns></returns>
 void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& info) noexcept {
     assert(algorithm && "bad argument");
+    m_uNumberSpriteCount = 0;
+    //
     PathFD::Finder finder;
     finder.data = m_pMapCells;
     finder.width = m_dataMap.map_width;
@@ -896,6 +912,7 @@ void PathFD::UIMapControl::BeginShow(IFDAlgorithm*&& algorithm) noexcept {
     assert(algorithm && "bad argument");
     // 重置数据
     m_fAlgorithmStepTimeNow = 0.f;
+    m_uNumberSpriteCount = 0;
     this->reset_map();
     // 释放旧的算法
     if (m_pAlgorithm) m_pAlgorithm->Dispose();
@@ -930,7 +947,7 @@ void PathFD::UIMapControl::Update() noexcept {
 #endif
         // 需要刷新
         if (m_fAlgorithmStepTimeNow > m_fAlgorithmStepTimeAll) {
-            m_fAlgorithmStepTimeNow = 0.f;
+            m_fAlgorithmStepTimeNow -= m_fAlgorithmStepTimeAll;
             this->exe_next_step();
         }
     }
@@ -942,7 +959,48 @@ void PathFD::UIMapControl::Update() noexcept {
     }
 }
 
+#undef max
+#include <algorithm>
 
+// 设置节点显示
+void PathFD::UIMapControl::SetNodeDisplay(const NodeDisplay& num) noexcept {
+    constexpr int MAXCOUNT = 8;
+    D2D1_RECT_F des[MAXCOUNT]; D2D1_RECT_U src[MAXCOUNT];
+    assert(num.argc < MAXCOUNT && "buffer too small");
+    // 保证
+    auto sp = m_pNumberDisplay;
+    auto addsp = [sp]() noexcept {
+        D2D1_RECT_F rect = { 0.f };
+        return sp->AddSprites(64, &rect, nullptr, nullptr, nullptr, 0, 0, 0, 0);
+    };
+    // 计算需要精灵
+    uint32_t count = (num.i + 1) * num.argc;
+    m_uNumberSpriteCount = std::max(m_uNumberSpriteCount, count);
+    // 精灵不够?
+    auto hr = S_OK;
+    if (count > sp->GetSpriteCount()) hr = addsp();
+    // 成功
+    if (SUCCEEDED(hr)) {
+        const float dx = float(num.x * m_dataMap.cell_width);
+        const uint32_t dy = num.y * m_dataMap.cell_height;
+        // 设置
+        for (uint32_t i = 0; i < num.argc; ++i) {
+            // 设置目标矩形
+            des[i].left = dx;
+            des[i].top = float(dy + i * DIGNUMNER_HEIGHT);
+            des[i].right = des[i].left + float(NUMCOUNT * DIGNUMNER_WIDTH);
+            des[i].bottom = des[i].top + float(DIGNUMNER_HEIGHT);
+            // 设置源矩形
+            auto n = num.argv[i];
+            src[i].left = n % LINECOUNT * (NUMCOUNT * DIGNUMNER_WIDTH);
+            src[i].top = n / LINECOUNT * DIGNUMNER_HEIGHT;
+            src[i].right = src[i].left + NUMCOUNT * DIGNUMNER_WIDTH;
+            src[i].bottom = src[i].top + DIGNUMNER_HEIGHT;
+        }
+        // 设置
+        sp->SetSprites(count - num.argc, num.argc, des, src);
+    }
+}
 
 // 暂停恢复
 void PathFD::UIMapControl::PauseResume() noexcept {
@@ -952,10 +1010,6 @@ void PathFD::UIMapControl::PauseResume() noexcept {
     else {
         m_fAlgorithmStepTimeNow = -1.f;
     }
-    UIManager << DL_Log 
-        << "m_fAlgorithmStepTimeNow" 
-        << m_fAlgorithmStepTimeNow 
-        << LongUI::endl;
 }
 
 // 执行下一步
@@ -967,12 +1021,12 @@ void PathFD::UIMapControl::ExeNextStep() noexcept {
         // 下一步
         this->exe_next_step();
     }
-;}
+}
 
 // 执行下一步
 void PathFD::UIMapControl::exe_next_step() noexcept {
     assert(m_pAlgorithm && "bad action");
-    auto end = m_pAlgorithm->NextStep(m_pMapSpriteBatch);
+    auto end = m_pAlgorithm->NextStep(m_pMapSpriteBatch, this);
     // 结束搜寻?
     if (end) {
         m_pAlgorithm->EndStep();

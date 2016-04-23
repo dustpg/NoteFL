@@ -134,6 +134,15 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
+    // 步进间隔
+    ctrl =  m_pWindow->FindControl("edtMapStep");
+    {
+        auto map = m_pMapControl;
+        ctrl->AddEventCall([map](LongUI::UIControl* edt) noexcept {
+            map->SetStepDeltaTime(LongUI::AtoF(edt->GetText()));
+            return true;
+        }, LongUI::SubEvent::Event_ValueChanged);
+    }
 }
 
 #include "pdfImpl.h"
@@ -231,6 +240,12 @@ namespace PathFD {
                 0, 0, 0, 0
             );
         }
+        // 设置节点显示
+        void set_node_display(void* num, void* display) noexcept {
+            auto map = reinterpret_cast<UIMapControl*>(num);
+            auto numdisplay = reinterpret_cast<NodeDisplay*>(display);
+            map->SetNodeDisplay(*numdisplay);
+        }
         // 创建事件
         auto create_event() noexcept->event {
             static_assert(sizeof(HANDLE) == sizeof(event), "bad action");
@@ -244,7 +259,7 @@ namespace PathFD {
         // 等待事件
         void wait(event ev) noexcept {
             assert(ev && "bad argment");
-            ::WaitForSingleObject(windows(ev), 1000);
+            ::WaitForSingleObject(windows(ev), INFINITE);
         }
         // 摧毁事件
         void destroy(event& ev) noexcept {
