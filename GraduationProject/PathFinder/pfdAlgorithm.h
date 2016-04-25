@@ -53,4 +53,8 @@ namespace PathFD {
     };
     // 创建A*算法
     auto CreateAStarAlgorithm() noexcept ->IFDAlgorithm*;
+    // 创建Greedy BFS算法
+    auto CreateGreedyBFSAlgorithm() noexcept ->IFDAlgorithm*;
+    // 创建Dijkstra算法
+    auto CreateDijkstraAlgorithm() noexcept ->IFDAlgorithm*;
 }

@@ -6,6 +6,15 @@ namespace PathFD { namespace impl {
     // 调试数输出
     void outputdebug(const wchar_t* a) noexcept;
 #endif
+    // 自动锁
+    template<typename T> struct auto_locker {
+        // 构造函数
+        auto_locker(T& locker) noexcept :locker(locker) { locker.lock(); }
+        // 析构函数
+        ~auto_locker() noexcept { locker.unlock(); }
+        // 锁
+        T&          locker;
+    };
     // 互斥锁
     struct mutex_impl; using mutex = mutex_impl*;
     // 创建互斥锁

@@ -20,6 +20,12 @@
     <ClCompile Include="pfdCharacter.cpp">
       <Filter>角色</Filter>
     </ClCompile>
+    <ClCompile Include="pfdGreedyBFS.cpp">
+      <Filter>算法</Filter>
+    </ClCompile>
+    <ClCompile Include="pfdDijkstra.cpp">
+      <Filter>算法</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Application.manifest" />

@@ -37,7 +37,10 @@ u8R"(<?xml version="1.0" encoding="utf-8"?>
                 <Button templateid="3" text="载入地图" name="btnMapLoad"/>
                 <Button templateid="3" text="保存地图" name="btnMapSave"/>
             </HorizontalLayout>
-            <Button templateid="3" text="重置缩放" name="btnMapRezm"/>
+            <HorizontalLayout>
+                <Button templateid="3" text="重置缩放" name="btnMapRezm"/>
+                <Button templateid="3" text="清除地图" name="btnMapCler"/>
+            </HorizontalLayout>
             <HorizontalLayout>
                 <RadioButton text="通行方格"/>
                 <RadioButton text="地图视图" checked="true"/>
@@ -52,7 +55,6 @@ u8R"(<?xml version="1.0" encoding="utf-8"?>
                 <ComboBox drawdownarrow="true" textoffsetx="4" name="cbbAlgPath" align="left" templateid="3" >
                     <List linetemplate="Text">
                         <ScrollBarA marginal="right"/>
-                        <ListLine><Text text="A-Star"/></ListLine>
                     </List>
                 </ComboBox>
             </HorizontalLayout>
@@ -150,3 +152,50 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, char* lpCmdLine
     return EXIT_SUCCESS;
 }
 
+
+
+/*
+            // 添加
+            auto insert2 = [&](const CFDAStar::NODE& node) {
+                // 加锁
+                op.lock();
+                // 比最后的都大?
+                if (open.empty() || node.fx >= open.back().fx) {
+                    // 添加到最后
+                    open.push_back(node);
+                    // 解锁
+                    op.unlock();
+                    return;
+                }
+                // 添加节点
+                for (auto itr = open.begin(); itr != open.end(); ++itr) {
+                    if (node.fx < itr->fx) {
+                        open.insert(itr, node);
+                        // 解锁
+                        op.unlock();
+                        return;
+                    }
+                }
+                // 不可能
+                assert(!"Impossible ");
+            };
+            // 移动
+            auto moveto = [&](int16_t xplus, int16_t yplus) {
+                CFDAStar::NODE tmp; 
+                tmp.x = node.x + xplus; 
+                tmp.y = node.y + yplus; 
+                // 可以通行 并且没有遍历过
+                if (check_pass(tmp.x, tmp.y) && !check_visited(tmp.x, tmp.y)) {
+                    // 标记
+                    mark_visited(tmp.x, tmp.y);
+                    // 记录父节点位置
+                    tmp.parent = &node;
+                    // 计算g(n)
+                    tmp.gn = node.gn + 1;
+                    // f(n) = g(n) + h(n)
+                    tmp.fx = tmp.gn + hn(tmp.x, tmp.y);
+                    // 添加
+                    insert2(tmp);
+                }
+            };
+*/

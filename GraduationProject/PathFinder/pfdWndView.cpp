@@ -2,6 +2,7 @@
 #include "pfdUIMap.h"
 #include <Core/luiWindow.h>
 #include <Core/luiManager.h>
+#include <Control/UIComboBox.h>
 #include  "pfdAlgorithm.h"
 
 
@@ -36,12 +37,30 @@ bool PathFD::CFDWndView::DoEvent(const LongUI::EventArgument& arg) noexcept {
 // 引用函数
 using LongUI::longui_cast;
 
+// PathFD 命名空间
+namespace PathFD {
+    // 算法列表
+    enum AlgorithmId : uint32_t {
+        Id_AStar = 0,       // A* 算法
+        Id_GreedyBFS,       // 贪心最佳搜索算法
+        Id_Dijkstra,        // Dijkstra算法
+        ID_COUNT,           // 算法个数
+    };
+    // 算法名称
+    static const wchar_t* const ALG_NAME[ID_COUNT] = {
+         L"A-Star", 
+         L"Greedy BFS",
+         L"Dijkstra",
+    };
+}
+
 // 初始化控件
 void PathFD::CFDWndView::init_wndview() noexcept {
     LongUI::UIControl* ctrl = nullptr;
 #ifdef _DEBUG
     UIManager << DL_Log << L"called" << LongUI::endl;
 #endif
+    this->add_algorithm();
     // 地图控件
     ctrl = m_pWindow->FindControl("mapPathFD");
     m_pMapControl = longui_cast<UIMapControl*>(ctrl);
@@ -88,14 +107,23 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
+    // 清理地图
+    ctrl = m_pWindow->FindControl("btnMapCler");
+    {
+        auto map = m_pMapControl;
+        ctrl->AddEventCall([map](LongUI::UIControl*) noexcept {
+            map->ClearMap();
+            return true;
+        }, LongUI::SubEvent::Event_ItemClicked);
+    }
     // 开始寻路
     ctrl =  m_pWindow->FindControl("btnFinderStart");
     {
+        auto algorithmccb = longui_cast<LongUI::UIComboBox*>(m_pCcbAlgorithm);
         auto display = m_pWindow->FindControl("txtDisplay");
         auto map = m_pMapControl;
-        ctrl->AddEventCall([map, display](LongUI::UIControl*) noexcept {
-            IFDAlgorithm* algorithm = nullptr;
-            algorithm = PathFD::CreateAStarAlgorithm();
+        ctrl->AddEventCall([map, display, algorithmccb](LongUI::UIControl*) noexcept {
+            auto algorithm = CFDWndView::create_algorithm(algorithmccb->GetSelectedIndex());
             if (algorithm) {
                 LongUI::CUIString str;
                 map->Execute(algorithm, str);
@@ -108,9 +136,10 @@ void PathFD::CFDWndView::init_wndview() noexcept {
     // 开始演示
     ctrl =  m_pWindow->FindControl("btnFinderShow");
     {
+        auto algorithmccb = longui_cast<LongUI::UIComboBox*>(m_pCcbAlgorithm);
         auto map = m_pMapControl;
-        ctrl->AddEventCall([map](LongUI::UIControl*) noexcept {
-            auto* algorithm = PathFD::CreateAStarAlgorithm();
+        ctrl->AddEventCall([map, algorithmccb](LongUI::UIControl*) noexcept {
+            auto algorithm = CFDWndView::create_algorithm(algorithmccb->GetSelectedIndex());
             map->BeginShow(std::move(algorithm));
             assert(algorithm == nullptr);
             return true;
@@ -142,6 +171,34 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             map->SetStepDeltaTime(LongUI::AtoF(edt->GetText()));
             return true;
         }, LongUI::SubEvent::Event_ValueChanged);
+    }
+}
+
+// 添加算法
+void PathFD::CFDWndView::add_algorithm() noexcept {
+    m_pCcbAlgorithm = m_pWindow->FindControl("cbbAlgPath");
+    assert(m_pCcbAlgorithm);
+    // 算法选择
+    auto algorithm = longui_cast<LongUI::UIComboBox*>(m_pCcbAlgorithm);
+    for (auto name : PathFD::ALG_NAME) {
+        algorithm->PushItem(name);
+    }
+    algorithm->SetSelectedIndex(0);
+}
+
+// 创建算法
+auto PathFD::CFDWndView::create_algorithm(uint32_t id) noexcept -> IFDAlgorithm* {
+    switch (AlgorithmId(id))
+    {
+    case PathFD::Id_AStar:
+        return PathFD::CreateAStarAlgorithm();
+    case PathFD::Id_GreedyBFS:
+        return PathFD::CreateGreedyBFSAlgorithm();
+    case PathFD::Id_Dijkstra:
+        return PathFD::CreateDijkstraAlgorithm();
+    default:
+        assert(!"BAD ARG");
+        return nullptr;
     }
 }
 

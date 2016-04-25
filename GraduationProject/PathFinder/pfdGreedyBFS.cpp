@@ -11,7 +11,7 @@
 
 /*
 
-A*算法流程：
+贪心最佳搜索算法流程：
 
 首先将起始结点S放入OPEN表，CLOSE表置空，算法开始时：
 1、如果OPEN表不为空，从表头取一个结点n，如果为空算法失败。
@@ -20,7 +20,7 @@ A*算法流程：
 
 3、将n的所有后继结点展开，就是从n可以直接关联的结点（子结点），
 如果不在CLOSE表中，就将它们放入OPEN表，并把S放入CLOSE表，
-同时计算每一个后继结点的估价值f(n)，将OPEN表按f(x)排序，
+同时计算每一个后继结点的启发值h(n)，将OPEN表按h(x)排序，
 最小的放在表头，重复算法，回到1。
 */
 
@@ -29,7 +29,7 @@ namespace PathFD {
     // impl
     namespace impl {
         // 步进操作类
-        template<typename T> struct astar_step_op {
+        template<typename T> struct gbfs_step_op {
             // 设置OPEN表
             template<typename Y>inline void set_open_list(Y& list) {
                 openlist = &list;
@@ -72,9 +72,9 @@ namespace PathFD {
                 impl::unlock(mx);
             }
             // 构造本类函数
-            astar_step_op(T& parent) : parent(parent) {}
+            gbfs_step_op(T& parent) : parent(parent) {}
             // 构造本类函数
-            ~astar_step_op() { impl::destroy(ev); impl::destroy(mx);}
+            ~gbfs_step_op() { impl::destroy(ev); impl::destroy(mx);}
             // 事件
             event               ev = impl::create_event();
             // 访问锁
@@ -91,7 +91,7 @@ namespace PathFD {
             uint32_t            nodey = 0;
         };
         // 操作类
-        struct astar_op {
+        struct gbfs_op {
             // 设置OPEN表
             template<typename Y> inline void set_open_list(Y& list) {  }
             // 设置CLOSE表
@@ -212,31 +212,29 @@ namespace PathFD {
             return address;
         }
     };
-    // A*算法
-    class CFDAStar final : public IFDAlgorithm {
+    // GreedyBFS算法
+    class CFDGreedyBFS final : public IFDAlgorithm {
     public:
         // 节点
         struct NODE {
             // 坐标
             int16_t         x, y;
-            // 节点深度(gn)
-            int16_t         gn;
-            // 节点价值(fh)
-            int16_t         fh;
+            // 节点启发值(gn)
+            uint32_t        hn;
             // 父节点
             const NODE*     parent;
         };
         // 列表
 #ifdef _DEBUG
-        using List = std::list<CFDAStar::NODE>;
+        using List = std::list<CFDGreedyBFS::NODE>;
 #else
-        using List = std::list<CFDAStar::NODE, AllocatorEx<CFDAStar::NODE>>;
+        using List = std::list<CFDGreedyBFS::NODE, AllocatorEx<CFDGreedyBFS::NODE>>;
 #endif
         // 操作
-        using StepOp = impl::astar_step_op<CFDAStar>;
+        using StepOp = impl::gbfs_step_op<CFDGreedyBFS>;
     public:
         // 构造函数
-        CFDAStar() noexcept;
+        CFDGreedyBFS() noexcept;
         // 释放对象
         void Dispose() noexcept override { delete this; };
         // 执行算法, 返回路径(成功的话), 需要调用者调用std::free释放
@@ -254,7 +252,7 @@ namespace PathFD {
         void SetFinished() { m_bFinished = true; }
     private:
         // 析构函数
-        ~CFDAStar() noexcept;
+        ~CFDGreedyBFS() noexcept;
     private:
         // 操作数据
         StepOp                  m_opStep;
@@ -276,15 +274,15 @@ namespace PathFD {
 /// 创建A*算法
 /// </summary>
 /// <returns>A*算法接口</returns>
-auto PathFD::CreateAStarAlgorithm() noexcept -> IFDAlgorithm* {
-    return new(std::nothrow) PathFD::CFDAStar;
+auto PathFD::CreateGreedyBFSAlgorithm() noexcept -> IFDAlgorithm* {
+    return new(std::nothrow) PathFD::CFDGreedyBFS;
 }
 
 
 /// <summary>
-/// <see cref="CFDAStar"/> 类构造函数
+/// <see cref="CFDGreedyBFS"/> 类构造函数
 /// </summary>
-PathFD::CFDAStar::CFDAStar() noexcept : m_opStep(*this) {
+PathFD::CFDGreedyBFS::CFDGreedyBFS() noexcept : m_opStep(*this) {
 
 }
 
@@ -292,20 +290,16 @@ PathFD::CFDAStar::CFDAStar() noexcept : m_opStep(*this) {
 // pathfd::impl 命名空间
 namespace PathFD { namespace impl {
     // 找到路径
-    auto path_found(const PathFD::CFDAStar::List& close_list) noexcept {
+    auto path_found(const PathFD::CFDGreedyBFS::List& close_list) noexcept {
         assert(!close_list.empty());
-        size_t size = size_t(close_list.front().gn);
-#ifdef _DEBUG
-        size_t debug_count = 0;
+        size_t size = 0;
         {
             const auto* itr = &close_list.front();
             while (itr->parent) {
-                ++debug_count;
+                ++size;
                 itr = itr->parent;
             }
         }
-        assert(debug_count == size);
-#endif
         {
             // 申请空间
             auto* path = reinterpret_cast<PathFD::Path*>(std::malloc(
@@ -329,7 +323,7 @@ namespace PathFD { namespace impl {
     }
     // 寻找路径ex
     template<typename OP>
-    auto a_star_find_ex(OP& op, const PathFD::Finder& fd) {
+    auto gbfs_find_ex(OP& op, const PathFD::Finder& fd) {
         // 起点终点数据
         const int16_t sx = fd.startx;
         const int16_t sy = fd.starty;
@@ -369,18 +363,16 @@ namespace PathFD { namespace impl {
             return false;
         };
         // 起点数据
-        CFDAStar::NODE start; 
+        CFDGreedyBFS::NODE start; 
         start.x = sx; start.y = sy;
-        start.gn = 0;
-        start.fh = hn(start.x, start.y);
+        start.hn = hn(start.x, start.y);
         start.parent = nullptr;
         // 终点数据
         struct { decltype(start.x) x, y; } end;
         end.x = gx; end.y = gy;
         // 起点加入OPEN表
-        CFDAStar::List open, close; open.push_back(start);
+        CFDGreedyBFS::List open, close; open.push_back(start);
         mark_visited(start.x, start.y);
-
         // 为操作设置表数据
         op.set_open_list(open); op.set_close_list(close);
         // 为空算法失败
@@ -405,17 +397,17 @@ namespace PathFD { namespace impl {
                 return op.found(close);
             }
             // 添加
-            auto insert2 = [&](const CFDAStar::NODE& node) {
+            auto insert2 = [&](const CFDGreedyBFS::NODE& node) {
                 // 比最后的都大?
-                if (open.empty() || node.fh >= open.back().fh) {
+                if (open.empty() || node.hn >= open.back().hn) {
                     // 添加到最后
                     open.push_back(node);
                     return;
                 }
                 // 添加节点
                 for (auto itr = open.begin(); itr != open.end(); ++itr) {
-                    if (node.fh <= itr->fh) {
-                        open.insert(++itr, node);
+                    if (node.hn <= itr->hn) {
+                        open.insert(itr, node);
                         return;
                     }
                 }
@@ -424,7 +416,7 @@ namespace PathFD { namespace impl {
             };
             // 移动
             auto moveto = [&](int16_t xplus, int16_t yplus) {
-                CFDAStar::NODE tmp; 
+                CFDGreedyBFS::NODE tmp; 
                 tmp.x = node.x + xplus; 
                 tmp.y = node.y + yplus; 
                 // 可以通行 并且没有遍历过
@@ -433,10 +425,8 @@ namespace PathFD { namespace impl {
                     mark_visited(tmp.x, tmp.y);
                     // 记录父节点位置
                     tmp.parent = &node;
-                    // 计算g(n)
-                    tmp.gn = node.gn + 1;
-                    // f(n) = g(n) + h(n)
-                    tmp.fh = tmp.gn + hn(tmp.x, tmp.y);
+                    // 计算h(n)
+                    tmp.hn = hn(tmp.x, tmp.y);
                     // 加锁
                     impl::auto_locker<OP> locker(op);
                     // 添加
@@ -463,15 +453,15 @@ namespace PathFD { namespace impl {
 
 
 // 执行算法
-auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
+auto PathFD::CFDGreedyBFS::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
     // 正式处理
-    try { impl::astar_op op; return impl::a_star_find_ex(op, fd); }
+    try { impl::gbfs_op op; return impl::gbfs_find_ex(op, fd); }
     // 出现异常
     catch (...) { return nullptr; }
 }
 
 // 可视化步进
-void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
+void PathFD::CFDGreedyBFS::BeginStep(const PathFD::Finder& fd) noexcept {
     assert(m_thdStep.joinable() == false);
     std::this_thread::yield();
     m_fdData = fd;
@@ -480,14 +470,16 @@ void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
         auto& op = m_opStep;
         m_thdStep.std::thread::~thread();
         m_thdStep.std::thread::thread([&op, &data]() {
-            impl::a_star_find_ex(op, data);
+            impl::gbfs_find_ex(op, data);
         });
     }
     catch (...) { m_opStep.failed(); }
 }
 // 可视化步进
-bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
+bool PathFD::CFDGreedyBFS::NextStep(void* cells, void* num) noexcept {
     assert(cells && "bad pointer");
+    // 结束就提前返回
+    if (m_bFinished) return true;
     // 阶段0: 显示
     if (m_uPhase == 0) {
         //auto count = m_fdData.width * m_fdData.height;
@@ -498,11 +490,6 @@ bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
             green.r = 0.f; green.g = 1.f; green.b = 0.f; green.a = 1.f;
             // 读取数据
             m_opStep.lock();
-            // 已经结束
-            if (m_bFinished) {
-                m_opStep.unlock();
-                return true;
-            }
             assert(m_opStep.openlist && m_opStep.closelist);
             static uint32_t s_index;
             s_index = 0;
@@ -528,7 +515,7 @@ bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
                         return Direction_NE;
                     }
                 };
-                constexpr uint32_t COUNT = 3;
+                constexpr uint32_t COUNT = 1;
                 char buffer[sizeof(NodeDisplay) + sizeof(uint32_t) * COUNT];
                 auto& numdis = reinterpret_cast<NodeDisplay&>(*buffer);
                 // 设置
@@ -538,12 +525,8 @@ bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
                 numdis.argc = COUNT;
                 // 节点
                 numdis.d = cal_direction_ex(node);
-                // fh = 
-                numdis.argv[0] = node.fh;
-                // gn = 
-                numdis.argv[1] = node.gn;
                 // hn = 
-                numdis.argv[2] = node.fh - node.gn;
+                numdis.argv[0] = node.hn;
                 // 显示数字
                 impl::set_node_display(num, &numdis);
             };
@@ -577,7 +560,7 @@ bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
 }
 
 // 结束可视化步进
-void PathFD::CFDAStar::EndStep() noexcept {
+void PathFD::CFDGreedyBFS::EndStep() noexcept {
     assert(m_thdStep.joinable());
     m_bExit = true;
     m_opStep.signal();
@@ -590,7 +573,7 @@ void PathFD::CFDAStar::EndStep() noexcept {
 }
 
 // 析构函数
-PathFD::CFDAStar::~CFDAStar() noexcept {
+PathFD::CFDGreedyBFS::~CFDGreedyBFS() noexcept {
     m_opStep.signal();
     m_bExit = true;
     if (m_thdStep.joinable()) m_thdStep.join();

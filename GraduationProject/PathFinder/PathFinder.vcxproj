@@ -148,6 +148,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pfdAStar.cpp" />
     <ClCompile Include="pfdCharacter.cpp" />
+    <ClCompile Include="pfdDijkstra.cpp" />
+    <ClCompile Include="pfdGreedyBFS.cpp" />
     <ClCompile Include="pfdWndView.cpp" />
     <ClCompile Include="pfdUiMap.cpp" />
   </ItemGroup>

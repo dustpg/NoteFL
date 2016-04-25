@@ -65,6 +65,14 @@ namespace PathFD {
             NUMBERTABLE_HEIGHT = 1024,
             // 数字表行个数
             LINECOUNT = NUMBERTABLE_WIDTH / NUMCOUNT / DIGNUMNER_WIDTH,
+            // 方向箭头源X偏移(像素)
+            DIRARROW_SRCX_OFFSET = 0,
+            // 方向箭头源Y偏移(像素)
+            DIRARROW_SRCY_OFFSET = 32,
+            // 方向箭头宽度(像素)
+            DIRARROW_SRC_WIDTH = 32,
+            // 方向箭头高度(像素)
+            DIRARROW_SRC_HEIGHT = 32,
         };
     public:
         // 渲染 
@@ -86,6 +94,8 @@ namespace PathFD {
         void SaveMap() noexcept;
         // 保存地图
         void SaveMap(const wchar_t* filename) noexcept;
+        // 清理地图
+        void ClearMap() noexcept;
         // 地图
         void GenerateMap(uint32_t width, uint32_t height) noexcept;
         // 重置地图单位大小
@@ -101,9 +111,13 @@ namespace PathFD {
         // 暂停恢复
         void PauseResume() noexcept;
         // 设置步进间隔时间
-        void SetStepDeltaTime(float time) noexcept { m_fAlgorithmStepTimeAll = time; }
+        void SetStepDeltaTime(float time) noexcept;
         // 设置节点显示
         void SetNodeDisplay(const NodeDisplay& num) noexcept;
+        // 设置显示节点关系
+        void SetDisplayNodeShip(bool ship) noexcept { m_bDisplayNodeShip = ship; }
+        // 设置强制刷新
+        void SetFlushOut(bool flush) noexcept { m_bFlushOut = flush; }
     public:
         // 构造函数
         UIMapControl(LongUI::UIContainer* cp) noexcept;
@@ -130,6 +144,8 @@ namespace PathFD {
         void reset_map() noexcept;
         // 重置精灵
         void reset_sprites() noexcept;
+        // 强制刷新
+        void flush() const noexcept;
         // 获取角色数据
         auto&get_char_data() noexcept { return *reinterpret_cast<CharData*>(m_bufCharData); }
         // 执行下一步
@@ -139,6 +155,11 @@ namespace PathFD {
         // debug infomation
         virtual bool debug_do_event(const LongUI::DebugEventInformation&) const noexcept override;
 #endif
+    private:
+        // 时间胶囊ID : 动态路径显示
+        auto get_capsule_pathdisplay() const noexcept { return m_pAlgorithm; }
+        // 时间胶囊ID : 动态地图缩放
+        auto get_capsule_zoommap() const noexcept { return m_pFileOpenDialog; }
     private:
         // 当前算法
         IFDAlgorithm*           m_pAlgorithm = nullptr;
@@ -152,6 +173,8 @@ namespace PathFD {
         ID2D1SpriteBatch*       m_pMapSpriteBatch = nullptr;
         // 数字显示精灵集
         ID2D1SpriteBatch*       m_pNumberDisplay = nullptr;
+        // 父节点显示精灵集
+        ID2D1SpriteBatch*       m_pNodeDisplay = nullptr;
         // 路径显示精灵集
         ID2D1SpriteBatch*       m_pPathDisplay = nullptr;
         // 地图自动瓦片地图缓存
@@ -180,6 +203,8 @@ namespace PathFD {
         //uint32_t                m_uPathSpriteCount = 0;
         // 数字当前精灵数量
         uint32_t                m_uNumberSpriteCount = 0;
+        // 节点当前精灵数量
+        uint32_t                m_uNodeSpriteCount = 0;
         // 选中点x位置
         uint32_t                m_uClickX = uint32_t(-1);
         // 选中点x位置
@@ -200,8 +225,16 @@ namespace PathFD {
         uint16_t                m_uMapBitmap = 0;
         // 图标位图id
         uint16_t                m_idMapIcon = 0;
+        // 显示节点关系
+        bool                    m_bDisplayNodeShip = true;
+        // 强制刷新
+        bool                    m_bFlushOut = true;
+        // 需要执行前重置
+        bool                    m_bNeedReset = true;
+        // 节点显示
+        //bool                    m_bNodeSet = true;
         // 未使用
-        //uint16_t                m_unused_u16_map[2];
+        bool                    m_unused_bool_map[1];
         // 角色数据缓存 :目前只需要4个动作
         char                    m_bufCharData[sizeof(CharData) + sizeof(CharData::action[0]) * 4];
     };

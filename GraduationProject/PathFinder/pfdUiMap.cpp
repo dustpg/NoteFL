@@ -209,6 +209,7 @@ void PathFD::UIMapControl::reset_map() noexcept {
 /// <returns></returns>
 void PathFD::UIMapControl::reset_sprites() noexcept {
     m_uNumberSpriteCount = 0;
+    m_uNodeSpriteCount = 0;
     // 无效
     if (!m_pMapSpriteBatch) return;
     float cllw = float(m_dataMap.cell_width);
@@ -274,6 +275,7 @@ void PathFD::UIMapControl::release_resource() noexcept {
     LongUI::SafeRelease(m_pNumberDisplay);
     LongUI::SafeRelease(m_pAutoTileCache);
     LongUI::SafeRelease(m_pNumnberTable);
+    LongUI::SafeRelease(m_pNodeDisplay);
     LongUI::SafeRelease(m_pPathDisplay);
     LongUI::SafeRelease(m_pMapIcon);
     LongUI::SafeRelease(m_pMapSkin);
@@ -304,6 +306,19 @@ PathFD::UIMapControl::~UIMapControl() noexcept {
         std::free(m_pPath);
         m_pPath = nullptr;
     }
+    // 移除时间胶囊A -> 动态路径显示(这个调用需要许多时间: 1.f + float(count) / 300.f)
+    UIManager.RemoveTimeCapsule(this->get_capsule_pathdisplay());
+    // 移除时间胶囊A -> 动态地图缩放
+    UIManager.RemoveTimeCapsule(this->get_capsule_zoommap());
+}
+
+/// <summary>
+/// Flushes this instance.
+/// </summary>
+/// <returns></returns>
+inline void PathFD::UIMapControl::flush() const noexcept {
+    // 执行渲染
+    if (m_bFlushOut) UIManager_RenderTarget->Flush();
 }
 
 /// <summary>
@@ -330,7 +345,7 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
     UIManager_RenderTarget->SetTransform(&transform2);
 #endif
     // 强行刷新
-    UIManager_RenderTarget->Flush();
+    this->flush();
     // 精灵集需要取消抗锯齿模式
     UIManager_RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
     // 渲染精灵集
@@ -400,10 +415,23 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
     }
     // 渲染角色
     m_char.Render();
-    // 渲染数字(看得清的情况下才显示)
+    // 渲染节点关系
+    if (m_bDisplayNodeShip) {
+        // 强行刷新
+        this->flush();
+        // 渲染关系
+        UIManager_RenderTarget->DrawSpriteBatch(
+            m_pNodeDisplay,
+            0, m_uNodeSpriteCount,
+            m_pMapIcon,
+            D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
+        );
+    }
+    // 渲染权重(看得清的情况下才显示)
     if (this->world._11 >= 1.f) {
         // 强行刷新
-        UIManager_RenderTarget->Flush();
+        this->flush();
+        // 渲染权重
         UIManager_RenderTarget->DrawSpriteBatch(
             m_pNumberDisplay,
             0, m_uNumberSpriteCount,
@@ -493,10 +521,12 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             D2D1_COMPATIBLE_RENDER_TARGET_OPTIONS_NONE,
             &pBitmapRenderTarget
         );
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateCompatibleRenderTarget Failed");
     }
     // 父类重建
     if (SUCCEEDED(hr)) {
         hr = Super::Recreate();
+        longui_debug_hr(hr, L"Super::Recreate Failed");
     }
     // 创建地图单元分界线位图
     if (SUCCEEDED(hr)) {
@@ -510,6 +540,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             ),
             &pCellBitmapBoundary
         );
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmap Failed");
     }
     // 写入分界线颜色
     if (SUCCEEDED(hr)) {
@@ -522,10 +553,12 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         pBitmapRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::Black, 0.f));
         pBitmapRenderTarget->PopAxisAlignedClip();
         hr = pBitmapRenderTarget->EndDraw();
+        longui_debug_hr(hr, L"pBitmapRenderTarget->EndDraw Failed");
     }
     // 复制数据
     if (SUCCEEDED(hr)) {
         hr = pCellBitmapBoundary->CopyFromRenderTarget(nullptr, pBitmapRenderTarget, nullptr);
+        longui_debug_hr(hr, L"CopyFromRenderTarget Failed");
     }
     // 创建地图单元分界线笔刷
     if (SUCCEEDED(hr)) {
@@ -537,6 +570,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             &bbp, nullptr,
             &m_pCellBoundaryBrush
         );
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmapBrush Failed");
     }
     // 设置角色
     if (SUCCEEDED(hr)) {
@@ -557,14 +591,22 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
     // 创建精灵集1
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pMapSpriteBatch);
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
     }
     // 创建精灵集2
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pPathDisplay);
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
     }
     // 创建精灵集3
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pNumberDisplay);
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
+    }
+    // 创建精灵集4
+    if (SUCCEEDED(hr)) {
+        hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pNodeDisplay);
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
     }
     // 创建自动瓦片位图缓存
     if (SUCCEEDED(hr)) {
@@ -577,6 +619,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             ),
             &m_pAutoTileCache
         );
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmap Failed");
     }
     // 复制数据
     if (SUCCEEDED(hr)) {
@@ -605,7 +648,8 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             int y = i / WIDTH;
 
         }*/
-        m_pAutoTileCache->CopyFromBitmap(&des, m_pMapSkin, &src);
+        hr = m_pAutoTileCache->CopyFromBitmap(&des, m_pMapSkin, &src);
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CopyFromBitmap Failed");
     }
     // 创建数字表
     if (SUCCEEDED(hr)) {
@@ -618,6 +662,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             ),
             &m_pNumnberTable
         );
+        longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmap Failed");
     }
     // 设置数字表
     if (SUCCEEDED(hr)) {
@@ -677,6 +722,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             hr = E_NOT_SET;
         }
     }
+    // 扫尾处理
     LongUI::SafeRelease(pCellBitmapBoundary);
     LongUI::SafeRelease(pBitmapRenderTarget);
     return hr;
@@ -831,8 +877,10 @@ void PathFD::UIMapControl::ZoomMapTo(float zoom, float time) noexcept {
         con->SetZoom(zoomx, zoomx);
         // 不要终止时间胶囊刷新
         return false;
-    }, this, time);
+    }, this->get_capsule_zoommap(), time);
 }
+
+#include <thread>
 
 /// <summary>
 /// 执行寻路
@@ -842,8 +890,11 @@ void PathFD::UIMapControl::ZoomMapTo(float zoom, float time) noexcept {
 /// <returns></returns>
 void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& info) noexcept {
     assert(algorithm && "bad argument");
-    m_uNumberSpriteCount = 0;
-    //
+    if (m_bNeedReset) this->reset_map();
+    m_bNeedReset = true;
+    //m_uNumberSpriteCount = 0;
+    //m_uNodeSpriteCount = 0;
+    // PathFD::Finder 数据初始化
     PathFD::Finder finder;
     finder.data = m_pMapCells;
     finder.width = m_dataMap.map_width;
@@ -853,15 +904,13 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
     finder.goalx = int16_t(m_uGoalX);
     finder.goaly = int16_t(m_uGoalY);
     LongUI::CUITimeMeterH meter;
+    std::this_thread::yield();
     meter.Start();
     auto* path = algorithm->Execute(finder);
     auto time = meter.Delta_ms<double>();
     info.Format(L"%ls: %.3f 毫秒", path ? L"成功" : L"失败", time);
     // 旧的路径有效
-    if (m_pPath) {
-        //assert(!"UNFINISHED");
-        std::free(m_pPath);
-    }
+    if (m_pPath) std::free(m_pPath);
     // 新的路径有效
     if ((m_pPath = path)) {
         uint32_t count = path->len;
@@ -899,7 +948,7 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
             }
             // 不要中断调用
             return false;
-        }, &m_pMapSpriteBatch, 1.f + float(count) / 300.f);
+        }, this->get_capsule_pathdisplay(), 1.f + float(count) / 300.f);
     }
 }
 
@@ -913,6 +962,8 @@ void PathFD::UIMapControl::BeginShow(IFDAlgorithm*&& algorithm) noexcept {
     // 重置数据
     m_fAlgorithmStepTimeNow = 0.f;
     m_uNumberSpriteCount = 0;
+    m_uNodeSpriteCount = 0;
+    m_bNeedReset = false;
     this->reset_map();
     // 释放旧的算法
     if (m_pAlgorithm) m_pAlgorithm->Dispose();
@@ -942,12 +993,11 @@ void PathFD::UIMapControl::Update() noexcept {
     // 步进算法
     if (m_pAlgorithm && m_fAlgorithmStepTimeNow >= 0.f) {
         m_fAlgorithmStepTimeNow += UIManager.GetDeltaTime();
-#ifdef _DEBUG
-        //m_fAlgorithmStepTimeAll = 0.5f;
-#endif
+        assert(m_fAlgorithmStepTimeAll > 0.f);
         // 需要刷新
-        if (m_fAlgorithmStepTimeNow > m_fAlgorithmStepTimeAll) {
+        while (m_pAlgorithm && m_fAlgorithmStepTimeNow > m_fAlgorithmStepTimeAll) {
             m_fAlgorithmStepTimeNow -= m_fAlgorithmStepTimeAll;
+            //m_bNodeSet = m_fAlgorithmStepTimeNow <= m_fAlgorithmStepTimeAll;
             this->exe_next_step();
         }
     }
@@ -962,23 +1012,95 @@ void PathFD::UIMapControl::Update() noexcept {
 #undef max
 #include <algorithm>
 
+// 设置步进间隔时间
+void PathFD::UIMapControl::SetStepDeltaTime(float time) noexcept {
+    assert(time > 0.f && "out of range");
+    if (time <= 0.f) time = 0.0001f;
+    m_fAlgorithmStepTimeAll = time;
+}
+
+// PathFD 命名空间
+namespace PathFD {
+    // 方向箭头数组
+    static const D2D1_RECT_U DIRARROW_SETS[CharacterDirection::DIRECTION_SIZE] = {
+        {
+            0 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+        {
+            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+        {
+            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+        {
+            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            4 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+
+        {
+            0 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+        {
+            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+        {
+            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+        {
+            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+            4 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
+            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
+        },
+    };
+}
+
 // 设置节点显示
 void PathFD::UIMapControl::SetNodeDisplay(const NodeDisplay& num) noexcept {
     constexpr int MAXCOUNT = 8;
     D2D1_RECT_F des[MAXCOUNT]; D2D1_RECT_U src[MAXCOUNT];
     assert(num.argc < MAXCOUNT && "buffer too small");
+    assert(num.d < CharacterDirection::DIRECTION_SIZE && "bad direction");
     // 保证
-    auto sp = m_pNumberDisplay;
-    auto addsp = [sp]() noexcept {
+    auto requiresp = [](ID2D1SpriteBatch* sp, uint32_t c) noexcept {
+        auto count = sp->GetSpriteCount();
+        if (count > c) return S_OK;
         D2D1_RECT_F rect = { 0.f };
-        return sp->AddSprites(64, &rect, nullptr, nullptr, nullptr, 0, 0, 0, 0);
+        return sp->AddSprites(std::max(64ui32, (c - count)), &rect, nullptr, nullptr, nullptr, 0, 0, 0, 0);
     };
     // 计算需要精灵
     uint32_t count = (num.i + 1) * num.argc;
     m_uNumberSpriteCount = std::max(m_uNumberSpriteCount, count);
-    // 精灵不够?
+    m_uNodeSpriteCount = std::max(m_uNodeSpriteCount, (num.i + 1));
     auto hr = S_OK;
-    if (count > sp->GetSpriteCount()) hr = addsp();
+    // 精灵不够?
+    if (SUCCEEDED(hr)) {
+        hr = requiresp(m_pNumberDisplay, count);
+    }
+    // 精灵不够?
+    if (SUCCEEDED(hr)) {
+        hr = requiresp(m_pNodeDisplay, num.i + 1);
+    }
     // 成功
     if (SUCCEEDED(hr)) {
         const float dx = float(num.x * m_dataMap.cell_width);
@@ -997,8 +1119,13 @@ void PathFD::UIMapControl::SetNodeDisplay(const NodeDisplay& num) noexcept {
             src[i].right = src[i].left + NUMCOUNT * DIGNUMNER_WIDTH;
             src[i].bottom = src[i].top + DIGNUMNER_HEIGHT;
         }
-        // 设置
-        sp->SetSprites(count - num.argc, num.argc, des, src);
+        // 设置节点数字显示
+        m_pNumberDisplay->SetSprites(count - num.argc, num.argc, des, src);
+        // 设置节点关系显示
+        auto desnode = *des;
+        desnode.right = desnode.left + float(m_dataMap.cell_width);
+        desnode.bottom = desnode.top + float(m_dataMap.cell_height);
+        m_pNodeDisplay->SetSprites(num.i, 1, &desnode, DIRARROW_SETS + num.d);
     }
 }
 
@@ -1160,6 +1287,16 @@ void PathFD::UIMapControl::LoadMap(const wchar_t* filename) noexcept {
     this->reset_map();
 }
 
+
+// 清理地图
+void PathFD::UIMapControl::ClearMap() noexcept {
+    if (!m_pMapCells) return;
+    uint32_t len = sizeof(m_pMapCells[0]) * m_dataMap.map_width * m_dataMap.map_height;
+    // 写入地图
+    std::memset(m_pMapCells, 1, len);
+    // 重置地图
+    this->reset_map();
+}
 
 // 保存数据
 void PathFD::UIMapControl::SaveMap(const wchar_t* filename) noexcept {
