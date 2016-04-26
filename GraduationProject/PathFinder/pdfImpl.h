@@ -1,44 +1,44 @@
-#pragma once
+ï»¿#pragma once
 
-// pathfd::impl ÃüÃû¿Õ¼ä
+// pathfd::impl å‘½åç©ºé—´
 namespace PathFD { namespace impl {
 #ifdef _DEBUG
-    // µ÷ÊÔÊıÊä³ö
+    // è°ƒè¯•æ•°è¾“å‡º
     void outputdebug(const wchar_t* a) noexcept;
 #endif
-    // ×Ô¶¯Ëø
+    // è‡ªåŠ¨é”
     template<typename T> struct auto_locker {
-        // ¹¹Ôìº¯Êı
+        // æ„é€ å‡½æ•°
         auto_locker(T& locker) noexcept :locker(locker) { locker.lock(); }
-        // Îö¹¹º¯Êı
+        // ææ„å‡½æ•°
         ~auto_locker() noexcept { locker.unlock(); }
-        // Ëø
+        // é”
         T&          locker;
     };
-    // »¥³âËø
+    // äº’æ–¥é”
     struct mutex_impl; using mutex = mutex_impl*;
-    // ´´½¨»¥³âËø
+    // åˆ›å»ºäº’æ–¥é”
     auto create_mutex() noexcept->mutex;
-    // ´İ»Ù»¥³âËø
+    // æ‘§æ¯äº’æ–¥é”
     void destroy(mutex& mx) noexcept;
-    // ÉÏ»¥³âËø
+    // ä¸Šäº’æ–¥é”
     void lock(mutex mx) noexcept;
-    // ÏÂ»¥³âËø
+    // ä¸‹äº’æ–¥é”
     void unlock(mutex mx) noexcept;
-    // ÊÂ¼ş
+    // äº‹ä»¶
     struct event_impl; using event = event_impl*;
-    // ÑÕÉ«
+    // é¢œè‰²
     struct color { float r, g, b, a; };
-    // Éè¶¨Ö¸¶¨µ¥Ôª¸ñ¸½¼ÓÑÕÉ«
+    // è®¾å®šæŒ‡å®šå•å…ƒæ ¼é™„åŠ é¢œè‰²
     void set_cell_color(void* sprite, uint32_t index, const color& c) noexcept;
-    // ÉèÖÃÊı×ÖÏÔÊ¾
+    // è®¾ç½®æ•°å­—æ˜¾ç¤º
     void set_node_display(void* num, void* display) noexcept;
-    // ´´½¨ÊÂ¼ş
+    // åˆ›å»ºäº‹ä»¶
     auto create_event() noexcept->event;
-    // ¼¤»îÊÂ¼ş
+    // æ¿€æ´»äº‹ä»¶
     void signal(event ev) noexcept;
-    // µÈ´ıÊÂ¼ş
+    // ç­‰å¾…äº‹ä»¶
     void wait(event ev) noexcept;
-    // ´İ»ÙÊÂ¼ş
+    // æ‘§æ¯äº‹ä»¶
     void destroy(event& ev) noexcept;
 }}

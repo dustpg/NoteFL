@@ -1,4 +1,4 @@
-#include <algorithm>
+ï»¿#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <random>
@@ -384,14 +384,14 @@ public:
     const auto& data() const { return _tiles; }
 };
 
-// PathFD ÃüÃû¿Õ¼ä
+// PathFD å‘½åç©ºé—´
 namespace PathFD {
     /// <summary>
-    /// Ä¬ÈÏÃÔ¹¬Éú³ÉËã·¨
+    /// é»˜è®¤è¿·å®«ç”Ÿæˆç®—æ³•
     /// </summary>
-    /// <param name="data">µØÍ¼Êı¾İ</param>
-    /// <param name="w">µØÍ¼¿í</param>
-    /// <param name="h">µØÍ¼¸ß</param>
+    /// <param name="data">åœ°å›¾æ•°æ®</param>
+    /// <param name="w">åœ°å›¾å®½</param>
+    /// <param name="h">åœ°å›¾é«˜</param>
     /// <returns></returns>
     bool DefaultGeneration(uint8_t* data, uint32_t w, uint32_t h, uint32_t pos[]) noexcept {
         assert(data && w && h);

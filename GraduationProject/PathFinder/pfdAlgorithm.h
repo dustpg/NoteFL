@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <cstdint>
 #include "pfdUtil.h"
@@ -12,49 +12,55 @@
 #endif
 #pragma warning(disable: 4200)
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
-    // FD½á¹¹
+    // FDç»“æž„
     struct Finder {
-        // ÃÔ¹¬Êý¾Ý
+        // è¿·å®«æ•°æ®
         const uint8_t*  data;
-        // ÃÔ¹¬¿í¶È
+        // è¿·å®«å®½åº¦
         int16_t         width;
-        // ÃÔ¹¬¸ß¶È
+        // è¿·å®«é«˜åº¦
         int16_t         height;
-        // ÆðµãÎ»ÖÃX
+        // èµ·ç‚¹ä½ç½®X
         int16_t         startx;
-        // ÆðµãÎ»ÖÃY
+        // èµ·ç‚¹ä½ç½®Y
         int16_t         starty;
-        // ÖÕµãÎ»ÖÃX
+        // ç»ˆç‚¹ä½ç½®X
         int16_t         goalx;
-        // ÖÕµãÎ»ÖÃY
+        // ç»ˆç‚¹ä½ç½®Y
         int16_t         goaly;
+        // æ˜¯å¦æ˜¯8æ–¹å‘
+        bool            dir8;
+        // æœªä½¿ç”¨
+        bool            unused[3];
     };
-    // Â·¾¶µã
+    // è·¯å¾„ç‚¹
     struct PathPoint { int16_t x, y; };
-    // Â·¾¶
+    // è·¯å¾„
     struct Path { uint32_t len; PathPoint pt[0]; };
-    // Ñ°Â·Ëã·¨
+    // å¯»è·¯ç®—æ³•
     struct PATHFD_NOVTABLE IFDInterface {
-        // ÊÍ·Å¶ÔÏó
+        // é‡Šæ”¾å¯¹è±¡
         virtual void Dispose() noexcept = 0;
     };
-    // Ñ°Â·Ëã·¨
+    // å¯»è·¯ç®—æ³•
     struct PATHFD_NOVTABLE IFDAlgorithm : IFDInterface {
-        // Ö´ÐÐËã·¨, ·µ»ØÂ·¾¶(³É¹¦µÄ»°), ÐèÒªµ÷ÓÃÕßµ÷ÓÃstd::freeÊÍ·Å
+        // æ‰§è¡Œç®—æ³•, è¿”å›žè·¯å¾„(æˆåŠŸçš„è¯), éœ€è¦è°ƒç”¨è€…è°ƒç”¨std::freeé‡Šæ”¾
         virtual auto Execute(const PathFD::Finder& fd) noexcept->Path* = 0;
-        // ¿ÉÊÓ»¯²½½ø
+        // å¯è§†åŒ–æ­¥è¿›
         virtual void BeginStep(const PathFD::Finder& fd) noexcept = 0;
-        // ¿ÉÊÓ»¯²½½ø, Ð´Èë¿ÉÊÓ»¯Êý¾Ý(±£Ö¤·ÃÎÊ°²È«), ·µ»Øtrue±íÊ¾½áÊø
-        virtual bool NextStep(void* cells, void* num) noexcept = 0;
-        // ½áÊø¿ÉÊÓ»¯²½½ø
+        // å¯è§†åŒ–æ­¥è¿›, å†™å…¥å¯è§†åŒ–æ•°æ®(ä¿è¯è®¿é—®å®‰å…¨), è¿”å›žtrueè¡¨ç¤ºç»“æŸ
+        virtual bool NextStep(void* cells, void* num, bool refresh) noexcept = 0;
+        // è¯»å–æ•°æ®
+        //virtual void ReadData() const noexcept = 0;
+        // ç»“æŸå¯è§†åŒ–æ­¥è¿›
         virtual void EndStep() noexcept = 0;
     };
-    // ´´½¨A*Ëã·¨
+    // åˆ›å»ºA*ç®—æ³•
     auto CreateAStarAlgorithm() noexcept ->IFDAlgorithm*;
-    // ´´½¨Greedy BFSËã·¨
+    // åˆ›å»ºGreedy BFSç®—æ³•
     auto CreateGreedyBFSAlgorithm() noexcept ->IFDAlgorithm*;
-    // ´´½¨DijkstraËã·¨
+    // åˆ›å»ºDijkstraç®—æ³•
     auto CreateDijkstraAlgorithm() noexcept ->IFDAlgorithm*;
 }

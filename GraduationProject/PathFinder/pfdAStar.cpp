@@ -1,4 +1,4 @@
-#include "pfdAlgorithm.h"
+ï»¿#include "pfdAlgorithm.h"
 #include "pdfImpl.h"
 
 #include <algorithm>
@@ -11,112 +11,113 @@
 
 /*
 
-A*Ëã·¨Á÷³Ì£º
+A*ç®—æ³•æµç¨‹ï¼š
 
-Ê×ÏÈ½«ÆğÊ¼½áµãS·ÅÈëOPEN±í£¬CLOSE±íÖÃ¿Õ£¬Ëã·¨¿ªÊ¼Ê±£º
-1¡¢Èç¹ûOPEN±í²»Îª¿Õ£¬´Ó±íÍ·È¡Ò»¸ö½áµãn£¬Èç¹ûÎª¿ÕËã·¨Ê§°Ü¡£
+é¦–å…ˆå°†èµ·å§‹ç»“ç‚¹Sæ”¾å…¥OPENè¡¨ï¼ŒCLOSEè¡¨ç½®ç©ºï¼Œç®—æ³•å¼€å§‹æ—¶ï¼š
+1ã€å¦‚æœOPENè¡¨ä¸ä¸ºç©ºï¼Œä»è¡¨å¤´å–ä¸€ä¸ªç»“ç‚¹nï¼Œå¦‚æœä¸ºç©ºç®—æ³•å¤±è´¥ã€‚
 
-2¡¢nÊÇÄ¿±ê½âÂğ£¿ÊÇ£¬ÕÒµ½Ò»¸ö½â£¨¼ÌĞøÑ°ÕÒ£¬»òÖÕÖ¹Ëã·¨£©¡£
+2ã€næ˜¯ç›®æ ‡è§£å—ï¼Ÿæ˜¯ï¼Œæ‰¾åˆ°ä¸€ä¸ªè§£ï¼ˆç»§ç»­å¯»æ‰¾ï¼Œæˆ–ç»ˆæ­¢ç®—æ³•ï¼‰ã€‚
 
-3¡¢½«nµÄËùÓĞºó¼Ì½áµãÕ¹¿ª£¬¾ÍÊÇ´Ón¿ÉÒÔÖ±½Ó¹ØÁªµÄ½áµã£¨×Ó½áµã£©£¬
-Èç¹û²»ÔÚCLOSE±íÖĞ£¬¾Í½«ËüÃÇ·ÅÈëOPEN±í£¬²¢°ÑS·ÅÈëCLOSE±í£¬
-Í¬Ê±¼ÆËãÃ¿Ò»¸öºó¼Ì½áµãµÄ¹À¼ÛÖµf(n)£¬½«OPEN±í°´f(x)ÅÅĞò£¬
-×îĞ¡µÄ·ÅÔÚ±íÍ·£¬ÖØ¸´Ëã·¨£¬»Øµ½1¡£
+3ã€å°†nçš„æ‰€æœ‰åç»§ç»“ç‚¹å±•å¼€ï¼Œå°±æ˜¯ä»nå¯ä»¥ç›´æ¥å…³è”çš„ç»“ç‚¹ï¼ˆå­ç»“ç‚¹ï¼‰ï¼Œ
+å¦‚æœä¸åœ¨CLOSEè¡¨ä¸­ï¼Œå°±å°†å®ƒä»¬æ”¾å…¥OPENè¡¨ï¼Œå¹¶æŠŠSæ”¾å…¥CLOSEè¡¨ï¼Œ
+åŒæ—¶è®¡ç®—æ¯ä¸€ä¸ªåç»§ç»“ç‚¹çš„ä¼°ä»·å€¼f(n)ï¼Œå°†OPENè¡¨æŒ‰f(x)æ’åºï¼Œ
+æœ€å°çš„æ”¾åœ¨è¡¨å¤´ï¼Œé‡å¤ç®—æ³•ï¼Œå›åˆ°1ã€‚
+
 */
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
     // impl
     namespace impl {
-        // ²½½ø²Ù×÷Àà
+        // æ­¥è¿›æ“ä½œç±»
         template<typename T> struct astar_step_op {
-            // ÉèÖÃOPEN±í
+            // è®¾ç½®OPENè¡¨
             template<typename Y>inline void set_open_list(Y& list) {
                 openlist = &list;
             }
-            // ÉèÖÃCLOSE±í
+            // è®¾ç½®CLOSEè¡¨
             template<typename Y>inline void set_close_list(Y& list) {
                 closelist = &list;
             }
-            // »ñÈ¡Ò»¸ö½Úµã
+            // è·å–ä¸€ä¸ªèŠ‚ç‚¹
             template<typename Y> inline void get_node(const Y& node) {
                 nodex = node.x;
                 nodey = node.y;
             }
-            // Â·¾¶ÒÑ¾­ÕÒµ½
+            // è·¯å¾„å·²ç»æ‰¾åˆ°
             template<typename Y> inline void found(const Y& list) {
                 parent.SetFinished();
             }
-            // ÊÇ·ñ¼ÌĞøÑ°ÕÒ
+            // æ˜¯å¦ç»§ç»­å¯»æ‰¾
             inline bool go_on() {
                 return !parent.IsExit();
             }
-            // Ñ°ÕÒÂ·¾¶Ê§°Ü
+            // å¯»æ‰¾è·¯å¾„å¤±è´¥
             inline void failed() {
                 parent.SetFinished();
             }
-            // ÌáÊ¾¼ÌĞøÖ´ĞĞ
+            // æç¤ºç»§ç»­æ‰§è¡Œ
             inline void signal() {
                 impl::signal(ev);
             }
-            // µÈ´ıÏÂÒ»²½Öè
+            // ç­‰å¾…ä¸‹ä¸€æ­¥éª¤
             inline void wait() {
                 impl::wait(ev);
             }
-            // Îª±í²Ù×÷¼ÓËø
+            // ä¸ºè¡¨æ“ä½œåŠ é”
             inline void lock() {
                 impl::lock(mx);
             }
-            // Îª±í²Ù×÷½âËø
+            // ä¸ºè¡¨æ“ä½œè§£é”
             inline void unlock() {
                 impl::unlock(mx);
             }
-            // ¹¹Ôì±¾Ààº¯Êı
+            // æ„é€ æœ¬ç±»å‡½æ•°
             astar_step_op(T& parent) : parent(parent) {}
-            // ¹¹Ôì±¾Ààº¯Êı
+            // æ„é€ æœ¬ç±»å‡½æ•°
             ~astar_step_op() { impl::destroy(ev); impl::destroy(mx);}
-            // ÊÂ¼ş
+            // äº‹ä»¶
             event               ev = impl::create_event();
-            // ·ÃÎÊËø
+            // è®¿é—®é”
             mutex               mx = impl::create_mutex();
-            // ¸¸¶ÔÏó
+            // çˆ¶å¯¹è±¡
             T&                  parent;
-            // OPEN±í
+            // OPENè¡¨
             typename T::List*   openlist = nullptr;
-            // CLOSE±í
+            // CLOSEè¡¨
             typename T::List*   closelist = nullptr;
-            // Ñ¡Ôñ½ÚµãX
+            // é€‰æ‹©èŠ‚ç‚¹X
             uint32_t            nodex = 0;
-            // Ñ¡Ôñ½ÚµãY
+            // é€‰æ‹©èŠ‚ç‚¹Y
             uint32_t            nodey = 0;
         };
-        // ²Ù×÷Àà
+        // æ“ä½œç±»
         struct astar_op {
-            // ÉèÖÃOPEN±í
+            // è®¾ç½®OPENè¡¨
             template<typename Y> inline void set_open_list(Y& list) {  }
-            // ÉèÖÃCLOSE±í
+            // è®¾ç½®CLOSEè¡¨
             template<typename Y> inline void set_close_list(Y& list) { }
-            // »ñÈ¡Ò»¸ö½Úµã
+            // è·å–ä¸€ä¸ªèŠ‚ç‚¹
             template<typename Y> inline void get_node(const Y& node) { }
-            // Â·¾¶ÒÑ¾­ÕÒµ½
+            // è·¯å¾„å·²ç»æ‰¾åˆ°
             template<typename Y> inline auto found(const Y& list) {
                 return impl::path_found(list);
             }
-            // ÊÇ·ñ¼ÌĞøÑ°ÕÒ
+            // æ˜¯å¦ç»§ç»­å¯»æ‰¾
             inline bool go_on() { return true; }
-            // Ñ°ÕÒÂ·¾¶Ê§°Ü
+            // å¯»æ‰¾è·¯å¾„å¤±è´¥
             inline auto failed() ->Path* { return nullptr; }
-            // ÌáÊ¾¼ÌĞøÖ´ĞĞ
+            // æç¤ºç»§ç»­æ‰§è¡Œ
             inline void signal() { }
-            // µÈ´ıÏÂÒ»²½Öè
+            // ç­‰å¾…ä¸‹ä¸€æ­¥éª¤
             inline void wait() { }
-            // Îª±í²Ù×÷¼ÓËø
+            // ä¸ºè¡¨æ“ä½œåŠ é”
             inline void lock() { }
-            // Îª±í²Ù×÷½âËø
+            // ä¸ºè¡¨æ“ä½œè§£é”
             inline void unlock() { }
         };
     }
-    // ×Ô¶¨Òå·ÖÅäÆ÷
+    // è‡ªå®šä¹‰åˆ†é…å™¨
     template<typename T> class AllocatorEx {
         // CHAIN
         struct CHAIN { CHAIN* next; size_t used; char buffer[0]; };
@@ -212,112 +213,111 @@ namespace PathFD {
             return address;
         }
     };
-    // A*Ëã·¨
+    // A*ç®—æ³•
     class CFDAStar final : public IFDAlgorithm {
     public:
-        // ½Úµã
+        // èŠ‚ç‚¹
         struct NODE {
-            // ×ø±ê
+            // åæ ‡
             int16_t         x, y;
-            // ½ÚµãÉî¶È(gn)
+            // èŠ‚ç‚¹æ·±åº¦(gn)
             int16_t         gn;
-            // ½Úµã¼ÛÖµ(fh)
+            // èŠ‚ç‚¹ä»·å€¼(fh)
             int16_t         fh;
-            // ¸¸½Úµã
+            // çˆ¶èŠ‚ç‚¹
             const NODE*     parent;
         };
-        // ÁĞ±í
+        // åˆ—è¡¨
 #ifdef _DEBUG
         using List = std::list<CFDAStar::NODE>;
 #else
         using List = std::list<CFDAStar::NODE, AllocatorEx<CFDAStar::NODE>>;
 #endif
-        // ²Ù×÷
+        // æ“ä½œ
         using StepOp = impl::astar_step_op<CFDAStar>;
     public:
-        // ¹¹Ôìº¯Êı
+        // æ„é€ å‡½æ•°
         CFDAStar() noexcept;
-        // ÊÍ·Å¶ÔÏó
+        // é‡Šæ”¾å¯¹è±¡
         void Dispose() noexcept override { delete this; };
-        // Ö´ĞĞËã·¨, ·µ»ØÂ·¾¶(³É¹¦µÄ»°), ĞèÒªµ÷ÓÃÕßµ÷ÓÃstd::freeÊÍ·Å
+        // æ‰§è¡Œç®—æ³•, è¿”å›è·¯å¾„(æˆåŠŸçš„è¯), éœ€è¦è°ƒç”¨è€…è°ƒç”¨std::freeé‡Šæ”¾
         auto Execute(const PathFD::Finder& fd) noexcept->Path* override;
-        // ¿ÉÊÓ»¯²½½ø
+        // å¯è§†åŒ–æ­¥è¿›
         void BeginStep(const PathFD::Finder& fd) noexcept override;
-        // ¿ÉÊÓ»¯²½½ø
-        bool NextStep(void* cells, void* num) noexcept override;
-        // ½áÊø¿ÉÊÓ»¯²½½ø
+        // å¯è§†åŒ–æ­¥è¿›
+        bool NextStep(void* cells, void* num, bool refresh) noexcept override;
+        // ç»“æŸå¯è§†åŒ–æ­¥è¿›
         void EndStep() noexcept override;
     public:
-        // ÍË³ö
+        // é€€å‡º
         bool IsExit() const { return m_bExit; }
-        // Íê³É
+        // å®Œæˆ
         void SetFinished() { m_bFinished = true; }
     private:
-        // Îö¹¹º¯Êı
+        // ææ„å‡½æ•°
         ~CFDAStar() noexcept;
     private:
-        // ²Ù×÷Êı¾İ
+        // æ“ä½œæ•°æ®
         StepOp                  m_opStep;
-        // Ïß³ÌÊı¾İ
+        // çº¿ç¨‹æ•°æ®
         PathFD::Finder          m_fdData;
-        // Ö´ĞĞÏß³Ì
+        // æ‰§è¡Œçº¿ç¨‹
         std::thread             m_thdStep;
-        // ÍË³öĞÅºÅ
+        // é€€å‡ºä¿¡å·
         std::atomic_bool        m_bExit = false;
-        // ÍË³öĞÅºÅ
+        // é€€å‡ºä¿¡å·
         std::atomic_bool        m_bFinished = false;
-        // ¿ÉÊÓ»¯½×¶Î
-        uint16_t                m_uPhase = 0;
+        // å¯è§†åŒ–é˜¶æ®µ
+        uint8_t                 m_uPhase = 0;
+        // 8æ–¹å‘
+        bool                    m_unused;
     };
 }
 
 
 /// <summary>
-/// ´´½¨A*Ëã·¨
+/// åˆ›å»ºA*ç®—æ³•
 /// </summary>
-/// <returns>A*Ëã·¨½Ó¿Ú</returns>
+/// <returns>A*ç®—æ³•æ¥å£</returns>
 auto PathFD::CreateAStarAlgorithm() noexcept -> IFDAlgorithm* {
-    return new(std::nothrow) PathFD::CFDAStar;
+    return new(std::nothrow) PathFD::CFDAStar();
 }
 
 
 /// <summary>
-/// <see cref="CFDAStar"/> Àà¹¹Ôìº¯Êı
+/// <see cref="CFDAStar"/> ç±»æ„é€ å‡½æ•°
 /// </summary>
-PathFD::CFDAStar::CFDAStar() noexcept : m_opStep(*this) {
+PathFD::CFDAStar::CFDAStar() noexcept : m_opStep(*this){
 
 }
 
 
-// pathfd::impl ÃüÃû¿Õ¼ä
+// pathfd::impl å‘½åç©ºé—´
 namespace PathFD { namespace impl {
-    // ÕÒµ½Â·¾¶
+    // æ‰¾åˆ°è·¯å¾„
     auto path_found(const PathFD::CFDAStar::List& close_list) noexcept {
         assert(!close_list.empty());
-        size_t size = size_t(close_list.front().gn);
-#ifdef _DEBUG
-        size_t debug_count = 0;
+        // åŒ…æ‹¬ç»ˆç‚¹
+        size_t size = 0;
         {
             const auto* itr = &close_list.front();
-            while (itr->parent) {
-                ++debug_count;
+            while (itr->parent != itr) {
+                ++size;
                 itr = itr->parent;
             }
         }
-        assert(debug_count == size);
-#endif
         {
-            // ÉêÇë¿Õ¼ä
+            // ç”³è¯·ç©ºé—´
             auto* path = reinterpret_cast<PathFD::Path*>(std::malloc(
                 sizeof(PathFD::Path) + sizeof(PathFD::Path::pt[0]) * size
             ));
-            // ÓĞĞ§
+            // æœ‰æ•ˆ
             if (path) {
                 path->len = uint32_t(size);
                 auto pp = path->pt + size;
-                // ±éÀú¼ì²é
+                // éå†æ£€æŸ¥
                 const auto* itr = &close_list.front();
-                while (itr->parent) {
+                while (itr->parent != itr) {
                     --pp;
                     pp->x = itr->x;
                     pp->y = itr->y;
@@ -327,28 +327,32 @@ namespace PathFD { namespace impl {
             return path;
         }
     }
-    // Ñ°ÕÒÂ·¾¶ex
+    // å¯»æ‰¾è·¯å¾„ex
     template<typename OP>
     auto a_star_find_ex(OP& op, const PathFD::Finder& fd) {
-        // ÆğµãÖÕµãÊı¾İ
+        // åŠ é”
+        op.lock();
+        // 8æ–¹å‘
+        auto direction8 = fd.dir8;
+        // èµ·ç‚¹ç»ˆç‚¹æ•°æ®
         const int16_t sx = fd.startx;
         const int16_t sy = fd.starty;
         const int16_t gx = fd.goalx;
         const int16_t gy = fd.goaly;
-        // ±éÀú¹ıÊı¾İ
+        // éå†è¿‡æ•°æ®
         auto visited = std::make_unique<uint8_t[]>(fd.width * fd.height);
         std::memset(visited.get(), 0, sizeof(uint8_t) * fd.width * fd.height);
-        // ±ê¼ÇĞèÒªÊı¾İ
+        // æ ‡è®°éœ€è¦æ•°æ®
         auto mk_ptr = visited.get(); int16_t mk_width = fd.width;
-        // ±ê¼Ç±éÀú
+        // æ ‡è®°éå†
         auto mark_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
             mk_ptr[x + y * mk_width] = true;
         };
-        // ¼ì²é±ê¼Ç
+        // æ£€æŸ¥æ ‡è®°
         auto check_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
             return mk_ptr[x + y * mk_width];
         };
-        // ¹ÀÖµº¯Êı f(n)=g(n)+h(n)
+        // ä¼°å€¼å‡½æ•° f(n)=g(n)+h(n)
         auto hn = [=](int16_t x, int16_t y) noexcept -> int16_t {
 #if 0
             auto xxx = std::abs(x - gx);
@@ -357,10 +361,10 @@ namespace PathFD { namespace impl {
             auto minone = std::min(xxx, yyy);
             return minone * 3 + (maxone - minone) * 2;
 #else
-            return std::abs(x - gx) + std::abs(y - gy);
+            return (std::abs(x - gx) + std::abs(y - gy));
 #endif
         };
-        // ¼ì²éÍ¨ĞĞ
+        // æ£€æŸ¥é€šè¡Œ
         auto cp_ptr = fd.data; int16_t cp_width = fd.width; int16_t cp_height = fd.height;
         auto check_pass = [cp_ptr, cp_width, cp_height](int16_t x, int16_t y) noexcept {
             if (x >= 0 && x < cp_width && y >= 0 && y < cp_height) {
@@ -368,109 +372,121 @@ namespace PathFD { namespace impl {
             }
             return false;
         };
-        // ÆğµãÊı¾İ
+        // èµ·ç‚¹æ•°æ®
         CFDAStar::NODE start; 
         start.x = sx; start.y = sy;
         start.gn = 0;
         start.fh = hn(start.x, start.y);
-        start.parent = nullptr;
-        // ÖÕµãÊı¾İ
+        start.parent = &start;
+        // ç»ˆç‚¹æ•°æ®
         struct { decltype(start.x) x, y; } end;
         end.x = gx; end.y = gy;
-        // Æğµã¼ÓÈëOPEN±í
+        // èµ·ç‚¹åŠ å…¥OPENè¡¨
         CFDAStar::List open, close; open.push_back(start);
         mark_visited(start.x, start.y);
-
-        // Îª²Ù×÷ÉèÖÃ±íÊı¾İ
+        // ä¸ºæ“ä½œè®¾ç½®è¡¨æ•°æ®
         op.set_open_list(open); op.set_close_list(close);
-        // Îª¿ÕËã·¨Ê§°Ü
+        // è§£é”
+        op.unlock();
+        // ä¸ºç©ºç®—æ³•å¤±è´¥
         while (!open.empty() && op.go_on()) {
-            // ¼ÓËø
+            // åŠ é”
             op.lock();
-            // ´Ó±íÍ·È¡Ò»¸ö½áµã Ìí¼Óµ½CLOSE±í
+            // ä»è¡¨å¤´å–ä¸€ä¸ªç»“ç‚¹ æ·»åŠ åˆ°CLOSEè¡¨
             close.push_front(open.front());
-            // ÊÂ¼ş´¦Àí
+            // äº‹ä»¶å¤„ç†
             op.get_node(close.front());
-            // µ¯³ö
+            // å¼¹å‡º
             open.pop_front();
-            // »ñÈ¡
+            // è·å–
             const auto& node = close.front();
-            // ½âËø
+            // è§£é”
             op.unlock();
-            // Ä¿±ê½â
+            // ç›®æ ‡è§£
             if (node.x == end.x && node.y == end.y) {
-                // ¼ÓËø
+                // åŠ é”
                 impl::auto_locker<OP> locker(op);
-                // ·µ»Ø
+                // è¿”å›
                 return op.found(close);
             }
-            // Ìí¼Ó
+            // æ·»åŠ 
             auto insert2 = [&](const CFDAStar::NODE& node) {
-                // ±È×îºóµÄ¶¼´ó?
+                // æ¯”æœ€åçš„éƒ½å¤§?
                 if (open.empty() || node.fh >= open.back().fh) {
-                    // Ìí¼Óµ½×îºó
+                    // æ·»åŠ åˆ°æœ€å
                     open.push_back(node);
                     return;
                 }
-                // Ìí¼Ó½Úµã
+                // æ·»åŠ èŠ‚ç‚¹
                 for (auto itr = open.begin(); itr != open.end(); ++itr) {
                     if (node.fh <= itr->fh) {
                         open.insert(++itr, node);
                         return;
                     }
                 }
-                // ²»¿ÉÄÜ
+                // ä¸å¯èƒ½
                 assert(!"Impossible ");
             };
-            // ÒÆ¶¯
+            // ç§»åŠ¨
             auto moveto = [&](int16_t xplus, int16_t yplus) {
                 CFDAStar::NODE tmp; 
                 tmp.x = node.x + xplus; 
                 tmp.y = node.y + yplus; 
-                // ¿ÉÒÔÍ¨ĞĞ ²¢ÇÒÃ»ÓĞ±éÀú¹ı
+                // å¯ä»¥é€šè¡Œ å¹¶ä¸”æ²¡æœ‰éå†è¿‡
                 if (check_pass(tmp.x, tmp.y) && !check_visited(tmp.x, tmp.y)) {
-                    // ±ê¼Ç
+                    // æ ‡è®°
                     mark_visited(tmp.x, tmp.y);
-                    // ¼ÇÂ¼¸¸½ÚµãÎ»ÖÃ
+                    // è®°å½•çˆ¶èŠ‚ç‚¹ä½ç½®
                     tmp.parent = &node;
-                    // ¼ÆËãg(n)
+                    // è®¡ç®—g(n)
                     tmp.gn = node.gn + 1;
                     // f(n) = g(n) + h(n)
                     tmp.fh = tmp.gn + hn(tmp.x, tmp.y);
-                    // ¼ÓËø
+                    // åŠ é”
                     impl::auto_locker<OP> locker(op);
-                    // Ìí¼Ó
+                    // æ·»åŠ 
                     insert2(tmp);
                 }
             };
-            // ÄÏ
+            // å—
             moveto( 0,+1);
-            // Î÷
+            // è¥¿
             moveto(-1, 0);
-            // ¶«
+            // ä¸œ
             moveto(+1, 0);
-            // ±±
+            // åŒ—
             moveto( 0,-1);
-            // µÈ´ıÒ»²½
+            // 8æ–¹å‘
+            if (direction8) {
+                // è¥¿å—
+                moveto(-1,+1);
+                // ä¸œå—
+                moveto(+1,+1);
+                // è¥¿åŒ—
+                moveto(-1,-1);
+                // ä¸œåŒ—
+                moveto(+1,-1);
+            }
+            // ç­‰å¾…ä¸€æ­¥
             op.wait();
         }
-        // ¼ÓËø
+        // åŠ é”
         impl::auto_locker<OP> locker(op);
-        // Ê§°Ü
+        // å¤±è´¥
         return op.failed();
     }
 }}
 
 
-// Ö´ĞĞËã·¨
+// æ‰§è¡Œç®—æ³•
 auto PathFD::CFDAStar::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
-    // ÕıÊ½´¦Àí
+    // æ­£å¼å¤„ç†
     try { impl::astar_op op; return impl::a_star_find_ex(op, fd); }
-    // ³öÏÖÒì³£
+    // å‡ºç°å¼‚å¸¸
     catch (...) { return nullptr; }
 }
 
-// ¿ÉÊÓ»¯²½½ø
+// å¯è§†åŒ–æ­¥è¿›
 void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
     assert(m_thdStep.joinable() == false);
     std::this_thread::yield();
@@ -485,20 +501,20 @@ void PathFD::CFDAStar::BeginStep(const PathFD::Finder& fd) noexcept {
     }
     catch (...) { m_opStep.failed(); }
 }
-// ¿ÉÊÓ»¯²½½ø
-bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
+// å¯è§†åŒ–æ­¥è¿›
+bool PathFD::CFDAStar::NextStep(void* cells, void* num, bool refresh) noexcept {
     assert(cells && "bad pointer");
-    // ½×¶Î0: ÏÔÊ¾
+    // é˜¶æ®µ0: æ˜¾ç¤º
     if (m_uPhase == 0) {
         //auto count = m_fdData.width * m_fdData.height;
-        {
+        if (refresh) {
             impl::color red;
             red.r = 1.f; red.g = 0.f; red.b = 0.f; red.a = 1.f;
             impl::color green;
             green.r = 0.f; green.g = 1.f; green.b = 0.f; green.a = 1.f;
-            // ¶ÁÈ¡Êı¾İ
+            // è¯»å–æ•°æ®
             m_opStep.lock();
-            // ÒÑ¾­½áÊø
+            // å·²ç»ç»“æŸ
             if (m_bFinished) {
                 m_opStep.unlock();
                 return true;
@@ -506,77 +522,59 @@ bool PathFD::CFDAStar::NextStep(void* cells, void* num) noexcept {
             assert(m_opStep.openlist && m_opStep.closelist);
             static uint32_t s_index;
             s_index = 0;
-            // ÏÔÊ¾½ÚµãÊı¾İ
+            // æ˜¾ç¤ºèŠ‚ç‚¹æ•°æ®
             auto nodedisplay = [num](const NODE& node) noexcept {
-                static const CharacterDirection DARRAY[] = {
-                    Direction_N, Direction_W,  Direction_S, Direction_E
-                };
-                // ¼ÆËã·½Ïò
-                auto cal_direction = [](int16_t x, int16_t y) noexcept {
-                    auto a = ((x + 1) >> 1);
-                    auto b = (y + 1);
-                    auto i = (a | b) + (a & b) * 2;
-                    assert(i < 4);
-                    return DARRAY[i];
-                };
-                // ¼ÆËã·½ÏòEx
-                auto cal_direction_ex = [&cal_direction](const NODE& node) noexcept {
-                    if (node.parent) {
-                        return cal_direction(node.parent->x - node.x, node.parent->y - node.y);
-                    }
-                    else {
-                        return Direction_NE;
-                    }
-                };
                 constexpr uint32_t COUNT = 3;
                 char buffer[sizeof(NodeDisplay) + sizeof(uint32_t) * COUNT];
                 auto& numdis = reinterpret_cast<NodeDisplay&>(*buffer);
-                // ÉèÖÃ
+                // è®¾ç½®
                 numdis.x = node.x;
                 numdis.y = node.y;
                 numdis.i = s_index++;
                 numdis.argc = COUNT;
-                // ½Úµã
-                numdis.d = cal_direction_ex(node);
+                // èŠ‚ç‚¹
+                numdis.d = PathFD::CaculateDirection(node.parent->x - node.x, node.parent->y - node.y);
                 // fh = 
                 numdis.argv[0] = node.fh;
                 // gn = 
                 numdis.argv[1] = node.gn;
                 // hn = 
                 numdis.argv[2] = node.fh - node.gn;
-                // ÏÔÊ¾Êı×Ö
+                // æ˜¾ç¤ºæ•°å­—
                 impl::set_node_display(num, &numdis);
             };
-            // ÎªOPEN±íÌí¼ÓºìÉ«
+            // ä¸ºOPENè¡¨æ·»åŠ çº¢è‰²
             for (const auto& node : (*m_opStep.openlist)) {
                 uint32_t index = node.x + node.y * m_fdData.width;
                 impl::set_cell_color(cells, index, red);
                 nodedisplay(node);
             }
-            // ÎªCLOSE±íÌí¼ÓÂÌÉ«
+            // ä¸ºCLOSEè¡¨æ·»åŠ ç»¿è‰²
             for (const auto& node : (*m_opStep.closelist)) {
                 uint32_t index = node.x + node.y * m_fdData.width;
                 impl::set_cell_color(cells, index, green);
                 nodedisplay(node);
             }
-            // ½âÊı¾İ·ÃÎÊËø
+            // è§£æ•°æ®è®¿é—®é”
             m_opStep.unlock();
         }
-        // ÌáÊ¾ÏÂÒ»²½
+        // æç¤ºä¸‹ä¸€æ­¥
         m_opStep.signal();
     }
     else {
-        impl::color blue;
-        blue.r = 1.f; blue.g = 1.f;  blue.b = 2.f; blue.a = 1.0f;
-        uint32_t index = m_opStep.nodex + m_opStep.nodey * m_fdData.width;
-        impl::set_cell_color(cells, index, blue);
+        if (refresh) {
+            impl::color blue;
+            blue.r = 1.f; blue.g = 1.f;  blue.b = 2.f; blue.a = 1.0f;
+            uint32_t index = m_opStep.nodex + m_opStep.nodey * m_fdData.width;
+            impl::set_cell_color(cells, index, blue);
+        }
     }
-    // ¸ü»»½×¶Î
+    // æ›´æ¢é˜¶æ®µ
     m_uPhase = !m_uPhase;
     return false;
 }
 
-// ½áÊø¿ÉÊÓ»¯²½½ø
+// ç»“æŸå¯è§†åŒ–æ­¥è¿›
 void PathFD::CFDAStar::EndStep() noexcept {
     assert(m_thdStep.joinable());
     m_bExit = true;
@@ -589,7 +587,7 @@ void PathFD::CFDAStar::EndStep() noexcept {
     catch (...) { }
 }
 
-// Îö¹¹º¯Êı
+// ææ„å‡½æ•°
 PathFD::CFDAStar::~CFDAStar() noexcept {
     m_opStep.signal();
     m_bExit = true;

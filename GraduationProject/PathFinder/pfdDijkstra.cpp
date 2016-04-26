@@ -1,4 +1,4 @@
-#include "pfdAlgorithm.h"
+ï»¿#include "pfdAlgorithm.h"
 #include "pdfImpl.h"
 
 #include <algorithm>
@@ -11,172 +11,175 @@
 
 /*
 
-Dijkstra Ëã·¨:
-  ÔÚtileµØÍ¼ÉÏ, DijkstraÆäÊµ¾ÍÊÇ¹ã¶ÈÓÅÏÈËã·¨
+Dijkstra ç®—æ³•:
+  åœ¨tileåœ°å›¾ä¸Š, Dijkstraå…¶å®å°±æ˜¯å¹¿åº¦ä¼˜å…ˆç®—æ³•
 
 */
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
     // impl
     namespace impl {
-        // ²½½ø²Ù×÷Àà
+        // æ­¥è¿›æ“ä½œç±»
         template<typename T> struct dijk_step_op {
-            // ÉèÖÃOPEN±í
+            // è®¾ç½®OPENè¡¨
             template<typename Y>inline void set_list(Y& l) {
                 list = &l;
             }
-            // ÉèÖÃOPEN±í
+            // è®¾ç½®OPENè¡¨
             inline void set_open_list_begin(size_t obegin) {
                 openbegin = obegin;
             }
-            // Â·¾¶ÒÑ¾­ÕÒµ½
+            // è·¯å¾„å·²ç»æ‰¾åˆ°
             template<typename Y> inline void found(const Y& list) {
                 parent.SetFinished();
             }
-            // ÊÇ·ñ¼ÌĞøÑ°ÕÒ
+            // æ˜¯å¦ç»§ç»­å¯»æ‰¾
             inline bool go_on() {
                 return !parent.IsExit();
             }
-            // Ñ°ÕÒÂ·¾¶Ê§°Ü
+            // å¯»æ‰¾è·¯å¾„å¤±è´¥
             inline void failed() {
                 parent.SetFinished();
             }
-            // ÌáÊ¾¼ÌĞøÖ´ĞĞ
+            // æç¤ºç»§ç»­æ‰§è¡Œ
             inline void signal() {
                 impl::signal(ev);
             }
-            // µÈ´ıÏÂÒ»²½Öè
+            // ç­‰å¾…ä¸‹ä¸€æ­¥éª¤
             inline void wait() {
                 impl::wait(ev);
             }
-            // Îª±í²Ù×÷¼ÓËø
+            // ä¸ºè¡¨æ“ä½œåŠ é”
             inline void lock() {
                 impl::lock(mx);
             }
-            // Îª±í²Ù×÷½âËø
+            // ä¸ºè¡¨æ“ä½œè§£é”
             inline void unlock() {
                 impl::unlock(mx);
             }
-            // ¹¹Ôì±¾Ààº¯Êı
+            // æ„é€ æœ¬ç±»å‡½æ•°
             dijk_step_op(T& parent) : parent(parent) {}
-            // ¹¹Ôì±¾Ààº¯Êı
+            // æ„é€ æœ¬ç±»å‡½æ•°
             ~dijk_step_op() { impl::destroy(ev); impl::destroy(mx);}
-            // ÊÂ¼ş
+            // äº‹ä»¶
             event               ev = impl::create_event();
-            // ·ÃÎÊËø
+            // è®¿é—®é”
             mutex               mx = impl::create_mutex();
-            // ¸¸¶ÔÏó
+            // çˆ¶å¯¹è±¡
             T&                  parent;
-            // OPEN±í
+            // OPENè¡¨
             typename T::List*   list = nullptr;
-            // OPEN±íÎ»ÖÃ
+            // OPENè¡¨ä½ç½®
             size_t              openbegin = 0;
         };
-        // ²Ù×÷Àà
+        // æ“ä½œç±»
         struct dijk_op {
-            // ÉèÖÃOPEN±í
+            // è®¾ç½®OPENè¡¨
             template<typename Y> inline void set_list(Y& list) {  }
-            // ÉèÖÃOPEN±í
+            // è®¾ç½®OPENè¡¨
             inline void set_open_list_begin(size_t obegin) { }
-            // »ñÈ¡Ò»¸ö½Úµã
+            // è·å–ä¸€ä¸ªèŠ‚ç‚¹
             template<typename Y> inline void get_node(const Y& node) { }
-            // Â·¾¶ÒÑ¾­ÕÒµ½
+            // è·¯å¾„å·²ç»æ‰¾åˆ°
             template<typename Y> inline auto found(const Y& list) {
                 return impl::path_found(list);
             }
-            // ÊÇ·ñ¼ÌĞøÑ°ÕÒ
+            // æ˜¯å¦ç»§ç»­å¯»æ‰¾
             inline bool go_on() { return true; }
-            // Ñ°ÕÒÂ·¾¶Ê§°Ü
+            // å¯»æ‰¾è·¯å¾„å¤±è´¥
             inline auto failed() ->Path* { return nullptr; }
-            // ÌáÊ¾¼ÌĞøÖ´ĞĞ
+            // æç¤ºç»§ç»­æ‰§è¡Œ
             inline void signal() { }
-            // µÈ´ıÏÂÒ»²½Öè
+            // ç­‰å¾…ä¸‹ä¸€æ­¥éª¤
             inline void wait() { }
-            // Îª±í²Ù×÷¼ÓËø
+            // ä¸ºè¡¨æ“ä½œåŠ é”
             inline void lock() { }
-            // Îª±í²Ù×÷½âËø
+            // ä¸ºè¡¨æ“ä½œè§£é”
             inline void unlock() { }
         };
     }
-    // DijkstraËã·¨
+    // Dijkstraç®—æ³•
     class CFDDijkstra final : public IFDAlgorithm {
     public:
-        // ½Úµã
+        // èŠ‚ç‚¹
         struct NODE {
-            // ×ø±ê
+            // åæ ‡
             int16_t         x, y;
-            // ¸¸½Úµã×ø±êÏà¼Ó
+            // çˆ¶èŠ‚ç‚¹åæ ‡ç›¸åŠ 
             int8_t          px, py;
-            // ²½Êı
+            // æ­¥æ•°
             int16_t         step;
         };
-        // ÁĞ±í
+        // åˆ—è¡¨
         using List = std::vector<CFDDijkstra::NODE>;
-        // ²Ù×÷
+        // æ“ä½œ
         using StepOp = impl::dijk_step_op<CFDDijkstra>;
     public:
-        // ¹¹Ôìº¯Êı
+        // æ„é€ å‡½æ•°
         CFDDijkstra() noexcept;
-        // ÊÍ·Å¶ÔÏó
+        // é‡Šæ”¾å¯¹è±¡
         void Dispose() noexcept override { delete this; };
-        // Ö´ĞĞËã·¨, ·µ»ØÂ·¾¶(³É¹¦µÄ»°), ĞèÒªµ÷ÓÃÕßµ÷ÓÃstd::freeÊÍ·Å
+        // æ‰§è¡Œç®—æ³•, è¿”å›è·¯å¾„(æˆåŠŸçš„è¯), éœ€è¦è°ƒç”¨è€…è°ƒç”¨std::freeé‡Šæ”¾
         auto Execute(const PathFD::Finder& fd) noexcept->Path* override;
-        // ¿ÉÊÓ»¯²½½ø
+        // å¯è§†åŒ–æ­¥è¿›
         void BeginStep(const PathFD::Finder& fd) noexcept override;
-        // ¿ÉÊÓ»¯²½½ø
-        bool NextStep(void* cells, void* num) noexcept override;
-        // ½áÊø¿ÉÊÓ»¯²½½ø
+        // å¯è§†åŒ–æ­¥è¿›
+        bool NextStep(void* cells, void* num, bool refresh) noexcept override;
+        // ç»“æŸå¯è§†åŒ–æ­¥è¿›
         void EndStep() noexcept override;
     public:
-        // ÍË³ö
+        // é€€å‡º
         bool IsExit() const { return m_bExit; }
-        // Íê³É
+        // å®Œæˆ
         void SetFinished() { m_bFinished = true; }
     private:
-        // Îö¹¹º¯Êı
+        // ææ„å‡½æ•°
         ~CFDDijkstra() noexcept;
     private:
-        // ²Ù×÷Êı¾İ
+        // æ“ä½œæ•°æ®
         StepOp                  m_opStep;
-        // Ïß³ÌÊı¾İ
+        // çº¿ç¨‹æ•°æ®
         PathFD::Finder          m_fdData;
-        // Ö´ĞĞÏß³Ì
+        // æ‰§è¡Œçº¿ç¨‹
         std::thread             m_thdStep;
-        // ÍË³öĞÅºÅ
+        // é€€å‡ºä¿¡å·
         std::atomic_bool        m_bExit = false;
-        // ÍË³öĞÅºÅ
+        // é€€å‡ºä¿¡å·
         std::atomic_bool        m_bFinished = false;
+        // 8æ–¹å‘
+        bool                    m_unused[2];
     };
 }
 
 
 /// <summary>
-/// ´´½¨A*Ëã·¨
+/// åˆ›å»ºA*ç®—æ³•
 /// </summary>
-/// <returns>A*Ëã·¨½Ó¿Ú</returns>
+/// <returns>A*ç®—æ³•æ¥å£</returns>
 auto PathFD::CreateDijkstraAlgorithm() noexcept -> IFDAlgorithm* {
-    return new(std::nothrow) PathFD::CFDDijkstra;
+    return new(std::nothrow) PathFD::CFDDijkstra();
 }
 
 
 /// <summary>
-/// <see cref="CFDDijkstra"/> Àà¹¹Ôìº¯Êı
+/// <see cref="CFDDijkstra"/> ç±»æ„é€ å‡½æ•°
 /// </summary>
 PathFD::CFDDijkstra::CFDDijkstra() noexcept : m_opStep(*this) {
 
 }
 
 
-// pathfd::impl ÃüÃû¿Õ¼ä
+// pathfd::impl å‘½åç©ºé—´
 namespace PathFD { namespace impl {
-    // ÕÒµ½Â·¾¶
+    // æ‰¾åˆ°è·¯å¾„
     auto path_found(const PathFD::CFDDijkstra::List& list) noexcept {
         assert(!list.empty());
-        size_t size = size_t(list.back().step);
+        // åŒ…æ‹¬èµ·å§‹ç‚¹
+        size_t size = size_t(list.back().step) + 1;
         assert(size);
         auto noop = list.crend();
-        // ²éÕÒ½áµã
+        // æŸ¥æ‰¾ç»“ç‚¹
         auto find_node = [noop](decltype(noop)& itr) noexcept -> decltype(noop)& {
             const auto& node = *itr;
             decltype(node.x) parentx = node.x + node.px;
@@ -194,51 +197,55 @@ namespace PathFD { namespace impl {
         size_t debug_count = 0;
         {
             auto itr = list.crbegin();
-            while (find_node(itr) != noop) ++debug_count;
+            do { ++debug_count; } while (find_node(itr) != noop);
         }
         assert(debug_count == size);
 #endif
         {
-            // ÉêÇë¿Õ¼ä
+            // ç”³è¯·ç©ºé—´
             auto* path = reinterpret_cast<PathFD::Path*>(std::malloc(
                 sizeof(PathFD::Path) + sizeof(PathFD::Path::pt[0]) * size
             ));
-            // ÓĞĞ§
+            // æœ‰æ•ˆ
             if (path) {
                 path->len = uint32_t(size);
                 auto pp = path->pt + size;
                 auto itr = list.crbegin();
-                while (find_node(itr) != noop) {
+                do {
                     --pp;
                     pp->x = itr->x;
                     pp->y = itr->y;
-                }
+                } while (find_node(itr) != noop);
             }
             return path;
         }
     }
-    // Ñ°ÕÒÂ·¾¶ex
+    // å¯»æ‰¾è·¯å¾„ex
     template<typename OP>
     auto dijk_find_ex(OP& op, const PathFD::Finder& fd) {
-        // ÆğµãÖÕµãÊı¾İ
+        // åŠ é”
+        op.lock();
+        // 8æ–¹å‘
+        auto direction8 = fd.dir8;
+        // èµ·ç‚¹ç»ˆç‚¹æ•°æ®
         const int16_t sx = fd.startx;
         const int16_t sy = fd.starty;
         const int16_t gx = fd.goalx;
         const int16_t gy = fd.goaly;
-        // ±éÀú¹ıÊı¾İ
+        // éå†è¿‡æ•°æ®
         auto visited = std::make_unique<uint8_t[]>(fd.width * fd.height);
         std::memset(visited.get(), 0, sizeof(uint8_t) * fd.width * fd.height);
-        // ±ê¼ÇĞèÒªÊı¾İ
+        // æ ‡è®°éœ€è¦æ•°æ®
         auto mk_ptr = visited.get(); int16_t mk_width = fd.width;
-        // ±ê¼Ç±éÀú
+        // æ ‡è®°éå†
         auto mark_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
             mk_ptr[x + y * mk_width] = true;
         };
-        // ¼ì²é±ê¼Ç
+        // æ£€æŸ¥æ ‡è®°
         auto check_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
             return mk_ptr[x + y * mk_width];
         };
-        // ¼ì²éÍ¨ĞĞ
+        // æ£€æŸ¥é€šè¡Œ
         auto cp_ptr = fd.data; int16_t cp_width = fd.width; int16_t cp_height = fd.height;
         auto check_pass = [cp_ptr, cp_width, cp_height](int16_t x, int16_t y) noexcept {
             if (x >= 0 && x < cp_width && y >= 0 && y < cp_height) {
@@ -246,91 +253,104 @@ namespace PathFD { namespace impl {
             }
             return false;
         };
-        // ÆğµãÊı¾İ
+        // èµ·ç‚¹æ•°æ®
         CFDDijkstra::NODE start; 
         start.x = sx; start.y = sy;
         start.px = 0; start.py = 0; start.step = 0;
-        // ÖÕµãÊı¾İ
+        // ç»ˆç‚¹æ•°æ®
         struct { decltype(start.x) x, y; } end;
         end.x = gx; end.y = gy;
-        // Æğµã¼ÓÈëOPEN±í
+        // èµ·ç‚¹åŠ å…¥OPENè¡¨
         CFDDijkstra::List list;
         mark_visited(start.x, start.y);
         constexpr size_t reserved = 1024 * 64;
         list.reserve(reserved);
         list.push_back(start);
-        // OPENÆğÊ¼Î»ÖÃ
+        // OPENèµ·å§‹ä½ç½®
         size_t open_begin_index = 0;
-        // OPENÖÕµãÎ»ÖÃ
+        // OPENç»ˆç‚¹ä½ç½®
         size_t open_end_index = 1;
-        // Îª²Ù×÷ÉèÖÃ±íÊı¾İ
+        // ä¸ºæ“ä½œè®¾ç½®è¡¨æ•°æ®
         op.set_list(list);
-        // Îª¿ÕËã·¨Ê§°Ü
+        // è§£é”
+        op.unlock();
+        // ä¸ºç©ºç®—æ³•å¤±è´¥
         while (!list.empty() && op.go_on()) {
-            // ´Ó±íÈ¡Ò»¸ö½áµã
+            // ä»è¡¨å–ä¸€ä¸ªç»“ç‚¹
             for (auto i = open_begin_index; i != open_end_index; ++i) {
-                // ´Ó±íÈ¡Ò»¸ö½áµã, µü´úÆ÷¿ÉÄÜÊ§Ğ§
+                // ä»è¡¨å–ä¸€ä¸ªç»“ç‚¹, è¿­ä»£å™¨å¯èƒ½å¤±æ•ˆ
                 const auto node = list[i];
-                // Ä¿±ê½â
+                // ç›®æ ‡è§£
                 if (node.x == end.x && node.y == end.y) {
-                    // ¼ÓËø
+                    // åŠ é”
                     impl::auto_locker<OP> locker(op);
-                    // ÖØÖÃ´óĞ¡
+                    // é‡ç½®å¤§å°
                     list.resize(i + 1);
-                    // ½â
+                    // è§£
                     return op.found(list);
                 }
-                // ÒÆ¶¯
+                // ç§»åŠ¨
                 auto moveto = [&](int8_t xplus, int8_t yplus) {
                     CFDDijkstra::NODE tmp; 
                     tmp.x = node.x + xplus; tmp.y = node.y + yplus; 
-                    // ¿ÉÒÔÍ¨ĞĞ ²¢ÇÒÃ»ÓĞ±éÀú¹ı
+                    // å¯ä»¥é€šè¡Œ å¹¶ä¸”æ²¡æœ‰éå†è¿‡
                     if (check_pass(tmp.x, tmp.y) && !check_visited(tmp.x, tmp.y)) {
-                        // ±ê¼Ç
+                        // æ ‡è®°
                         mark_visited(tmp.x, tmp.y);
-                        // ¼ÇÂ¼¸¸½ÚµãÎ»ÖÃ
+                        // è®°å½•çˆ¶èŠ‚ç‚¹ä½ç½®
                         tmp.px = -xplus; tmp.py = -yplus;
-                        // ²½Êı
+                        // æ­¥æ•°
                         tmp.step = node.step + 1;
-                        // ¼ÓËø
+                        // åŠ é”
                         impl::auto_locker<OP> locker(op);
-                        // Ìí¼Óµ½×îºó
+                        // æ·»åŠ åˆ°æœ€å
                         list.push_back(tmp);
                     }
                 };
-                // ÄÏ
+                // å—
                 moveto( 0,+1);
-                // Î÷
+                // è¥¿
                 moveto(-1, 0);
-                // ¶«
+                // ä¸œ
                 moveto(+1, 0);
-                // ±±
+                // åŒ—
                 moveto( 0,-1);
+                // 8æ–¹å‘
+                if (direction8) {
+                    // è¥¿å—
+                    moveto(-1,+1);
+                    // ä¸œå—
+                    moveto(+1,+1);
+                    // è¥¿åŒ—
+                    moveto(-1,-1);
+                    // ä¸œåŒ—
+                    moveto(+1,-1);
+                }
             }
-            // Ğ´ÈëÊı¾İ
+            // å†™å…¥æ•°æ®
             open_begin_index = open_end_index;
             open_end_index = list.size();
             op.set_open_list_begin(open_begin_index);
-            // µÈ´ıÒ»²½
+            // ç­‰å¾…ä¸€æ­¥
             op.wait();
         }
-        // ¼ÓËø
+        // åŠ é”
         impl::auto_locker<OP> locker(op);
-        // Ê§°Ü
+        // å¤±è´¥
         return op.failed();
     }
 }}
 
 
-// Ö´ĞĞËã·¨
+// æ‰§è¡Œç®—æ³•
 auto PathFD::CFDDijkstra::Execute(const PathFD::Finder& fd) noexcept -> PathFD::Path* {
-    // ÕıÊ½´¦Àí
+    // æ­£å¼å¤„ç†
     try { impl::dijk_op op; return impl::dijk_find_ex(op, fd); }
-    // ³öÏÖÒì³£
+    // å‡ºç°å¼‚å¸¸
     catch (...) { return nullptr; }
 }
 
-// ¿ÉÊÓ»¯²½½ø
+// å¯è§†åŒ–æ­¥è¿›
 void PathFD::CFDDijkstra::BeginStep(const PathFD::Finder& fd) noexcept {
     assert(m_thdStep.joinable() == false);
     std::this_thread::yield();
@@ -345,75 +365,67 @@ void PathFD::CFDDijkstra::BeginStep(const PathFD::Finder& fd) noexcept {
     }
     catch (...) { m_opStep.failed(); }
 }
-// ¿ÉÊÓ»¯²½½ø
-bool PathFD::CFDDijkstra::NextStep(void* cells, void* num) noexcept {
+// å¯è§†åŒ–æ­¥è¿›
+bool PathFD::CFDDijkstra::NextStep(void* cells, void* num, bool refresh) noexcept {
     assert(cells && "bad pointer");
-    // ½áÊø¾ÍÌáÇ°·µ»Ø
-    if (m_bFinished) return true;
     //auto count = m_fdData.width * m_fdData.height;
-    {
+    if (refresh) {
         impl::color red;
         red.r = 1.f; red.g = 0.f; red.b = 0.f; red.a = 1.f;
         impl::color green;
         green.r = 0.f; green.g = 1.f; green.b = 0.f; green.a = 1.f;
-        // ¶ÁÈ¡Êı¾İ
+        // è¯»å–æ•°æ®
         m_opStep.lock();
+        // å·²ç»ç»“æŸ
+        if (m_bFinished) {
+            m_opStep.unlock();
+            return true;
+        }
         assert(m_opStep.list);
         static uint32_t s_index;
         s_index = 0;
-        // ÏÔÊ¾½ÚµãÊı¾İ
+        // æ˜¾ç¤ºèŠ‚ç‚¹æ•°æ®
         auto nodedisplay = [num](const NODE& node) noexcept {
-            static const CharacterDirection DARRAY[] = {
-                Direction_N, Direction_W,  Direction_S, Direction_E
-            };
-            // ¼ÆËã·½Ïò
-            auto cal_direction = [](int16_t x, int16_t y) noexcept {
-                auto a = ((x + 1) >> 1);
-                auto b = (y + 1);
-                auto i = (a | b) + (a & b) * 2;
-                assert(i < 4);
-                return DARRAY[i];
-            };
             constexpr uint32_t COUNT = 1;
             char buffer[sizeof(NodeDisplay) + sizeof(uint32_t) * COUNT];
             auto& numdis = reinterpret_cast<NodeDisplay&>(*buffer);
-            // ÉèÖÃ
+            // è®¾ç½®
             numdis.x = node.x;
             numdis.y = node.y;
             numdis.i = s_index++;
             numdis.argc = COUNT;
-            // ½Úµã
-            numdis.d = cal_direction(node.px, node.py);
+            // èŠ‚ç‚¹
+            numdis.d = PathFD::CaculateDirection(node.px, node.py);
             // gn = 
-            numdis.argv[0] = 0;
-            // ÏÔÊ¾Êı×Ö
+            numdis.argv[0] = node.step;
+            // æ˜¾ç¤ºæ•°å­—
             impl::set_node_display(num, &numdis);
         };
         auto& list = *m_opStep.list;
         auto openbegin = list.begin() + m_opStep.openbegin;
-        // ÎªCLOSE±íÌí¼ÓÂÌÉ«
+        // ä¸ºCLOSEè¡¨æ·»åŠ ç»¿è‰²
         for (auto itr = list.begin(); itr != openbegin; ++itr) {
             const auto& node = *itr;
             uint32_t index = node.x + node.y * m_fdData.width;
             impl::set_cell_color(cells, index, green);
             nodedisplay(node);
         }
-        // ÎªOPEN±íÌí¼ÓºìÉ«
+        // ä¸ºOPENè¡¨æ·»åŠ çº¢è‰²
         for (auto itr = openbegin; itr != list.end(); ++itr) {
             const auto& node = *itr;
             uint32_t index = node.x + node.y * m_fdData.width;
             impl::set_cell_color(cells, index, red);
             nodedisplay(node);
         }
-        // ½âÊı¾İ·ÃÎÊËø
+        // è§£æ•°æ®è®¿é—®é”
         m_opStep.unlock();
     }
-    // ÌáÊ¾ÏÂÒ»²½
+    // æç¤ºä¸‹ä¸€æ­¥
     m_opStep.signal();
     return false;
 }
 
-// ½áÊø¿ÉÊÓ»¯²½½ø
+// ç»“æŸå¯è§†åŒ–æ­¥è¿›
 void PathFD::CFDDijkstra::EndStep() noexcept {
     assert(m_thdStep.joinable());
     m_bExit = true;
@@ -426,7 +438,7 @@ void PathFD::CFDDijkstra::EndStep() noexcept {
     catch (...) { }
 }
 
-// Îö¹¹º¯Êı
+// ææ„å‡½æ•°
 PathFD::CFDDijkstra::~CFDDijkstra() noexcept {
     m_opStep.signal();
     m_bExit = true;

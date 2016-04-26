@@ -1,20 +1,20 @@
-#include "pfdCharacter.h"
+ï»¿#include "pfdCharacter.h"
 #include <algorithm>
 #include <cassert>
 #include <memory>
 #undef min
 #undef max
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
-    // °²È«ÊÍ·Å
+    // å®‰å…¨é‡Šæ”¾
     template<class T> void SafeRelease(T*& iii) noexcept {
         if (iii) {
             iii->Release();
             iii = nullptr;
         }
     }
-    // °²È«ÒıÓÃ
+    // å®‰å…¨å¼•ç”¨
     template<class T> inline auto SafeAcquire(T* pInterfaceToRelease) {
         if (pInterfaceToRelease) {
             pInterfaceToRelease->AddRef();
@@ -24,7 +24,7 @@ namespace PathFD {
 }
 
 /// <summary>
-/// <see cref="CFDCharacter"/> Àà ¹¹Ôìº¯Êı
+/// <see cref="CFDCharacter"/> ç±» æ„é€ å‡½æ•°
 /// </summary>
 PathFD::CFDCharacter::CFDCharacter() noexcept {
 
@@ -32,7 +32,7 @@ PathFD::CFDCharacter::CFDCharacter() noexcept {
 
 
 /// <summary>
-/// ÊÍ·ÅÊı¾İ
+/// é‡Šæ”¾æ•°æ®
 /// </summary>
 /// <returns></returns>
 void PathFD::CFDCharacter::release_data() noexcept {
@@ -46,41 +46,41 @@ void PathFD::CFDCharacter::release_data() noexcept {
 
 
 /// <summary>
-/// ÖØÖÃµØÍ¼
+/// é‡ç½®åœ°å›¾
 /// </summary>
 /// <param name="data">The data.</param>
 /// <returns></returns>
 void PathFD::CFDCharacter::ResetMap(const MapData& data) noexcept {
-    // ¼ì²é²ÎÊı
+    // æ£€æŸ¥å‚æ•°
     assert(data.map_data && "bad map data");
     assert(data.map_width && "bad map width");
     assert(data.map_height && "bad map height");
     assert(data.cell_width && "bad cell width");
     assert(data.cell_height && "bad cell height");
-    // ¸³Öµ
+    // èµ‹å€¼
     m_map = data;
-    // Ë¢ĞÂ
+    // åˆ·æ–°
     this->refresh_position();
 }
 
 
 /// <summary>
-/// ÖØÖÃ½ÇÉ«Í¼Ïñ
+/// é‡ç½®è§’è‰²å›¾åƒ
 /// </summary>
 /// <param name="bitmap">The bitmap.</param>
 /// <returns></returns>
 void PathFD::CFDCharacter::ResetChar(ID2D1Bitmap1* bitmap, const CharData& data) noexcept {
-    // ¼ì²é²ÎÊı
+    // æ£€æŸ¥å‚æ•°
     assert(data.atime > 0.f && "bad action time");
     assert(data.speed > 0.f && "bad speed");
     assert(data.acount && "bad action count");
     assert(data.width && "bad character width");
     assert(data.height && "bad character height");
     assert(bitmap && "bad bitmap");
-    // ÊÍ·ÅÀÏÊı¾İ
+    // é‡Šæ”¾è€æ•°æ®
     PathFD::SafeRelease(m_pBitmap);
     if (m_pCharData) PathFD::FreeSmall(m_pCharData);
-    // ¸´ÖÆÊı¾İ
+    // å¤åˆ¶æ•°æ®
     m_pBitmap = PathFD::SafeAcquire(bitmap);
     const size_t len = sizeof(CharData) + sizeof(CharData::action[0]) * data.acount;
     m_pCharData = reinterpret_cast<CharData*>(PathFD::AllocSmall(len));
@@ -89,7 +89,7 @@ void PathFD::CFDCharacter::ResetChar(ID2D1Bitmap1* bitmap, const CharData& data)
 }
 
 /// <summary>
-/// ÖØÖÃäÖÈ¾Ä¿±ê³ÊÏÖÆ÷
+/// é‡ç½®æ¸²æŸ“ç›®æ ‡å‘ˆç°å™¨
 /// </summary>
 /// <param name="d2ddc">The D2DDC.</param>
 /// <returns></returns>
@@ -99,16 +99,16 @@ void PathFD::CFDCharacter::ResetRenderTarget(ID2D1DeviceContext2* d2ddc) noexcep
 }
 
 /// <summary>
-/// äÖÈ¾½ÇÉ«
+/// æ¸²æŸ“è§’è‰²
 /// </summary>
 /// <returns></returns>
 void PathFD::CFDCharacter::Render() const noexcept {
     if (!m_pCharData) return;
     const auto& chardata = *m_pCharData;
-    // ½ÇÉ«¿í¸ß
+    // è§’è‰²å®½é«˜
     const float charw = float(chardata.width);
     const float charh = float(chardata.height);
-    // ¼ÆËãÄ¿±ê¾ØĞÎ
+    // è®¡ç®—ç›®æ ‡çŸ©å½¢
     D2D1_RECT_F des;
     {
         des.left = m_fPosX;
@@ -116,24 +116,24 @@ void PathFD::CFDCharacter::Render() const noexcept {
         des.right = des.left + charw;
         des.bottom = des.top + charh;
     }
-    // ¼ÆËãÔ´¾ØĞÎ
+    // è®¡ç®—æºçŸ©å½¢
     D2D1_RECT_F src;
     {
-        // X×ø±êÊÇ¿¿"Ô´XÆ«ÒÆ"ºÍ"¶¯×÷"¼ÆËã 
+        // Xåæ ‡æ˜¯é "æºXåç§»"å’Œ"åŠ¨ä½œ"è®¡ç®— 
         src.left = float(
             chardata.src_offsetx +
             chardata.width * chardata.action[m_ixAction]
             );
-        // Y×ø±êÊÇ¿¿"Ô´XÆ«ÒÆ"ºÍ"³¯Ïò"¼ÆËã 
+        // Yåæ ‡æ˜¯é "æºXåç§»"å’Œ"æœå‘"è®¡ç®— 
         src.top = float(
             chardata.src_offsety +
             chardata.width * chardata.direction
             );
-        // ¿í¸ß¾ÍÊÇ½ÇÉ«¿í¸ß
+        // å®½é«˜å°±æ˜¯è§’è‰²å®½é«˜
         src.right = src.left + charw;
         src.bottom = src.top + charh;
     }
-    // ¿Ì»­Í¼Ïñ
+    // åˆ»ç”»å›¾åƒ
     m_pRenderTarget->DrawBitmap(
         m_pBitmap,
         &des,
@@ -151,28 +151,28 @@ void PathFD::CFDCharacter::Render() const noexcept {
 void PathFD::CFDCharacter::refresh_position() noexcept {
     const auto& chardata = *m_pCharData;
     DT dt = { 0,0 };
-    // ÒÆ¶¯ÖĞ
+    // ç§»åŠ¨ä¸­
     if (this->IsMoving()) dt = DIRECTION_OFFSET[m_dtMoving];
-    // TODO: XY×ø±ê»¹ÓĞµ¥Ôª¸ñºÍ½ÇÉ«´óĞ¡±È½Ï, ÕâÀïÄ¬ÈÏÒ»ÖÂ
+    // TODO: XYåæ ‡è¿˜æœ‰å•å…ƒæ ¼å’Œè§’è‰²å¤§å°æ¯”è¾ƒ, è¿™é‡Œé»˜è®¤ä¸€è‡´
     float x = float(dt.x) * m_fMoveOffset + float(m_map.char_x);
     float y = float(dt.y) * m_fMoveOffset + float(m_map.char_y);
-    // X×ø±êÊÇ¿¿"Ä¿±êXÆ«ÒÆ","XÎ»ÖÃ"ºÍ"ÒÆ¶¯Æ«ÒÆÁ¿"¼ÆËã
+    // Xåæ ‡æ˜¯é "ç›®æ ‡Xåç§»","Xä½ç½®"å’Œ"ç§»åŠ¨åç§»é‡"è®¡ç®—
     x = float(chardata.des_offsetx) + x * float(m_map.cell_width);
-    // Y×ø±êÊÇ¿¿"Ä¿±êYÆ«ÒÆ","YÎ»ÖÃ"ºÍ"ÒÆ¶¯Æ«ÒÆÁ¿"¼ÆËã
+    // Yåæ ‡æ˜¯é "ç›®æ ‡Yåç§»","Yä½ç½®"å’Œ"ç§»åŠ¨åç§»é‡"è®¡ç®—
     y = float(chardata.des_offsety) + y * float(m_map.cell_height);
-    // ĞèÒªË¢ĞÂ
+    // éœ€è¦åˆ·æ–°
     m_bNeedRefresh |= (int(x) != int(m_fPosX)) | (int(y) != int(m_fPosY));
-    // ¸üĞÂÊı¾İ
+    // æ›´æ–°æ•°æ®
     m_fPosX = x; m_fPosY = y;
 }
 
 /// <summary>
-/// Ë¢ĞÂ±¾¶ÔÏó
+/// åˆ·æ–°æœ¬å¯¹è±¡
 /// </summary>
 /// <returns></returns>
 bool PathFD::CFDCharacter::Update() noexcept {
     const auto& chardata = *m_pCharData;
-    // ÒÆ¶¯¼ÆËã
+    // ç§»åŠ¨è®¡ç®—
     if (this->IsMoving()) {
         m_fMoveOffset += PathFD::GetDeltaTime() * chardata.speed;
         this->refresh_position();
@@ -186,17 +186,17 @@ bool PathFD::CFDCharacter::Update() noexcept {
             this->EndAction();
         }
     }
-    // ¸üĞÂ¶¯×÷
+    // æ›´æ–°åŠ¨ä½œ
     if (m_bInAction) {
         m_fActionTime += PathFD::GetDeltaTime();
-        // Ë÷Òı¼ÆËã
+        // ç´¢å¼•è®¡ç®—
         auto findex = m_fActionTime / chardata.atime * float(chardata.acount);
         uint32_t index = uint32_t(findex);
         if (m_fActionTime > chardata.atime) {
             m_fActionTime = 0.f;
             index = chardata.acount - 1;
         }
-        // ÉèÖÃĞÂµÄË÷Òı
+        // è®¾ç½®æ–°çš„ç´¢å¼•
         if (index != m_ixAction) {
             m_ixAction = index;
             m_bNeedRefresh = true;
@@ -210,27 +210,27 @@ bool PathFD::CFDCharacter::Update() noexcept {
 }
 
 /// <summary>
-/// ½ÓÊÜÊäÈë
+/// æ¥å—è¾“å…¥
 /// </summary>
 /// <param name="d">The d.</param>
 /// <returns></returns>
 void PathFD::CFDCharacter::Input(CharacterDirection d) noexcept {
-    // ÒÆ¶¯ÖĞ
+    // ç§»åŠ¨ä¸­
     if (this->IsMoving()) return;
-    // ÊäÈëÓĞĞ§
+    // è¾“å…¥æœ‰æ•ˆ
     if (d != PathFD::Direction_Nil) {
         if (m_pCharData->direction != d) {
             m_pCharData->direction = d;
             m_bNeedRefresh = true;
         }
         assert(d < DIRECTION_SIZE);
-        // ¼ì²éÊÇ·ñ¿ÉÒÔÍ¨¹ı
+        // æ£€æŸ¥æ˜¯å¦å¯ä»¥é€šè¿‡
         auto dt = DIRECTION_OFFSET[d];
         uint32_t x = uint32_t(dt.x + int32_t(m_map.char_x));
         uint32_t y = uint32_t(dt.y + int32_t(m_map.char_y));
         if (x < m_map.map_width && y < m_map.map_height) {
             uint32_t index = x + y * m_map.map_width;
-            // ÔÊĞíÍ¨ĞĞ
+            // å…è®¸é€šè¡Œ
             if (m_map.map_data[index]) {
                 m_dtMoving = d;
                 this->BeginAction();
@@ -240,7 +240,7 @@ void PathFD::CFDCharacter::Input(CharacterDirection d) noexcept {
 }
 
 /// <summary>
-/// Ö´ĞĞ¶¯×÷
+/// æ‰§è¡ŒåŠ¨ä½œ
 /// </summary>
 void PathFD::CFDCharacter::BeginAction() {
     m_bInAction = true;
@@ -249,7 +249,7 @@ void PathFD::CFDCharacter::BeginAction() {
 }
 
 /// <summary>
-/// ½áÊø¶¯×÷
+/// ç»“æŸåŠ¨ä½œ
 /// </summary>
 void PathFD::CFDCharacter::EndAction() {
     m_bInAction = false;

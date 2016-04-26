@@ -1,241 +1,248 @@
-#pragma once
+ï»¿#pragma once
 
 #include <luibase.h>
 #include <luiconf.h>
 #include <Control/UIControl.h>
+#include <Control/UIRadioButton.h>
 #include <Platonly/luiPoHlper.h>
 #include "pfdCharacter.h"
 
-// ÎÄ¼ş¶Ô»°¿ò
+// æ–‡ä»¶å¯¹è¯æ¡†
 struct IFileDialog;
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
-    // Â·¾¶
+    // è·¯å¾„
     struct Path;
-    // Ëã·¨
+    // ç®—æ³•
     struct IFDAlgorithm;
-    // ÃÔ¹¬Éú²úËã·¨
+    // Finderæ•°æ®
+    struct Finder;
+    // è¿·å®«ç”Ÿäº§ç®—æ³•
     using DungeonGeneration = bool(*)(uint8_t* data, uint32_t w, uint32_t h, uint32_t []);
-    // Ä¬ÈÏÃÔ¹¬Éú²úËã·¨
+    // é»˜è®¤è¿·å®«ç”Ÿäº§ç®—æ³•
     bool DefaultGeneration(uint8_t* data, uint32_t w, uint32_t h, uint32_t []) noexcept;
-    // µØÍ¼¿Ø¼ş
+    // åœ°å›¾æ§ä»¶
     class UIMapControl final : public LongUI::UIControl {
-        // µã»÷
+        // ç‚¹å‡»
         enum ClickinType : uint16_t {
-            Type_Cell = 0,      // µ¥Ôª¸ñ
-            Type_Charactar,     // ½ÇÉ«¸ñ
-            Type_Start,         // Æğµã¸ñ
-            Type_Goal,          // ÖÕµã¸ñ
+            Type_Cell = 0,      // å•å…ƒæ ¼
+            Type_Charactar,     // è§’è‰²æ ¼
+            Type_Start,         // èµ·ç‚¹æ ¼
+            Type_Goal,          // ç»ˆç‚¹æ ¼
         };
-        // ¸¸Àà
+        // çˆ¶ç±»
         using Super = UIControl;
-        // Çå³ı¿Ø¼ş
+        // æ¸…é™¤æ§ä»¶
         virtual void cleanup() noexcept override;
-        // Ë«»÷°ïÖúÆ÷
+        // åŒå‡»å¸®åŠ©å™¨
         using DoubleClickHelper = LongUI::Helper::DoubleClick;
     public:
-        // Ñ¡Ôñ¿ò¿í¶È
+        // é€‰æ‹©æ¡†å®½åº¦
         static constexpr float  CEEL_SELECT_WIDTH = 4.f;
-        // ³£Á¿
+        // å¸¸é‡
         enum : uint32_t {
-            // µØÍ¼×î´ó¿í¶È
+            // åœ°å›¾æœ€å¤§å®½åº¦
             MAX_WIDTH = 1024,
-            // µØÍ¼×î´ó¸ß¶È
+            // åœ°å›¾æœ€å¤§é«˜åº¦
             MAX_HEIGHT = 1024,
-            // µØÍ¼µ¥Î»¿í¶È³õÊ¼»¯Öµ
+            // åœ°å›¾å•ä½å®½åº¦åˆå§‹åŒ–å€¼
             CELL_WIDTH_INIT = 32,
-            // µØÍ¼µ¥Î»¸ß¶È³õÊ¼»¯Öµ
+            // åœ°å›¾å•ä½é«˜åº¦åˆå§‹åŒ–å€¼
             CELL_HEIGHT_INIT = 32,
-            // Â·¾¶È¨ÖØ½Úµã¿í¶È
+            // è·¯å¾„æƒé‡èŠ‚ç‚¹å®½åº¦
             WEIGHT_NODE_BITMAP_WH = 1024,
-            // Êı×ÖÔ´XÆ«ÒÆ(ÏñËØ)
+            // æ•°å­—æºXåç§»(åƒç´ )
             DIGNUMNER_SRCX_OFFSET = 0,
-            // Êı×ÖÔ´YÆ«ÒÆ(ÏñËØ)
-            DIGNUMNER_SRCY_OFFSET = 32 * 2,
-            // Êı×Ö¿í¶È(ÏñËØ)
+            // æ•°å­—æºYåç§»(åƒç´ )
+            DIGNUMNER_SRCY_OFFSET = 32 * 3,
+            // æ•°å­—å®½åº¦(åƒç´ )
             DIGNUMNER_WIDTH = 4,
-            // Êı×Ö¸ß¶È(ÏñËØ)
+            // æ•°å­—é«˜åº¦(åƒç´ )
             DIGNUMNER_HEIGHT = 8,
-            // Êı×ÖÎ»Êı
+            // æ•°å­—ä½æ•°
             NUMCOUNT = 4,
-            // Êı×Ö±í¿í¶È(ÏñËØ)
+            // æ•°å­—è¡¨å®½åº¦(åƒç´ )
             NUMBERTABLE_WIDTH = 1024,
-            // Êı×Ö±í¸ß¶È(ÏñËØ)
+            // æ•°å­—è¡¨é«˜åº¦(åƒç´ )
             NUMBERTABLE_HEIGHT = 1024,
-            // Êı×Ö±íĞĞ¸öÊı
+            // æ•°å­—è¡¨è¡Œä¸ªæ•°
             LINECOUNT = NUMBERTABLE_WIDTH / NUMCOUNT / DIGNUMNER_WIDTH,
-            // ·½Ïò¼ıÍ·Ô´XÆ«ÒÆ(ÏñËØ)
+            // æ–¹å‘ç®­å¤´æºXåç§»(åƒç´ )
             DIRARROW_SRCX_OFFSET = 0,
-            // ·½Ïò¼ıÍ·Ô´YÆ«ÒÆ(ÏñËØ)
+            // æ–¹å‘ç®­å¤´æºYåç§»(åƒç´ )
             DIRARROW_SRCY_OFFSET = 32,
-            // ·½Ïò¼ıÍ·¿í¶È(ÏñËØ)
+            // æ–¹å‘ç®­å¤´å®½åº¦(åƒç´ )
             DIRARROW_SRC_WIDTH = 32,
-            // ·½Ïò¼ıÍ·¸ß¶È(ÏñËØ)
+            // æ–¹å‘ç®­å¤´é«˜åº¦(åƒç´ )
             DIRARROW_SRC_HEIGHT = 32,
         };
     public:
-        // äÖÈ¾ 
+        // æ¸²æŸ“ 
         virtual void Render() const noexcept override;
-        // Ë¢ĞÂ
+        // åˆ·æ–°
         virtual void Update() noexcept override;
-        // ÊÂ¼ş´¦Àí
+        // äº‹ä»¶å¤„ç†
         virtual bool DoEvent(const LongUI::EventArgument& arg) noexcept override;
-        // Êó±êÊÂ¼ş
+        // é¼ æ ‡äº‹ä»¶
         virtual bool DoMouseEvent(const LongUI::MouseEventArgument& arg) noexcept override;
-        // ÖØ½¨
+        // é‡å»º
         virtual auto Recreate() noexcept ->HRESULT override;
     public:
-        // ÔØÈëµØÍ¼
+        // è½½å…¥åœ°å›¾
         void LoadMap() noexcept;
-        // ÔØÈëµØÍ¼
+        // è½½å…¥åœ°å›¾
         void LoadMap(const wchar_t* filename) noexcept;
-        // ±£´æµØÍ¼
+        // ä¿å­˜åœ°å›¾
         void SaveMap() noexcept;
-        // ±£´æµØÍ¼
+        // ä¿å­˜åœ°å›¾
         void SaveMap(const wchar_t* filename) noexcept;
-        // ÇåÀíµØÍ¼
+        // æ¸…ç†åœ°å›¾
         void ClearMap() noexcept;
-        // µØÍ¼
+        // åœ°å›¾
         void GenerateMap(uint32_t width, uint32_t height) noexcept;
-        // ÖØÖÃµØÍ¼µ¥Î»´óĞ¡
+        // é‡ç½®åœ°å›¾å•ä½å¤§å°
         void ResizeCellSize(uint32_t width, uint32_t height) noexcept;
-        // Ëõ·ÅµØÍ¼
+        // ç¼©æ”¾åœ°å›¾
         void ZoomMapTo(float zoom, float time) noexcept;
-        // Ö´ĞĞÑ°Â·
+        // æ‰§è¡Œå¯»è·¯
         void Execute(IFDAlgorithm* algorithm, LongUI::CUIString& info) noexcept;
-        // ¿ªÊ¼ÑİÊ¾
+        // å¼€å§‹æ¼”ç¤º
         void BeginShow(IFDAlgorithm*&& algorithm) noexcept;
-        // Ö´ĞĞÏÂÒ»²½
+        // æ‰§è¡Œä¸‹ä¸€æ­¥
         void ExeNextStep() noexcept;
-        // ÔİÍ£»Ö¸´
+        // æš‚åœæ¢å¤
         void PauseResume() noexcept;
-        // ÉèÖÃ²½½ø¼ä¸ôÊ±¼ä
+        // è®¾ç½®æ­¥è¿›é—´éš”æ—¶é—´
         void SetStepDeltaTime(float time) noexcept;
-        // ÉèÖÃ½ÚµãÏÔÊ¾
+        // è®¾ç½®èŠ‚ç‚¹æ˜¾ç¤º
         void SetNodeDisplay(const NodeDisplay& num) noexcept;
-        // ÉèÖÃÏÔÊ¾½Úµã¹ØÏµ
+        // è®¾ç½®æ˜¾ç¤ºèŠ‚ç‚¹å…³ç³»
         void SetDisplayNodeShip(bool ship) noexcept { m_bDisplayNodeShip = ship; }
-        // ÉèÖÃÇ¿ÖÆË¢ĞÂ
+        // è®¾ç½®å¼ºåˆ¶åˆ·æ–°
         void SetFlushOut(bool flush) noexcept { m_bFlushOut = flush; }
     public:
-        // ¹¹Ôìº¯Êı
+        // æ„é€ å‡½æ•°
         UIMapControl(LongUI::UIContainer* cp) noexcept;
-        // ´´½¨¿Ø¼ş
+        // åˆ›å»ºæ§ä»¶
         static auto CreateControl(LongUI::CreateEventType type, pugi::xml_node) noexcept ->UIControl*;
     protected:
-        // Îö¹¹º¯Êı
+        // ææ„å‡½æ•°
         ~UIMapControl() noexcept;
-        // äÖÈ¾Á´: äÖÈ¾±³¾°
+        // æ¸²æŸ“é“¾: æ¸²æŸ“èƒŒæ™¯
         void render_chain_background() const noexcept;
-        // äÖÈ¾Á´: äÖÈ¾Ö÷Ìå
+        // æ¸²æŸ“é“¾: æ¸²æŸ“ä¸»ä½“
         void render_chain_main() const noexcept;
-        // äÖÈ¾Á´: äÖÈ¾±³¾°
+        // æ¸²æŸ“é“¾: æ¸²æŸ“èƒŒæ™¯
         void render_chain_foreground() const noexcept;
-        // É¾³ıÇ°µ÷ÓÃ
+        // åˆ é™¤å‰è°ƒç”¨
         void before_deleted() noexcept { Super::before_deleted(); }
-        // ³õÊ¼»¯
+        // åˆå§‹åŒ–
         void initialize(pugi::xml_node node) noexcept;
-        // ±£Ö¤Êı¾İÓĞĞ§
+        // ä¿è¯æ•°æ®æœ‰æ•ˆ
         bool require_mapdata(int32_t width, uint32_t height) noexcept;
-        // ÖØ½¨Éè±¸×ÊÔ´
+        // é‡å»ºè®¾å¤‡èµ„æº
         void release_resource() noexcept;
-        // ÖØÖÃµØÍ¼
+        // é‡ç½®åœ°å›¾
         void reset_map() noexcept;
-        // ÖØÖÃ¾«Áé
+        // é‡ç½®ç²¾çµ
         void reset_sprites() noexcept;
-        // Ç¿ÖÆË¢ĞÂ
+        // åˆ›å»ºfinderå¯¹è±¡
+        auto make_finder(PathFD::Finder& finder) noexcept ->PathFD::Finder&;
+        // å¼ºåˆ¶åˆ·æ–°
         void flush() const noexcept;
-        // »ñÈ¡½ÇÉ«Êı¾İ
+        // è·å–è§’è‰²æ•°æ®
         auto&get_char_data() noexcept { return *reinterpret_cast<CharData*>(m_bufCharData); }
-        // Ö´ĞĞÏÂÒ»²½
-        void exe_next_step() noexcept;
+        // æ‰§è¡Œä¸‹ä¸€æ­¥
+        void exe_next_step(bool refresh) noexcept;
 #ifdef LongUIDebugEvent
     protected:
         // debug infomation
         virtual bool debug_do_event(const LongUI::DebugEventInformation&) const noexcept override;
 #endif
     private:
-        // Ê±¼ä½ºÄÒID : ¶¯Ì¬Â·¾¶ÏÔÊ¾
+        // æ—¶é—´èƒ¶å›ŠID : åŠ¨æ€è·¯å¾„æ˜¾ç¤º
         auto get_capsule_pathdisplay() const noexcept { return m_pAlgorithm; }
-        // Ê±¼ä½ºÄÒID : ¶¯Ì¬µØÍ¼Ëõ·Å
+        // æ—¶é—´èƒ¶å›ŠID : åŠ¨æ€åœ°å›¾ç¼©æ”¾
         auto get_capsule_zoommap() const noexcept { return m_pFileOpenDialog; }
     private:
-        // µ±Ç°Ëã·¨
+        // 8æ–¹å‘æ£€æŸ¥
+        LongUI::UIRadioButton*  m_pRdiDirection8 = nullptr;
+        // å½“å‰ç®—æ³•
         IFDAlgorithm*           m_pAlgorithm = nullptr;
-        // ÎÄ¼ş´ò¿ª¶Ô»°¿ò
+        // æ–‡ä»¶æ‰“å¼€å¯¹è¯æ¡†
         IFileDialog*            m_pFileOpenDialog = nullptr;
-        // ÎÄ¼ş±£´æ¶Ô»°¿ò
+        // æ–‡ä»¶ä¿å­˜å¯¹è¯æ¡†
         IFileDialog*            m_pFileSaveDialog = nullptr;
-        // µØÍ¼·Ö½çÏß±ÊË¢
+        // åœ°å›¾åˆ†ç•Œçº¿ç¬”åˆ·
         ID2D1BitmapBrush*       m_pCellBoundaryBrush = nullptr;
-        // µØÍ¼¾«Áé¼¯
+        // åœ°å›¾ç²¾çµé›†
         ID2D1SpriteBatch*       m_pMapSpriteBatch = nullptr;
-        // Êı×ÖÏÔÊ¾¾«Áé¼¯
+        // æ•°å­—æ˜¾ç¤ºç²¾çµé›†
         ID2D1SpriteBatch*       m_pNumberDisplay = nullptr;
-        // ¸¸½ÚµãÏÔÊ¾¾«Áé¼¯
+        // çˆ¶èŠ‚ç‚¹æ˜¾ç¤ºç²¾çµé›†
         ID2D1SpriteBatch*       m_pNodeDisplay = nullptr;
-        // Â·¾¶ÏÔÊ¾¾«Áé¼¯
+        // è·¯å¾„æ˜¾ç¤ºç²¾çµé›†
         ID2D1SpriteBatch*       m_pPathDisplay = nullptr;
-        // µØÍ¼×Ô¶¯ÍßÆ¬µØÍ¼»º´æ
+        // åœ°å›¾è‡ªåŠ¨ç“¦ç‰‡åœ°å›¾ç¼“å­˜
         ID2D1Bitmap1*           m_pAutoTileCache = nullptr;
-        // µØÍ¼Æ¤·ô
+        // åœ°å›¾çš®è‚¤
         ID2D1Bitmap1*           m_pMapSkin = nullptr;
-        // µØÍ¼Ïà¹ØÍ¼±ê
+        // åœ°å›¾ç›¸å…³å›¾æ ‡
         ID2D1Bitmap1*           m_pMapIcon = nullptr;
-        // Êı×Ö±íÎ»Í¼
+        // æ•°å­—è¡¨ä½å›¾
         ID2D1Bitmap1*           m_pNumnberTable = nullptr;
-        // µØÍ¼Êı¾İ
+        // åœ°å›¾æ•°æ®
         uint8_t*                m_pMapCells = nullptr;
-        // Â·¾¶ĞÅÏ¢
+        // è·¯å¾„ä¿¡æ¯
         PathFD::Path*           m_pPath = nullptr;
-        // ÃÔ¹¬Éú³ÉËã·¨
+        // è¿·å®«ç”Ÿæˆç®—æ³•
         DungeonGeneration       m_fnGeneration = PathFD::DefaultGeneration;
-        // ½ÇÉ« ÏÔÊ¾
+        // è§’è‰² æ˜¾ç¤º
         CFDCharacter            m_char;
-        // µØÍ¼Êı¾İ
+        // åœ°å›¾æ•°æ®
         PathFD::MapData         m_dataMap;
-        // Ë«»÷°ïÖúÆ÷
+        // åŒå‡»å¸®åŠ©å™¨
         DoubleClickHelper       m_hlpDbClick;
-        // µØÍ¼µ±Ç°¾«ÁéÊıÁ¿
+        // åœ°å›¾å½“å‰ç²¾çµæ•°é‡
         uint32_t                m_uMapSpriteCount = 0;
-        // Â·¾¶µ±Ç°¾«ÁéÊıÁ¿
+        // è·¯å¾„å½“å‰ç²¾çµæ•°é‡
         //uint32_t                m_uPathSpriteCount = 0;
-        // Êı×Öµ±Ç°¾«ÁéÊıÁ¿
+        // æ•°å­—å½“å‰ç²¾çµæ•°é‡
         uint32_t                m_uNumberSpriteCount = 0;
-        // ½Úµãµ±Ç°¾«ÁéÊıÁ¿
+        // èŠ‚ç‚¹å½“å‰ç²¾çµæ•°é‡
         uint32_t                m_uNodeSpriteCount = 0;
-        // Ñ¡ÖĞµãxÎ»ÖÃ
+        // é€‰ä¸­ç‚¹xä½ç½®
         uint32_t                m_uClickX = uint32_t(-1);
-        // Ñ¡ÖĞµãxÎ»ÖÃ
+        // é€‰ä¸­ç‚¹xä½ç½®
         uint32_t                m_uClickY = uint32_t(-1);
-        // ÖÕµãxÎ»ÖÃ
+        // ç»ˆç‚¹xä½ç½®
         uint32_t                m_uGoalX = 0;
-        // ÖÕµãxÎ»ÖÃ
+        // ç»ˆç‚¹xä½ç½®
         uint32_t                m_uGoalY = 0;
-        // Ëã·¨ ×Ü¹²¼ä¸ôÊ±¼ä
+        // ç®—æ³• æ€»å…±é—´éš”æ—¶é—´
         float                   m_fAlgorithmStepTimeAll = 0.3f;
-        // Ëã·¨ µ±Ç°¼ä¸ôÊ±¼ä
+        // ç®—æ³• å½“å‰é—´éš”æ—¶é—´
         float                   m_fAlgorithmStepTimeNow = 0.f;
-        // Êó±êµã»÷ÀàĞÍ
+        // é¼ æ ‡ç‚¹å‡»ç±»å‹
         ClickinType             m_typeClicked = Type_Cell;
-        // ½ÇÉ«Î»Í¼
+        // è§’è‰²ä½å›¾
         uint16_t                m_uCharBitmap = 0;
-        // µØÍ¼Î»Í¼
+        // åœ°å›¾ä½å›¾
         uint16_t                m_uMapBitmap = 0;
-        // Í¼±êÎ»Í¼id
+        // å›¾æ ‡ä½å›¾id
         uint16_t                m_idMapIcon = 0;
-        // ÏÔÊ¾½Úµã¹ØÏµ
+        // æ˜¾ç¤ºèŠ‚ç‚¹å…³ç³»
         bool                    m_bDisplayNodeShip = true;
-        // Ç¿ÖÆË¢ĞÂ
+        // å¼ºåˆ¶åˆ·æ–°
         bool                    m_bFlushOut = true;
-        // ĞèÒªÖ´ĞĞÇ°ÖØÖÃ
+        // éœ€è¦æ‰§è¡Œå‰é‡ç½®
         bool                    m_bNeedReset = true;
-        // ½ÚµãÏÔÊ¾
+        // èŠ‚ç‚¹æ˜¾ç¤º
         //bool                    m_bNodeSet = true;
-        // Î´Ê¹ÓÃ
-        bool                    m_unused_bool_map[1];
-        // ½ÇÉ«Êı¾İ»º´æ :Ä¿Ç°Ö»ĞèÒª4¸ö¶¯×÷
+        // æœªä½¿ç”¨
+        //bool                    m_unused_bool_map[1];
+        // è§’è‰²æ•°æ®ç¼“å­˜ :ç›®å‰åªéœ€è¦4ä¸ªåŠ¨ä½œ
         char                    m_bufCharData[sizeof(CharData) + sizeof(CharData::action[0]) * 4];
     };
 }
@@ -243,7 +250,7 @@ namespace PathFD {
 #ifdef LongUIDebugEvent
 // longui namespace
 namespace LongUI {
-    // ÖØÔØ?ÌØÀı»¯ GetIID
+    // é‡è½½?ç‰¹ä¾‹åŒ– GetIID
     template<> LongUIInline const IID& GetIID<PathFD::UIMapControl>() {
         // {F46C5DE3-D761-4E9A-9D1A-4A301BB45CBE}
         static const GUID IID_PathFD_UIMapControl = {

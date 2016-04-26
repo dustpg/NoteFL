@@ -1,4 +1,4 @@
-#include "pfdUIMap.h"
+ï»¿#include "pfdUIMap.h"
 #include "pfdAlgorithm.h"
 // longui api
 #include <Control/UIContainer.h>
@@ -15,10 +15,10 @@
 /// <param name="cp">The cp.</param>
 PathFD::UIMapControl::UIMapControl(LongUI::UIContainer * cp) noexcept : Super(cp) {
     std::memset(m_bufCharData, 0, sizeof(m_bufCharData));
-    // µØÍ¼Êı¾İ
+    // åœ°å›¾æ•°æ®
     m_dataMap.cell_width = CELL_WIDTH_INIT;
     m_dataMap.cell_height = CELL_HEIGHT_INIT;
-    // ½ÇÉ«Êı¾İ
+    // è§’è‰²æ•°æ®
     auto& chardata = this->get_char_data();
     chardata.width = 32;
     chardata.height = 32;
@@ -37,22 +37,22 @@ PathFD::UIMapControl::UIMapControl(LongUI::UIContainer * cp) noexcept : Super(cp
 /// <param name="node">The node.</param>
 /// <returns></returns>
 void PathFD::UIMapControl::initialize(pugi::xml_node node) noexcept {
-    // Á´Ê½µ÷ÓÃ
+    // é“¾å¼è°ƒç”¨
     Super::initialize(node);
     const char* str = nullptr;
-    // »ñÈ¡²½½øÊ±¼ä
+    // è·å–æ­¥è¿›æ—¶é—´
     if ((str = node.attribute("steptime").value())) {
         this->SetStepDeltaTime(LongUI::AtoF(str));
     }
-    // »ñÈ¡
+    // è·å–
     if ((str = node.attribute("charbitmap").value())) {
         m_uCharBitmap = static_cast<uint16_t>(LongUI::AtoI(str));
     }
-    // »ñÈ¡
+    // è·å–
     if ((str = node.attribute("mapbitmap").value())) {
         m_uMapBitmap = static_cast<uint16_t>(LongUI::AtoI(str));
     }
-    // »ñÈ¡
+    // è·å–
     if ((str = node.attribute("mapicon").value())) {
         m_idMapIcon = static_cast<uint16_t>(LongUI::AtoI(str));
     }
@@ -60,7 +60,7 @@ void PathFD::UIMapControl::initialize(pugi::xml_node node) noexcept {
     assert(!m_pFileOpenDialog);
     assert(!m_pFileSaveDialog);
     auto hr = S_OK;
-    // ´´½¨ÎÄ±¾¶Ô»°¿ò
+    // åˆ›å»ºæ–‡æœ¬å¯¹è¯æ¡†
     if (SUCCEEDED(hr)) {
         hr = ::CoCreateInstance(
             CLSID_FileOpenDialog,
@@ -70,7 +70,7 @@ void PathFD::UIMapControl::initialize(pugi::xml_node node) noexcept {
             reinterpret_cast<void**>(&m_pFileOpenDialog)
         );
     }
-    // ´´½¨ÎÄ±¾¶Ô»°¿ò
+    // åˆ›å»ºæ–‡æœ¬å¯¹è¯æ¡†
     if (SUCCEEDED(hr)) {
         hr = ::CoCreateInstance(
             CLSID_FileSaveDialog,
@@ -80,41 +80,41 @@ void PathFD::UIMapControl::initialize(pugi::xml_node node) noexcept {
             reinterpret_cast<void**>(&m_pFileSaveDialog)
         );
     }
-    // ÉèÖÃÈ·¶¨±êÇ©
+    // è®¾ç½®ç¡®å®šæ ‡ç­¾
     if (SUCCEEDED(hr)) {
-        hr = m_pFileSaveDialog->SetOkButtonLabel(L"±£´æµØÍ¼ÎÄ¼ş");
+        hr = m_pFileSaveDialog->SetOkButtonLabel(L"ä¿å­˜åœ°å›¾æ–‡ä»¶");
     }
-    // ÉèÖÃ±êÌâ
+    // è®¾ç½®æ ‡é¢˜
     if (SUCCEEDED(hr)) {
-        hr = m_pFileSaveDialog->SetTitle(L"PathFD - Ñ¡Ôñ±£´æµÄÎÄ¼ş");
+        hr = m_pFileSaveDialog->SetTitle(L"PathFD - é€‰æ‹©ä¿å­˜çš„æ–‡ä»¶");
     }
-    // ÉèÖÃÈ·¶¨±êÇ©
+    // è®¾ç½®ç¡®å®šæ ‡ç­¾
     if (SUCCEEDED(hr)) {
-        hr = m_pFileOpenDialog->SetOkButtonLabel(L"´ò¿ªµØÍ¼ÎÄ¼ş");
+        hr = m_pFileOpenDialog->SetOkButtonLabel(L"æ‰“å¼€åœ°å›¾æ–‡ä»¶");
     }
-    // ÉèÖÃ±êÌâ
+    // è®¾ç½®æ ‡é¢˜
     if (SUCCEEDED(hr)) {
-        hr = m_pFileOpenDialog->SetTitle(L"PathFD - Ñ¡Ôñ´ò¿ªµÄÎÄ¼ş");
+        hr = m_pFileOpenDialog->SetTitle(L"PathFD - é€‰æ‹©æ‰“å¼€çš„æ–‡ä»¶");
     }
-    // ÉèÖÃÎÄ¼şÀàĞÍ
+    // è®¾ç½®æ–‡ä»¶ç±»å‹
     if (SUCCEEDED(hr)) {
-        COMDLG_FILTERSPEC filter = { L"PathFD µØÍ¼ÎÄ¼ş", L"*.map" };
+        COMDLG_FILTERSPEC filter = { L"PathFD åœ°å›¾æ–‡ä»¶", L"*.map" };
         hr = m_pFileSaveDialog->SetFileTypes(1, &filter);
     }
-    // ÉèÖÃÀ©Õ¹Ãû
+    // è®¾ç½®æ‰©å±•å
     if (SUCCEEDED(hr)) {
         hr = m_pFileSaveDialog->SetDefaultExtension(L"map");
     }
-    // ¼ì²é´íÎó
+    // æ£€æŸ¥é”™è¯¯
     if (FAILED(hr)) {
         assert(!"HR!");
         UIManager.ShowError(hr);
     }
 }
 
-// ------------------------- µØÍ¼Âß¼­
+// ------------------------- åœ°å›¾é€»è¾‘
 
-// µØÍ¼
+// åœ°å›¾
 void PathFD::UIMapControl::ResizeCellSize(uint32_t width, uint32_t height) noexcept {
     assert(width && height && "bad arguments");
     m_dataMap.cell_width = width;
@@ -124,33 +124,33 @@ void PathFD::UIMapControl::ResizeCellSize(uint32_t width, uint32_t height) noexc
 
 
 /// <summary>
-/// Éú³ÉµØÍ¼
+/// ç”Ÿæˆåœ°å›¾
 /// </summary>
 /// <param name="width">The width.</param>
 /// <param name="height">The height.</param>
 /// <returns></returns>
 void PathFD::UIMapControl::GenerateMap(uint32_t width, uint32_t height) noexcept {
-    // ÎŞĞ§µÄSB
+    // æ— æ•ˆçš„SB
     if (!m_pMapSpriteBatch) return;
-    // ÄÚ´æ²»×ã
+    // å†…å­˜ä¸è¶³
     if (!this->require_mapdata(width, height)) return;
-    // Çå¿Õ
+    // æ¸…ç©º
     std::memset(m_pMapCells, 0, sizeof(m_pMapCells[0]) * (width * height));
     uint32_t pos[2] = { 0 };
-    // Éú³ÉµØÍ¼
+    // ç”Ÿæˆåœ°å›¾
     m_fnGeneration(m_pMapCells, width, height, pos);
     m_dataMap.map_data = m_pMapCells;
     m_dataMap.char_x = pos[0] % m_dataMap.map_width;
     m_dataMap.char_y = pos[0] / m_dataMap.map_width;
     m_uGoalX = pos[1] % m_dataMap.map_width;
     m_uGoalY = pos[1] / m_dataMap.map_width;
-    // ÖØÖÃµØÍ¼
+    // é‡ç½®åœ°å›¾
     this->reset_map();
 }
 
 
 /// <summary>
-/// ±£´æµØÍ¼ÓĞĞ§ĞÔ
+/// ä¿å­˜åœ°å›¾æœ‰æ•ˆæ€§
 /// </summary>
 /// <param name="width">The width.</param>
 /// <param name="height">The height.</param>
@@ -161,21 +161,21 @@ bool PathFD::UIMapControl::require_mapdata(int32_t width, uint32_t height) noexc
     m_dataMap.map_width = width;
     m_dataMap.map_height = height;
     auto sz = width * height;
-    // ĞèÒªÖØĞÂÉêÇëÊı¾İ
+    // éœ€è¦é‡æ–°ç”³è¯·æ•°æ®
     if (m_uMapSpriteCount < sz) {
         LongUI::NormalFree(m_pMapCells);
         m_pMapCells = LongUI::NormalAllocT<uint8_t>(sz);
-        // ÄÚ´æ²»×ã
+        // å†…å­˜ä¸è¶³
         if (!m_pMapCells) return false;
         auto added = sz - m_uMapSpriteCount ;
         D2D1_RECT_F rect = { 0.f };
-        // ÉêÇë¾«Áé
+        // ç”³è¯·ç²¾çµ
         auto hr = m_pMapSpriteBatch->AddSprites(
             added,
             &rect, nullptr, nullptr, nullptr,
             0,        0,     0,       0
         );
-        // Ê§°Ü
+        // å¤±è´¥
         if (FAILED(hr)) {
             m_pMapSpriteBatch->Release();
             m_pMapSpriteBatch = nullptr;
@@ -188,33 +188,33 @@ bool PathFD::UIMapControl::require_mapdata(int32_t width, uint32_t height) noexc
 }
 
 /// <summary>
-/// ÖØÖÃµØÍ¼
+/// é‡ç½®åœ°å›¾
 /// <returns></returns>
 void PathFD::UIMapControl::reset_map() noexcept {
-    // ÖØÖÃ½ÇÉ«µØÍ¼
+    // é‡ç½®è§’è‰²åœ°å›¾
     m_char.ResetMap(m_dataMap);
-    // ÉèÖÃ¿Ø¼ş´óĞ¡
+    // è®¾ç½®æ§ä»¶å¤§å°
     this->SetWidth(float(m_dataMap.cell_width * m_dataMap.map_width));
     this->SetHeight(float(m_dataMap.cell_height * m_dataMap.map_height));
-    // ÖØÖÃµØÍ¼¾«Áé
+    // é‡ç½®åœ°å›¾ç²¾çµ
     this->reset_sprites();
-    // ÖØ»æµØÍ¼
+    // é‡ç»˜åœ°å›¾
     this->parent->SetControlLayoutChanged();
     this->parent->InvalidateThis();
 }
 
 /// <summary>
-/// ÖØÖÃ¾«Áé
+/// é‡ç½®ç²¾çµ
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::reset_sprites() noexcept {
     m_uNumberSpriteCount = 0;
     m_uNodeSpriteCount = 0;
-    // ÎŞĞ§
+    // æ— æ•ˆ
     if (!m_pMapSpriteBatch) return;
     float cllw = float(m_dataMap.cell_width);
     float cllh = float(m_dataMap.cell_height);
-    // Ô´¾ØĞÎ
+    // æºçŸ©å½¢
     D2D1_RECT_U srcs[] = {
         { 
             0, 
@@ -230,18 +230,18 @@ void PathFD::UIMapControl::reset_sprites() noexcept {
         },
     };
     // TODO: SetSpriteSSSSS
-    // ±éÀúÉèÖÃ
+    // éå†è®¾ç½®
     D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::White, 1.f);
     for (uint32_t y = 0; y != m_dataMap.map_height; ++y) {
         for (uint32_t x = 0; x < m_dataMap.map_width; ++x) {
             uint32_t index = x + y * m_dataMap.map_width;
             D2D1_RECT_F des;
-            // ÉèÖÃÄ¿±ê¾ØĞÎ
+            // è®¾ç½®ç›®æ ‡çŸ©å½¢
             des.left = float(x) * cllw;
             des.top = float(y) * cllh;
             des.right =  des.left +  cllw;
             des.bottom = des.top + cllh;
-            // ÉèÖÃ
+            // è®¾ç½®
             m_pMapSpriteBatch->SetSprites(
                 index, 1,
                 &des, srcs + m_pMapCells[index],
@@ -251,22 +251,22 @@ void PathFD::UIMapControl::reset_sprites() noexcept {
     }
 }
 
-// ------------------------- µØÍ¼¿ØÖÆ
+// ------------------------- åœ°å›¾æ§åˆ¶
 
 
 /// <summary>
-/// ÇåÀí±¾¿Ø¼ş
+/// æ¸…ç†æœ¬æ§ä»¶
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::cleanup() noexcept {
-    // É¾Ç°µ÷ÓÃ
+    // åˆ å‰è°ƒç”¨
     this->before_deleted();
-    // ÊÍ·Å¿Õ¼ä
+    // é‡Šæ”¾ç©ºé—´
     delete this;
 }
 
 /// <summary>
-/// ÊÍ·ÅÉè±¸×ÊÔ´
+/// é‡Šæ”¾è®¾å¤‡èµ„æº
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::release_resource() noexcept {
@@ -282,33 +282,33 @@ void PathFD::UIMapControl::release_resource() noexcept {
 }
 
 /// <summary>
-/// <see cref="UIMapControl"/> Îö¹¹º¯Êı
+/// <see cref="UIMapControl"/> ææ„å‡½æ•°
 /// </summary>
 /// <returns></returns>
 PathFD::UIMapControl::~UIMapControl() noexcept {
-    // ÊÍ·Å×ÊÔ´
+    // é‡Šæ”¾èµ„æº
     this->release_resource();
-    // ÊÍ·Å¶Ô»°¿ò
+    // é‡Šæ”¾å¯¹è¯æ¡†
     LongUI::SafeRelease(m_pFileOpenDialog);
     LongUI::SafeRelease(m_pFileSaveDialog);
-    // ÊÍ·ÅËã·¨
+    // é‡Šæ”¾ç®—æ³•
     if (m_pAlgorithm) {
         m_pAlgorithm->Dispose();
         m_pAlgorithm = nullptr;
     }
-    // ÊÍ·ÅÊı¾İ
+    // é‡Šæ”¾æ•°æ®
     if (m_pMapCells) {
         LongUI::NormalFree(m_pMapCells);
         m_pMapCells = nullptr;
     }
-    // ÊÍ·ÅÂ·¾¶
+    // é‡Šæ”¾è·¯å¾„
     if (m_pPath) {
         std::free(m_pPath);
         m_pPath = nullptr;
     }
-    // ÒÆ³ıÊ±¼ä½ºÄÒA -> ¶¯Ì¬Â·¾¶ÏÔÊ¾(Õâ¸öµ÷ÓÃĞèÒªĞí¶àÊ±¼ä: 1.f + float(count) / 300.f)
+    // ç§»é™¤æ—¶é—´èƒ¶å›ŠA -> åŠ¨æ€è·¯å¾„æ˜¾ç¤º(è¿™ä¸ªè°ƒç”¨éœ€è¦è®¸å¤šæ—¶é—´: 1.f + float(count) / 300.f)
     UIManager.RemoveTimeCapsule(this->get_capsule_pathdisplay());
-    // ÒÆ³ıÊ±¼ä½ºÄÒA -> ¶¯Ì¬µØÍ¼Ëõ·Å
+    // ç§»é™¤æ—¶é—´èƒ¶å›ŠA -> åŠ¨æ€åœ°å›¾ç¼©æ”¾
     UIManager.RemoveTimeCapsule(this->get_capsule_zoommap());
 }
 
@@ -317,20 +317,20 @@ PathFD::UIMapControl::~UIMapControl() noexcept {
 /// </summary>
 /// <returns></returns>
 inline void PathFD::UIMapControl::flush() const noexcept {
-    // Ö´ĞĞäÖÈ¾
+    // æ‰§è¡Œæ¸²æŸ“
     if (m_bFlushOut) UIManager_RenderTarget->Flush();
 }
 
 /// <summary>
-/// äÖÈ¾Á´-äÖÈ¾±³¾°
+/// æ¸²æŸ“é“¾-æ¸²æŸ“èƒŒæ™¯
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::render_chain_background() const noexcept {
-    // ¸¸Àà±³¾°
+    // çˆ¶ç±»èƒŒæ™¯
     Super::render_chain_background();
-    // ±¾Àà±³¾°
+    // æœ¬ç±»èƒŒæ™¯
     if (!m_pMapSpriteBatch || !m_uMapSpriteCount) return;
-    // ¶ÔÆëÍø¸ñ
+    // å¯¹é½ç½‘æ ¼
 #ifdef PATHFD_ALIGNED
     D2D1_MATRIX_3X2_F transform1, transform2; 
     UIManager_RenderTarget->GetTransform(&transform1);
@@ -344,18 +344,18 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
 #endif
     UIManager_RenderTarget->SetTransform(&transform2);
 #endif
-    // Ç¿ĞĞË¢ĞÂ
+    // å¼ºè¡Œåˆ·æ–°
     this->flush();
-    // ¾«Áé¼¯ĞèÒªÈ¡Ïû¿¹¾â³İÄ£Ê½
+    // ç²¾çµé›†éœ€è¦å–æ¶ˆæŠ—é”¯é½¿æ¨¡å¼
     UIManager_RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-    // äÖÈ¾¾«Áé¼¯
+    // æ¸²æŸ“ç²¾çµé›†
     UIManager_RenderTarget->DrawSpriteBatch(
         m_pMapSpriteBatch, 
         0, m_dataMap.map_width * m_dataMap.map_height,
         m_pMapIcon,
         D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
     );
-    // µØÍ¼·Ö½çÏß
+    // åœ°å›¾åˆ†ç•Œçº¿
     UIManager_RenderTarget->FillRectangle(
         D2D1::RectF(
             0.f,
@@ -365,21 +365,21 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
         ),
         m_pCellBoundaryBrush
     );
-    // äÖÈ¾Æğµã
+    // æ¸²æŸ“èµ·ç‚¹
     {
         D2D1_RECT_F des;
-        // Ä¿±ê¾ØĞÎ
+        // ç›®æ ‡çŸ©å½¢
         des.left = float(m_dataMap.char_x * m_dataMap.cell_width);
         des.top = float(m_dataMap.char_y * m_dataMap.cell_height);
         des.right =  des.left + float(m_dataMap.cell_width);
         des.bottom = des.top + float(m_dataMap.cell_height);
-        // Ô´¾ØĞÎ
+        // æºçŸ©å½¢
         D2D1_RECT_F src;
         src.left = float(m_dataMap.cell_height) * 2.f;
         src.top = 0.f;
         src.right = src.left + float(m_dataMap.cell_width);
         src.bottom = src.top + float(m_dataMap.cell_height);
-        // ¿Ì»­
+        // åˆ»ç”»
         UIManager_RenderTarget->DrawBitmap(
             m_pMapIcon,
             &des,
@@ -389,21 +389,21 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
             &src
         );
     }
-    // äÖÈ¾ÖÕµã
+    // æ¸²æŸ“ç»ˆç‚¹
     {
         D2D1_RECT_F des;
-        // Ä¿±ê¾ØĞÎ
+        // ç›®æ ‡çŸ©å½¢
         des.left = float(m_uGoalX * m_dataMap.cell_width);
         des.top = float(m_uGoalY * m_dataMap.cell_height);
         des.right =  des.left + float(m_dataMap.cell_width);
         des.bottom = des.top + float(m_dataMap.cell_height);
-        // Ô´¾ØĞÎ
+        // æºçŸ©å½¢
         D2D1_RECT_F src;
         src.left = float(m_dataMap.cell_height) * 3.f;
         src.top = 0.f;
         src.right = src.left + float(m_dataMap.cell_width);
         src.bottom = src.top + float(m_dataMap.cell_height);
-        // ¿Ì»­
+        // åˆ»ç”»
         UIManager_RenderTarget->DrawBitmap(
             m_pMapIcon,
             &des,
@@ -413,13 +413,13 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
             &src
         );
     }
-    // äÖÈ¾½ÇÉ«
+    // æ¸²æŸ“è§’è‰²
     m_char.Render();
-    // äÖÈ¾½Úµã¹ØÏµ
+    // æ¸²æŸ“èŠ‚ç‚¹å…³ç³»
     if (m_bDisplayNodeShip) {
-        // Ç¿ĞĞË¢ĞÂ
+        // å¼ºè¡Œåˆ·æ–°
         this->flush();
-        // äÖÈ¾¹ØÏµ
+        // æ¸²æŸ“å…³ç³»
         UIManager_RenderTarget->DrawSpriteBatch(
             m_pNodeDisplay,
             0, m_uNodeSpriteCount,
@@ -427,11 +427,11 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
             D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
         );
     }
-    // äÖÈ¾È¨ÖØ(¿´µÃÇåµÄÇé¿öÏÂ²ÅÏÔÊ¾)
+    // æ¸²æŸ“æƒé‡(çœ‹å¾—æ¸…çš„æƒ…å†µä¸‹æ‰æ˜¾ç¤º)
     if (this->world._11 >= 1.f) {
-        // Ç¿ĞĞË¢ĞÂ
+        // å¼ºè¡Œåˆ·æ–°
         this->flush();
-        // äÖÈ¾È¨ÖØ
+        // æ¸²æŸ“æƒé‡
         UIManager_RenderTarget->DrawSpriteBatch(
             m_pNumberDisplay,
             0, m_uNumberSpriteCount,
@@ -439,21 +439,21 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
             D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR
         );
     }
-    // äÖÈ¾Ñ¡Ôñ¿ò
+    // æ¸²æŸ“é€‰æ‹©æ¡†
     if (m_uClickX < m_dataMap.map_width && m_uClickY < m_dataMap.map_height) {
         D2D1_RECT_F rect;
-        // ÉèÖÃ
+        // è®¾ç½®
         rect.left = float(m_uClickX * m_dataMap.cell_width) + CEEL_SELECT_WIDTH * 0.5f;
         rect.top = float(m_uClickY * m_dataMap.cell_height) + CEEL_SELECT_WIDTH * 0.5f;
         rect.right = rect.left + float(m_dataMap.cell_width) - CEEL_SELECT_WIDTH;
         rect.bottom = rect.top + float(m_dataMap.cell_height) - CEEL_SELECT_WIDTH;
-        // äÖÈ¾
+        // æ¸²æŸ“
         m_pBrush_SetBeforeUse->SetColor(D2D1::ColorF(D2D1::ColorF::Black));
         UIManager_RenderTarget->DrawRectangle(&rect, m_pBrush_SetBeforeUse, CEEL_SELECT_WIDTH);
         m_pBrush_SetBeforeUse->SetColor(D2D1::ColorF(D2D1::ColorF::White));
         UIManager_RenderTarget->DrawRectangle(&rect, m_pBrush_SetBeforeUse, CEEL_SELECT_WIDTH * 0.5f);
     }
-    // ÉèÖÃ»ØÀ´
+    // è®¾ç½®å›æ¥
     UIManager_RenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);
 #ifdef PATHFD_ALIGNED
     UIManager_RenderTarget->SetTransform(&transform1);
@@ -462,7 +462,7 @@ void PathFD::UIMapControl::render_chain_background() const noexcept {
 
 
 /// <summary>
-/// äÖÈ¾Á´-äÖÈ¾Ö÷Ìå
+/// æ¸²æŸ“é“¾-æ¸²æŸ“ä¸»ä½“
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::render_chain_main() const noexcept {
@@ -470,7 +470,7 @@ void PathFD::UIMapControl::render_chain_main() const noexcept {
 }
 
 /// <summary>
-/// äÖÈ¾Á´-äÖÈ¾Ç°¾°
+/// æ¸²æŸ“é“¾-æ¸²æŸ“å‰æ™¯
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::render_chain_foreground() const noexcept {
@@ -478,33 +478,33 @@ void PathFD::UIMapControl::render_chain_foreground() const noexcept {
 }
 
 /// <summary>
-/// äÖÈ¾±¾¿Ø¼ş
+/// æ¸²æŸ“æœ¬æ§ä»¶
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::Render() const noexcept {
-    // ±³¾°äÖÈ¾
+    // èƒŒæ™¯æ¸²æŸ“
     this->render_chain_background();
-    // Ö÷¾°äÖÈ¾
+    // ä¸»æ™¯æ¸²æŸ“
     this->render_chain_main();
-    // Ç°¾°äÖÈ¾
+    // å‰æ™¯æ¸²æŸ“
     this->render_chain_foreground();
 }
 
 
 /// <summary>
-/// ÖØ½¨¿Ø¼ş×ÊÔ´
+/// é‡å»ºæ§ä»¶èµ„æº
 /// </summary>
 /// <returns></returns>
 auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
     if (!m_pFileOpenDialog || !m_pFileSaveDialog) return E_FAIL;
-    // ³õÊ¼»¯
+    // åˆå§‹åŒ–
     HRESULT hr = S_OK;
     ID2D1Bitmap1* pCellBitmapBoundary = nullptr;
     ID2D1BitmapRenderTarget* pBitmapRenderTarget = nullptr;
     size_t count = 4 * m_dataMap.cell_width * m_dataMap.cell_height;
-    // ÏÈÊÍ·Å
+    // å…ˆé‡Šæ”¾
     this->release_resource();
-    // ´´½¨Î»Í¼³ÊÏÖÆ÷
+    // åˆ›å»ºä½å›¾å‘ˆç°å™¨
     if (SUCCEEDED(hr)) {
         D2D1_PIXEL_FORMAT format = D2D1::PixelFormat(
             DXGI_FORMAT_B8G8R8A8_UNORM, 
@@ -523,14 +523,14 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         );
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateCompatibleRenderTarget Failed");
     }
-    // ¸¸ÀàÖØ½¨
+    // çˆ¶ç±»é‡å»º
     if (SUCCEEDED(hr)) {
         hr = Super::Recreate();
         longui_debug_hr(hr, L"Super::Recreate Failed");
     }
-    // ´´½¨µØÍ¼µ¥Ôª·Ö½çÏßÎ»Í¼
+    // åˆ›å»ºåœ°å›¾å•å…ƒåˆ†ç•Œçº¿ä½å›¾
     if (SUCCEEDED(hr)) {
-        // ´´½¨
+        // åˆ›å»º
         hr = UIManager_RenderTarget->CreateBitmap(
             D2D1::SizeU(m_dataMap.cell_width, m_dataMap.cell_height),
             nullptr, 0,
@@ -542,7 +542,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         );
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmap Failed");
     }
-    // Ğ´Èë·Ö½çÏßÑÕÉ«
+    // å†™å…¥åˆ†ç•Œçº¿é¢œè‰²
     if (SUCCEEDED(hr)) {
         const float w = float(m_dataMap.cell_width);
         const float h = float(m_dataMap.cell_height);
@@ -555,12 +555,12 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         hr = pBitmapRenderTarget->EndDraw();
         longui_debug_hr(hr, L"pBitmapRenderTarget->EndDraw Failed");
     }
-    // ¸´ÖÆÊı¾İ
+    // å¤åˆ¶æ•°æ®
     if (SUCCEEDED(hr)) {
         hr = pCellBitmapBoundary->CopyFromRenderTarget(nullptr, pBitmapRenderTarget, nullptr);
         longui_debug_hr(hr, L"CopyFromRenderTarget Failed");
     }
-    // ´´½¨µØÍ¼µ¥Ôª·Ö½çÏß±ÊË¢
+    // åˆ›å»ºåœ°å›¾å•å…ƒåˆ†ç•Œçº¿ç¬”åˆ·
     if (SUCCEEDED(hr)) {
         D2D1_BITMAP_BRUSH_PROPERTIES bbp;
         bbp.extendModeX = bbp.extendModeY = D2D1_EXTEND_MODE_WRAP;
@@ -572,43 +572,43 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         );
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmapBrush Failed");
     }
-    // ÉèÖÃ½ÇÉ«
+    // è®¾ç½®è§’è‰²
     if (SUCCEEDED(hr)) {
         m_pMapSkin = UIManager.GetBitmap(m_uMapBitmap);
         assert(m_pMapSkin && "bad action");
         if (!m_pMapSkin) hr = E_NOT_SET;
     }
-    // ÉèÖÃÍ¼±êÎ»Í¼
+    // è®¾ç½®å›¾æ ‡ä½å›¾
     if (SUCCEEDED(hr)) {
         m_pMapIcon = UIManager.GetBitmap(m_idMapIcon);
         assert(m_pMapSkin && "bad action");
         if (!m_pMapSkin) hr = E_NOT_SET;
     }
-    // ÉèÖÃ±ÊË¢Í¸Ã÷¶È
+    // è®¾ç½®ç¬”åˆ·é€æ˜åº¦
     if (SUCCEEDED(hr)) {
         m_pCellBoundaryBrush->SetOpacity(0.25f);
     }
-    // ´´½¨¾«Áé¼¯1
+    // åˆ›å»ºç²¾çµé›†1
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pMapSpriteBatch);
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
     }
-    // ´´½¨¾«Áé¼¯2
+    // åˆ›å»ºç²¾çµé›†2
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pPathDisplay);
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
     }
-    // ´´½¨¾«Áé¼¯3
+    // åˆ›å»ºç²¾çµé›†3
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pNumberDisplay);
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
     }
-    // ´´½¨¾«Áé¼¯4
+    // åˆ›å»ºç²¾çµé›†4
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateSpriteBatch(&m_pNodeDisplay);
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateSpriteBatch Failed");
     }
-    // ´´½¨×Ô¶¯ÍßÆ¬Î»Í¼»º´æ
+    // åˆ›å»ºè‡ªåŠ¨ç“¦ç‰‡ä½å›¾ç¼“å­˜
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateBitmap(
             D2D1::SizeU(m_dataMap.cell_width * 8, m_dataMap.cell_height * 8),
@@ -621,7 +621,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         );
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmap Failed");
     }
-    // ¸´ÖÆÊı¾İ
+    // å¤åˆ¶æ•°æ®
     if (SUCCEEDED(hr)) {
         auto halfw = m_dataMap.cell_width / 2;
         auto halfh = m_dataMap.cell_height / 2;
@@ -651,7 +651,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         hr = m_pAutoTileCache->CopyFromBitmap(&des, m_pMapSkin, &src);
         longui_debug_hr(hr, L"UIManager_RenderTarget->CopyFromBitmap Failed");
     }
-    // ´´½¨Êı×Ö±í
+    // åˆ›å»ºæ•°å­—è¡¨
     if (SUCCEEDED(hr)) {
         hr = UIManager_RenderTarget->CreateBitmap(
             D2D1::SizeU(NUMBERTABLE_WIDTH, NUMBERTABLE_HEIGHT),
@@ -664,14 +664,14 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
         );
         longui_debug_hr(hr, L"UIManager_RenderTarget->CreateBitmap Failed");
     }
-    // ÉèÖÃÊı×Ö±í
+    // è®¾ç½®æ•°å­—è¡¨
     if (SUCCEEDED(hr)) {
         constexpr int END = LINECOUNT * (NUMBERTABLE_HEIGHT/DIGNUMNER_HEIGHT);
         auto bmpd = m_pNumnberTable;
         auto bmps = m_pMapIcon;
-        // ¸´ÖÆ
+        // å¤åˆ¶
         auto copybmp = [=](int i, int num, int no) noexcept {
-            // ¼ÆËã×ø±ê
+            // è®¡ç®—åæ ‡
             auto x = (i % LINECOUNT) * DIGNUMNER_WIDTH * NUMCOUNT;
             auto y = (i / LINECOUNT) * DIGNUMNER_HEIGHT;
             D2D1_POINT_2U des = D2D1::Point2U(x + num*DIGNUMNER_WIDTH, y);
@@ -680,22 +680,22 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             src.top = DIGNUMNER_SRCY_OFFSET;
             src.right = src.left + DIGNUMNER_WIDTH;
             src.bottom = src.top + DIGNUMNER_HEIGHT;
-            // ¸´ÖÆµÚÒ»Î»
+            // å¤åˆ¶ç¬¬ä¸€ä½
             bmpd->CopyFromBitmap(&des, bmps, &src);
         };
 #ifdef _DEBUG
         LongUI::CUITimeMeterH tm; tm.Start();
         auto tick = ::timeGetTime();
 #endif
-        // ±éÀú
+        // éå†
         for (int i = 0; i < END; ++i) {
-            // µÚ1Î»
+            // ç¬¬1ä½
             copybmp(i, 0, i / 1000);
-            // µÚ2Î»
+            // ç¬¬2ä½
             copybmp(i, 1, i / 100 % 10);
-            // µÚ3Î»
+            // ç¬¬3ä½
             copybmp(i, 2, i / 10 % 10);
-            // µÚ4Î»
+            // ç¬¬4ä½
             copybmp(i, 3, i  % 10);
         }
 #ifdef _DEBUG
@@ -709,7 +709,7 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             << LongUI::endl;
 #endif
     }
-    // ÉèÖÃ½ÇÉ«
+    // è®¾ç½®è§’è‰²
     if (SUCCEEDED(hr)) {
         auto bitmap = UIManager.GetBitmap(m_uCharBitmap);
         assert(bitmap && "bad action");
@@ -722,37 +722,52 @@ auto PathFD::UIMapControl::Recreate() noexcept -> HRESULT {
             hr = E_NOT_SET;
         }
     }
-    // É¨Î²´¦Àí
+    // æ‰«å°¾å¤„ç†
     LongUI::SafeRelease(pCellBitmapBoundary);
     LongUI::SafeRelease(pBitmapRenderTarget);
     return hr;
 }
 
 
+// å¼•ç”¨ç®€åŒ–
+using LongUI::longui_cast;
+
 /// <summary>
-/// Ò»°ãÊ±¼ä´¦Àí
+/// ä¸€èˆ¬æ—¶é—´å¤„ç†
 /// </summary>
 /// <param name="arg">The argument.</param>
 /// <returns></returns>
 bool PathFD::UIMapControl::DoEvent(const LongUI::EventArgument& arg) noexcept {
-    // ¸¸Àà´¦Àí
+    // åˆå§‹åŒ–
+    switch (arg.event)
+    {
+    case LongUI::Event::Event_TreeBuildingFinished:
+    {
+        auto radio = m_pWindow->FindControl("rdoDirection8");
+        m_pRdiDirection8 = longui_cast<LongUI::UIRadioButton*>(radio);
+        assert(m_pRdiDirection8 && "control not found");
+
+    }
+        break;
+    }
+    // çˆ¶ç±»å¤„ç†
     return Super::DoEvent(arg);
 }
 
 
 
-// Êó±êÊÂ¼ş
+// é¼ æ ‡äº‹ä»¶
 bool PathFD::UIMapControl::DoMouseEvent(const LongUI::MouseEventArgument& arg) noexcept {
-    // ²»Ö§³Ö½ûÓÃ×´Ì¬
+    // ä¸æ”¯æŒç¦ç”¨çŠ¶æ€
 #if 0
-    // ½ûÓÃ×´Ì¬½ûÓÃÊó±êÏûÏ¢
+    // ç¦ç”¨çŠ¶æ€ç¦ç”¨é¼ æ ‡æ¶ˆæ¯
     if (!this->GetEnabled()) return true;
 #endif
-    // ×ø±ê×ª»»
+    // åæ ‡è½¬æ¢
     D2D1_POINT_2F pt4self = LongUI::TransformPointInverse(
         this->world, D2D1::Point2F(arg.ptx,  arg.pty)
     );
-    // ------------------------------- Êó±êÒÆ¶¯
+    // ------------------------------- é¼ æ ‡ç§»åŠ¨
     auto on_mouse_lbhold = [pt4self, this]() noexcept {
         auto x = uint32_t(pt4self.x) / m_dataMap.cell_width;
         auto y = uint32_t(pt4self.y) / m_dataMap.cell_height;
@@ -776,9 +791,9 @@ bool PathFD::UIMapControl::DoMouseEvent(const LongUI::MouseEventArgument& arg) n
         break;
         }
     };
-    // ------------------------------- Êó±ê×ó¼ü
+    // ------------------------------- é¼ æ ‡å·¦é”®
     auto on_lbutton_down = [pt4self, this]() noexcept {
-        // Ë«»÷
+        // åŒå‡»
         if (m_hlpDbClick.Click(long(pt4self.x), long(pt4self.y))) {
             const bool a = m_uClickX < m_dataMap.map_width;
             const bool b = m_uClickY < m_dataMap.map_height;
@@ -786,36 +801,36 @@ bool PathFD::UIMapControl::DoMouseEvent(const LongUI::MouseEventArgument& arg) n
                 auto index = m_uClickY * m_dataMap.map_width + m_uClickX;
                 auto& cell = m_pMapCells[index];
                 cell = !cell;
-                // TODO: Õë¶ÔĞÔÓÅ»¯
+                // TODO: é’ˆå¯¹æ€§ä¼˜åŒ–
                 this->reset_sprites();
                 this->InvalidateThis();
             }
         }
-        // µ¥»÷
+        // å•å‡»
         else {
             m_typeClicked = UIMapControl::Type_Cell;
             auto x = uint32_t(pt4self.x) / m_dataMap.cell_width;
             auto y = uint32_t(pt4self.y) / m_dataMap.cell_height;
-            // µã»÷Æğµã
+            // ç‚¹å‡»èµ·ç‚¹
             if (x == m_dataMap.char_x && y == m_dataMap.char_y) {
                 m_typeClicked = UIMapControl::Type_Start;
             }
-            // µã»÷ÖÕµã
+            // ç‚¹å‡»ç»ˆç‚¹
             else if (x == m_uGoalX && y == m_uGoalY) {
                 m_typeClicked = UIMapControl::Type_Goal;
             }
-            // µØÍ¼Ñ¡Ôñ
+            // åœ°å›¾é€‰æ‹©
             if (m_uClickX != x || m_uClickY != y) {
                 m_uClickX = x; m_uClickY = y;
                 this->InvalidateThis();
             }
         }
     };
-    // ------------------------------- ÊÂ¼ş´¦Àí
+    // ------------------------------- äº‹ä»¶å¤„ç†
     switch (arg.event)
     {
     case LongUI::MouseEvent::Event_MouseWheelV:
-        // °´×¡Ctrl¼üËõ·Å
+        // æŒ‰ä½Ctrlé”®ç¼©æ”¾
         if (UIInput.IsKbPressed(UIInput.KB_CONTROL)) {
             float z = arg.wheel.delta * 0.5f + 1.f;
             auto zx = this->parent->GetZoomX();
@@ -865,25 +880,44 @@ bool PathFD::UIMapControl::DoMouseEvent(const LongUI::MouseEventArgument& arg) n
     return false;
 }
 
-// Ëõ·Å¿Õ¼ä´óĞ¡
+// ç¼©æ”¾ç©ºé—´å¤§å°
 void PathFD::UIMapControl::ZoomMapTo(float zoom, float time) noexcept {
     auto con = this->parent;
     auto zs = con->GetZoomX();
     auto len = zoom - zs;
-    // Ìí¼Ó¿ØÖÆËõ·ÅµÄÊ±¼ä½ºÄÒ
+    // æ·»åŠ æ§åˆ¶ç¼©æ”¾çš„æ—¶é—´èƒ¶å›Š
     UIManager.AddTimeCapsule([con, zs, len](float x) noexcept {
         x = LongUI::EasingFunction(LongUI::AnimationType::Type_QuarticEaseOut, x);
         auto zoomx = zs + len * x;
         con->SetZoom(zoomx, zoomx);
-        // ²»ÒªÖÕÖ¹Ê±¼ä½ºÄÒË¢ĞÂ
+        // ä¸è¦ç»ˆæ­¢æ—¶é—´èƒ¶å›Šåˆ·æ–°
         return false;
     }, this->get_capsule_zoommap(), time);
+}
+
+
+
+/// <summary>
+/// åˆ›å»ºä¸€ä¸ª finder å¯¹è±¡ å¹¶è¿”å›å®ƒä»¥æ–¹ä¾¿è°ƒç”¨
+/// </summary>
+/// <param name="finder">The finder.</param>
+/// <returns>finder</returns>
+auto PathFD::UIMapControl::make_finder(PathFD::Finder& finder) noexcept -> PathFD::Finder& {
+    finder.data = m_pMapCells;
+    finder.width = m_dataMap.map_width;
+    finder.height = m_dataMap.map_height;
+    finder.startx = int16_t(m_dataMap.char_x);
+    finder.starty = int16_t(m_dataMap.char_y);
+    finder.goalx = int16_t(m_uGoalX);
+    finder.goaly = int16_t(m_uGoalY);
+    finder.dir8 = m_pRdiDirection8->GetCheckedState();
+    return finder;
 }
 
 #include <thread>
 
 /// <summary>
-/// Ö´ĞĞÑ°Â·
+/// æ‰§è¡Œå¯»è·¯
 /// </summary>
 /// <param name="algorithm">The algorithm.</param>
 /// <param name="info">The info.</param>
@@ -894,39 +928,31 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
     m_bNeedReset = true;
     //m_uNumberSpriteCount = 0;
     //m_uNodeSpriteCount = 0;
-    // PathFD::Finder Êı¾İ³õÊ¼»¯
+    // PathFD::Finder æ•°æ®åˆå§‹åŒ–
     PathFD::Finder finder;
-    finder.data = m_pMapCells;
-    finder.width = m_dataMap.map_width;
-    finder.height = m_dataMap.map_height;
-    finder.startx = int16_t(m_dataMap.char_x);
-    finder.starty = int16_t(m_dataMap.char_y);
-    finder.goalx = int16_t(m_uGoalX);
-    finder.goaly = int16_t(m_uGoalY);
     LongUI::CUITimeMeterH meter;
-    std::this_thread::yield();
     meter.Start();
-    auto* path = algorithm->Execute(finder);
+    auto* path = algorithm->Execute(this->make_finder(finder));
     auto time = meter.Delta_ms<double>();
-    info.Format(L"%ls: %.3f ºÁÃë", path ? L"³É¹¦" : L"Ê§°Ü", time);
-    // ¾ÉµÄÂ·¾¶ÓĞĞ§
+    info.Format(L"%ls: %.3f æ¯«ç§’", path ? L"æˆåŠŸ" : L"å¤±è´¥", time);
+    // æ—§çš„è·¯å¾„æœ‰æ•ˆ
     if (m_pPath) std::free(m_pPath);
-    // ĞÂµÄÂ·¾¶ÓĞĞ§
+    // æ–°çš„è·¯å¾„æœ‰æ•ˆ
     if ((m_pPath = path)) {
         uint32_t count = path->len;
         uint32_t index = 0;
         assert(m_pMapSpriteBatch);
         auto mapw = m_dataMap.map_width;
-        // Ìí¼Ó¿ØÖÆÂ·¾¶ÏÔÊ¾µÄÊ±¼ä½ºÄÒ
+        // æ·»åŠ æ§åˆ¶è·¯å¾„æ˜¾ç¤ºçš„æ—¶é—´èƒ¶å›Š
         UIManager.AddTimeCapsule([this, path, mapw, index](float x) mutable noexcept {
             constexpr auto at = LongUI::AnimationType::Type_QuarticEaseOut;
             x = LongUI::EasingFunction(at, x);
             if (x != 1.f) {
-                // ¼ÆËã
+                // è®¡ç®—
                 uint32_t end = uint32_t(x * float(path->len));
                 D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::Orange);
                 bool invalidate = false;
-                // ±éÀú·½¿é
+                // éå†æ–¹å—
                 for (auto i = index; i <= end; ++i) {
                     auto realindex = uint32_t(path->pt[i].x) + uint32_t(path->pt[i].y) * mapw;
                     m_pMapSpriteBatch->SetSprites(
@@ -939,71 +965,63 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
                     );
                     invalidate = true;
                 }
-                // ÍÆ½øË÷Òı
+                // æ¨è¿›ç´¢å¼•
                 index = end + 1;
-                // ĞèÒªË¢ĞÂ
+                // éœ€è¦åˆ·æ–°
                 if (invalidate) {
                     this->InvalidateThis();
                 }
             }
-            // ²»ÒªÖĞ¶Ïµ÷ÓÃ
+            // ä¸è¦ä¸­æ–­è°ƒç”¨
             return false;
         }, this->get_capsule_pathdisplay(), 1.f + float(count) / 300.f);
     }
 }
 
 /// <summary>
-/// ¿ªÊ¼ÑİÊ¾
+/// å¼€å§‹æ¼”ç¤º
 /// </summary>
 /// <param name="algorithm">The algorithm.</param>
 /// <returns></returns>
 void PathFD::UIMapControl::BeginShow(IFDAlgorithm*&& algorithm) noexcept {
     assert(algorithm && "bad argument");
-    // ÖØÖÃÊı¾İ
+    // é‡ç½®æ•°æ®
     m_fAlgorithmStepTimeNow = 0.f;
     m_uNumberSpriteCount = 0;
     m_uNodeSpriteCount = 0;
     m_bNeedReset = false;
     this->reset_map();
-    // ÊÍ·Å¾ÉµÄËã·¨
+    // é‡Šæ”¾æ—§çš„ç®—æ³•
     if (m_pAlgorithm) m_pAlgorithm->Dispose();
-    // ¼Ş½ÓĞÂµÄËã·¨
+    // å«æ¥æ–°çš„ç®—æ³•
     m_pAlgorithm = algorithm; algorithm = nullptr;
-    // Ö´ĞĞËã·¨
+    // æ‰§è¡Œç®—æ³•
     PathFD::Finder finder;
-    finder.data = m_pMapCells;
-    finder.width = m_dataMap.map_width;
-    finder.height = m_dataMap.map_height;
-    finder.startx = int16_t(m_dataMap.char_x);
-    finder.starty = int16_t(m_dataMap.char_y);
-    finder.goalx = int16_t(m_uGoalX);
-    finder.goaly = int16_t(m_uGoalY);
-    m_pAlgorithm->BeginStep(finder);
+    m_pAlgorithm->BeginStep(this->make_finder(finder));
 }
 
 /// <summary>
-/// UË¢ĞÂ¿Ø¼ş
+/// Uåˆ·æ–°æ§ä»¶
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::Update() noexcept {
-    // ¸¸ÀàË¢ĞÂ
+    // çˆ¶ç±»åˆ·æ–°
     Super::Update();
-    // µØÍ¼ÓĞĞ§
+    // åœ°å›¾æœ‰æ•ˆ
     if (!m_dataMap.map_width) return;
-    // ²½½øËã·¨
+    // æ­¥è¿›ç®—æ³•
     if (m_pAlgorithm && m_fAlgorithmStepTimeNow >= 0.f) {
         m_fAlgorithmStepTimeNow += UIManager.GetDeltaTime();
         assert(m_fAlgorithmStepTimeAll > 0.f);
-        // ĞèÒªË¢ĞÂ
+        // éœ€è¦åˆ·æ–°
         while (m_pAlgorithm && m_fAlgorithmStepTimeNow > m_fAlgorithmStepTimeAll) {
             m_fAlgorithmStepTimeNow -= m_fAlgorithmStepTimeAll;
-            //m_bNodeSet = m_fAlgorithmStepTimeNow <= m_fAlgorithmStepTimeAll;
-            this->exe_next_step();
+            this->exe_next_step(m_fAlgorithmStepTimeNow <= m_fAlgorithmStepTimeAll);
         }
     }
-    // ½ÓÊÜÊäÈë
+    // æ¥å—è¾“å…¥
     m_char.Input(PathFD::InputCheck());
-    // Ë¢ĞÂ½ÇÉ«
+    // åˆ·æ–°è§’è‰²
     if (m_char.Update()) {
         this->InvalidateThis();
     }
@@ -1012,116 +1030,95 @@ void PathFD::UIMapControl::Update() noexcept {
 #undef max
 #include <algorithm>
 
-// ÉèÖÃ²½½ø¼ä¸ôÊ±¼ä
+// è®¾ç½®æ­¥è¿›é—´éš”æ—¶é—´
 void PathFD::UIMapControl::SetStepDeltaTime(float time) noexcept {
     assert(time > 0.f && "out of range");
     if (time <= 0.f) time = 0.0001f;
     m_fAlgorithmStepTimeAll = time;
 }
 
-// PathFD ÃüÃû¿Õ¼ä
+// PathFD å‘½åç©ºé—´
 namespace PathFD {
-    // ·½Ïò¼ıÍ·Êı×é
+    // è®¡ç®—X
+    constexpr uint32_t ArrowX(uint32_t x) noexcept {
+        return x * UIMapControl::DIRARROW_SRC_WIDTH + UIMapControl::DIRARROW_SRCX_OFFSET;
+    }
+    // è®¡ç®—Y
+    constexpr uint32_t ArrowY(uint32_t y) noexcept {
+        return y * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET;
+    }
+    // æ–¹å‘ç®­å¤´æ•°ç»„
     static const D2D1_RECT_U DIRARROW_SETS[CharacterDirection::DIRECTION_SIZE] = {
-        {
-            0 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
-        {
-            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
-        {
-            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
-        {
-            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            0 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            4 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
-
-        {
-            0 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
-        {
-            1 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
-        {
-            2 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
-        {
-            3 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            1 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-            4 * UIMapControl::DIRARROW_SRC_WIDTH  + UIMapControl::DIRARROW_SRCX_OFFSET,
-            2 * UIMapControl::DIRARROW_SRC_HEIGHT + UIMapControl::DIRARROW_SRCY_OFFSET,
-        },
+        // 0
+        { ArrowX(2), ArrowY(2), ArrowX(3), ArrowY(3) },
+        // 1
+        { ArrowX(0), ArrowY(0), ArrowX(1), ArrowY(1) },
+        // 2
+        { ArrowX(1), ArrowY(0), ArrowX(2), ArrowY(1) },
+        // 3
+        { ArrowX(2), ArrowY(0), ArrowX(3), ArrowY(1) },
+        // 4
+        { ArrowX(3), ArrowY(0), ArrowX(4), ArrowY(1) },
+        // 5
+        { ArrowX(3), ArrowY(2), ArrowX(4), ArrowY(3) },
+        // 6
+        { ArrowX(0), ArrowY(1), ArrowX(1), ArrowY(2) },
+        // 7
+        { ArrowX(1), ArrowY(1), ArrowX(2), ArrowY(2) },
+        // 8
+        { ArrowX(2), ArrowY(1), ArrowX(3), ArrowY(2) },
+        // 9
+        { ArrowX(3), ArrowY(1), ArrowX(4), ArrowY(2) },
     };
 }
 
-// ÉèÖÃ½ÚµãÏÔÊ¾
+// è®¾ç½®èŠ‚ç‚¹æ˜¾ç¤º
 void PathFD::UIMapControl::SetNodeDisplay(const NodeDisplay& num) noexcept {
     constexpr int MAXCOUNT = 8;
     D2D1_RECT_F des[MAXCOUNT]; D2D1_RECT_U src[MAXCOUNT];
     assert(num.argc < MAXCOUNT && "buffer too small");
     assert(num.d < CharacterDirection::DIRECTION_SIZE && "bad direction");
-    // ±£Ö¤
+    // ä¿è¯
     auto requiresp = [](ID2D1SpriteBatch* sp, uint32_t c) noexcept {
         auto count = sp->GetSpriteCount();
         if (count > c) return S_OK;
         D2D1_RECT_F rect = { 0.f };
         return sp->AddSprites(std::max(64ui32, (c - count)), &rect, nullptr, nullptr, nullptr, 0, 0, 0, 0);
     };
-    // ¼ÆËãĞèÒª¾«Áé
+    // è®¡ç®—éœ€è¦ç²¾çµ
     uint32_t count = (num.i + 1) * num.argc;
     m_uNumberSpriteCount = std::max(m_uNumberSpriteCount, count);
     m_uNodeSpriteCount = std::max(m_uNodeSpriteCount, (num.i + 1));
     auto hr = S_OK;
-    // ¾«Áé²»¹»?
+    // ç²¾çµä¸å¤Ÿ?
     if (SUCCEEDED(hr)) {
         hr = requiresp(m_pNumberDisplay, count);
     }
-    // ¾«Áé²»¹»?
+    // ç²¾çµä¸å¤Ÿ?
     if (SUCCEEDED(hr)) {
         hr = requiresp(m_pNodeDisplay, num.i + 1);
     }
-    // ³É¹¦
+    // æˆåŠŸ
     if (SUCCEEDED(hr)) {
         const float dx = float(num.x * m_dataMap.cell_width);
         const uint32_t dy = num.y * m_dataMap.cell_height;
-        // ÉèÖÃ
+        // è®¾ç½®
         for (uint32_t i = 0; i < num.argc; ++i) {
-            // ÉèÖÃÄ¿±ê¾ØĞÎ
+            // è®¾ç½®ç›®æ ‡çŸ©å½¢
             des[i].left = dx;
             des[i].top = float(dy + i * DIGNUMNER_HEIGHT);
             des[i].right = des[i].left + float(NUMCOUNT * DIGNUMNER_WIDTH);
             des[i].bottom = des[i].top + float(DIGNUMNER_HEIGHT);
-            // ÉèÖÃÔ´¾ØĞÎ
+            // è®¾ç½®æºçŸ©å½¢
             auto n = num.argv[i];
             src[i].left = n % LINECOUNT * (NUMCOUNT * DIGNUMNER_WIDTH);
             src[i].top = n / LINECOUNT * DIGNUMNER_HEIGHT;
             src[i].right = src[i].left + NUMCOUNT * DIGNUMNER_WIDTH;
             src[i].bottom = src[i].top + DIGNUMNER_HEIGHT;
         }
-        // ÉèÖÃ½ÚµãÊı×ÖÏÔÊ¾
+        // è®¾ç½®èŠ‚ç‚¹æ•°å­—æ˜¾ç¤º
         m_pNumberDisplay->SetSprites(count - num.argc, num.argc, des, src);
-        // ÉèÖÃ½Úµã¹ØÏµÏÔÊ¾
+        // è®¾ç½®èŠ‚ç‚¹å…³ç³»æ˜¾ç¤º
         auto desnode = *des;
         desnode.right = desnode.left + float(m_dataMap.cell_width);
         desnode.bottom = desnode.top + float(m_dataMap.cell_height);
@@ -1129,7 +1126,7 @@ void PathFD::UIMapControl::SetNodeDisplay(const NodeDisplay& num) noexcept {
     }
 }
 
-// ÔİÍ£»Ö¸´
+// æš‚åœæ¢å¤
 void PathFD::UIMapControl::PauseResume() noexcept {
     if (m_fAlgorithmStepTimeNow < 0.f) {
         m_fAlgorithmStepTimeNow = 0.f;
@@ -1139,22 +1136,22 @@ void PathFD::UIMapControl::PauseResume() noexcept {
     }
 }
 
-// Ö´ĞĞÏÂÒ»²½
+// æ‰§è¡Œä¸‹ä¸€æ­¥
 void PathFD::UIMapControl::ExeNextStep() noexcept {
-    // Êı¾İÓĞĞ§
+    // æ•°æ®æœ‰æ•ˆ
     if (m_pAlgorithm) {
-        // ÔİÍ£²½½øÏÔÊ¾
+        // æš‚åœæ­¥è¿›æ˜¾ç¤º
         m_fAlgorithmStepTimeNow = -1.f;
-        // ÏÂÒ»²½
-        this->exe_next_step();
+        // ä¸‹ä¸€æ­¥
+        this->exe_next_step(true);
     }
 }
 
-// Ö´ĞĞÏÂÒ»²½
-void PathFD::UIMapControl::exe_next_step() noexcept {
+// æ‰§è¡Œä¸‹ä¸€æ­¥
+void PathFD::UIMapControl::exe_next_step(bool refresh) noexcept {
     assert(m_pAlgorithm && "bad action");
-    auto end = m_pAlgorithm->NextStep(m_pMapSpriteBatch, this);
-    // ½áÊøËÑÑ°?
+    auto end = m_pAlgorithm->NextStep(m_pMapSpriteBatch, this, refresh);
+    // ç»“æŸæœå¯»?
     if (end) {
         m_pAlgorithm->EndStep();
         m_pAlgorithm->Dispose();
@@ -1163,33 +1160,33 @@ void PathFD::UIMapControl::exe_next_step() noexcept {
     this->InvalidateThis();
 }
 
-// PathFD ÃüÃû¿Õ¼ä
+// PathFD å‘½åç©ºé—´
 namespace PathFD {
-    // ÎÄ¼şÍ·Êı¾İ
+    // æ–‡ä»¶å¤´æ•°æ®
     static constexpr char PathFdHd[8] = { 'P','a','t','h','F','d','H','d' };
-    // µØÍ¼ÎÄ¼şÍ·Êı¾İ
+    // åœ°å›¾æ–‡ä»¶å¤´æ•°æ®
     struct MapFileDataHeader {
-        // ÎÄ¼şÍ·±êÊ¶ 'PathFdHd'
+        // æ–‡ä»¶å¤´æ ‡è¯† 'PathFdHd'
         char            header[8];
-        // µØÍ¼¿í¶È
+        // åœ°å›¾å®½åº¦
         uint32_t        width;
-        // µØÍ¼¸ß¶È
+        // åœ°å›¾é«˜åº¦
         uint32_t        height;
-        // ÆğµãÎ»ÖÃX
+        // èµ·ç‚¹ä½ç½®X
         uint32_t        startx;
-        // ÆğµãÎ»ÖÃY
+        // èµ·ç‚¹ä½ç½®Y
         uint32_t        starty;
-        // ÖÕµãÎ»ÖÃX
+        // ç»ˆç‚¹ä½ç½®X
         uint32_t        goalx;
-        // ÖÕµãÎ»ÖÃY
+        // ç»ˆç‚¹ä½ç½®Y
         uint32_t        goaly;
-        // ½ÓÏÂÀ´¾ÍÊÇµØÍ¼Êı¾İ
+        // æ¥ä¸‹æ¥å°±æ˜¯åœ°å›¾æ•°æ®
         //uint8_t         data[0];
     };
 }
 
 /// <summary>
-/// ±£´æµØÍ¼
+/// ä¿å­˜åœ°å›¾
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::SaveMap() noexcept {
@@ -1197,17 +1194,17 @@ void PathFD::UIMapControl::SaveMap() noexcept {
     assert(m_pFileSaveDialog);
     IShellItem* item = nullptr;
     wchar_t* filename = nullptr;
-    // ÏÔÊ¾´°¿Ú
+    // æ˜¾ç¤ºçª—å£
     auto hr = m_pFileSaveDialog->Show(m_pWindow->GetHwnd());
-    // »ñÈ¡½á¹û
+    // è·å–ç»“æœ
     if (SUCCEEDED(hr)) {
         hr = m_pFileSaveDialog->GetResult(&item);
     }
-    // »ñÈ¡ÏÔÊ¾Ãû³Æ
+    // è·å–æ˜¾ç¤ºåç§°
     if (SUCCEEDED(hr)) {
         hr = item->GetDisplayName(SIGDN_FILESYSPATH, &filename);
     }
-    // ±£´æÎÄ¼ş
+    // ä¿å­˜æ–‡ä»¶
     if (SUCCEEDED(hr)) {
         this->SaveMap(filename);
     }
@@ -1219,24 +1216,24 @@ void PathFD::UIMapControl::SaveMap() noexcept {
 }
 
 /// <summary>
-/// ÔØÈëµØÍ¼
+/// è½½å…¥åœ°å›¾
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::LoadMap() noexcept {
     assert(m_pFileOpenDialog);
     IShellItem* item = nullptr;
     wchar_t* filename = nullptr;
-    // ÏÔÊ¾´°¿Ú
+    // æ˜¾ç¤ºçª—å£
     auto hr = m_pFileOpenDialog->Show(m_pWindow->GetHwnd());
-    // »ñÈ¡½á¹û
+    // è·å–ç»“æœ
     if (SUCCEEDED(hr)) {
         hr = m_pFileOpenDialog->GetResult(&item);
     }
-    // »ñÈ¡ÏÔÊ¾Ãû³Æ
+    // è·å–æ˜¾ç¤ºåç§°
     if (SUCCEEDED(hr)) {
         hr = item->GetDisplayName(SIGDN_FILESYSPATH, &filename);
     }
-    // ±£´æÎÄ¼ş
+    // ä¿å­˜æ–‡ä»¶
     if (SUCCEEDED(hr)) {
         this->LoadMap(filename);
     }
@@ -1248,7 +1245,7 @@ void PathFD::UIMapControl::LoadMap() noexcept {
 }
 
 /// <summary>
-/// Ê¹ÓÃÖ¸¶¨µÄÎÄ¼şÃûÔØÈëµØÍ¼
+/// ä½¿ç”¨æŒ‡å®šçš„æ–‡ä»¶åè½½å…¥åœ°å›¾
 /// </summary>
 /// <param name="filename">The filename.</param>
 /// <returns></returns>
@@ -1256,59 +1253,59 @@ void PathFD::UIMapControl::LoadMap(const wchar_t* filename) noexcept {
     assert(filename && "bad file name");
     LongUI::CUIFile* empty = nullptr;
     LongUI::CUIFile file(filename, empty->Flag_Read);
-    // ÎÄ¼ş´ò¿ªÊ§°Ü
+    // æ–‡ä»¶æ‰“å¼€å¤±è´¥
     if (!file.IsOk()) {
-        UIManager.ShowError(L"ÎÄ¼ş´ò¿ªÊ§°Ü", filename);
+        UIManager.ShowError(L"æ–‡ä»¶æ‰“å¼€å¤±è´¥", filename);
         return;
     }
-    // ÎÄ¼şÍ·
+    // æ–‡ä»¶å¤´
     MapFileDataHeader header;
     auto read = file.Read(&header, sizeof(header));
-    // ²»·ûºÏÒªÇó
+    // ä¸ç¬¦åˆè¦æ±‚
     if (read != sizeof(header) ||
         std::memcmp(header.header, PathFdHd, sizeof(PathFdHd))) {
-        UIManager.ShowError(L"·Ç·¨ÎÄ¼ş", filename);
+        UIManager.ShowError(L"éæ³•æ–‡ä»¶", filename);
         return;
     }
-    // ±£Ö¤µØÍ¼ÓĞĞ§
+    // ä¿è¯åœ°å›¾æœ‰æ•ˆ
     if (!this->require_mapdata(header.width, header.height)) return;
     uint32_t len = sizeof(m_pMapCells[0]) * (header.width * header.height);
-    // Çå¿Õ
+    // æ¸…ç©º
     std::memset(m_pMapCells, 0, len);
-    // Ğ´ÈëÊı¾İ
+    // å†™å…¥æ•°æ®
     m_dataMap.map_data = m_pMapCells;
     m_dataMap.char_x = header.startx;
     m_dataMap.char_y = header.starty;
     m_uGoalX = header.goalx;
     m_uGoalY = header.goaly;
-    // Ğ´ÈëµØÍ¼
+    // å†™å…¥åœ°å›¾
     file.Read(m_pMapCells, len);
-    // ÖØÖÃµØÍ¼
+    // é‡ç½®åœ°å›¾
     this->reset_map();
 }
 
 
-// ÇåÀíµØÍ¼
+// æ¸…ç†åœ°å›¾
 void PathFD::UIMapControl::ClearMap() noexcept {
     if (!m_pMapCells) return;
     uint32_t len = sizeof(m_pMapCells[0]) * m_dataMap.map_width * m_dataMap.map_height;
-    // Ğ´ÈëµØÍ¼
+    // å†™å…¥åœ°å›¾
     std::memset(m_pMapCells, 1, len);
-    // ÖØÖÃµØÍ¼
+    // é‡ç½®åœ°å›¾
     this->reset_map();
 }
 
-// ±£´æÊı¾İ
+// ä¿å­˜æ•°æ®
 void PathFD::UIMapControl::SaveMap(const wchar_t* filename) noexcept {
     assert(filename && "bad file name");
     LongUI::CUIFile* empty = nullptr;
     LongUI::CUIFile file(filename, empty->Flag_CreateAlways | empty->Flag_Write);
-    // ÎÄ¼ş´ò¿ªÊ§°Ü
+    // æ–‡ä»¶æ‰“å¼€å¤±è´¥
     if (!file.IsOk()) {
-        UIManager.ShowError(L"ÎÄ¼ş±£´æÊ§°Ü", filename);
+        UIManager.ShowError(L"æ–‡ä»¶ä¿å­˜å¤±è´¥", filename);
         return;
     }
-    // Ğ´ÈëÎÄ¼şÍ·
+    // å†™å…¥æ–‡ä»¶å¤´
     MapFileDataHeader header;
     std::memcpy(&header.header, PathFdHd, sizeof(PathFdHd));
     header.width = m_dataMap.map_width;
@@ -1317,14 +1314,14 @@ void PathFD::UIMapControl::SaveMap(const wchar_t* filename) noexcept {
     header.starty = m_dataMap.char_y;
     header.goalx = m_uGoalX;
     header.goaly = m_uGoalY;
-    // Ğ´ÈëÎÄ¼ş
+    // å†™å…¥æ–‡ä»¶
     file.Write(&header, sizeof(header));
-    // Ğ´ÈëµØÍ¼
+    // å†™å…¥åœ°å›¾
     file.Write(m_pMapCells, sizeof(m_pMapCells[0]) * header.width * header.height);
 }
 
 /// <summary>
-/// ´´½¨±¾¿Ø¼ş
+/// åˆ›å»ºæœ¬æ§ä»¶
 /// </summary>
 /// <param name="type">The type.</param>
 /// <param name="node">The node.</param>
@@ -1349,7 +1346,7 @@ auto PathFD::UIMapControl::CreateControl(
 
 
 #ifdef LongUIDebugEvent
-// UIÎÄ±¾: µ÷ÊÔĞÅÏ¢
+// UIæ–‡æœ¬: è°ƒè¯•ä¿¡æ¯
 bool PathFD::UIMapControl::debug_do_event(const LongUI::DebugEventInformation& info) const noexcept {
     switch (info.infomation)
     {
@@ -1360,7 +1357,7 @@ bool PathFD::UIMapControl::debug_do_event(const LongUI::DebugEventInformation& i
         info.str = L"::PathFD::UIMapControl";
         return true;
     case LongUI::DebugInformation::Information_CanbeCasted:
-        // ÀàĞÍ×ª»»
+        // ç±»å‹è½¬æ¢
         return *info.iid == LongUI::GetIID<::PathFD::UIMapControl>()
             || Super::debug_do_event(info);
     default:
@@ -1370,10 +1367,10 @@ bool PathFD::UIMapControl::debug_do_event(const LongUI::DebugEventInformation& i
 }
 #endif
 
-// pathfd Â·¾¶
+// pathfd è·¯å¾„
 namespace PathFD {
     /// <summary>
-    /// ´´½¨µØÍ¼¿Ø¼ş
+    /// åˆ›å»ºåœ°å›¾æ§ä»¶
     /// </summary>
     /// <returns></returns>
     auto CreateMapControl(LongUI::CreateEventType cet, pugi::xml_node node)

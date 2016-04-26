@@ -1,25 +1,26 @@
-#include "pfdWndView.h"
+ï»¿#include "pfdWndView.h"
 #include "pfdUIMap.h"
 #include <Core/luiWindow.h>
 #include <Core/luiManager.h>
 #include <Control/UIComboBox.h>
-#include  "pfdAlgorithm.h"
+#include <Control/UIRadioButton.h>
+#include "pfdAlgorithm.h"
 
 
 /// <summary>
-/// ÇåÀí¿Ø¼ş
+/// æ¸…ç†æ§ä»¶
 /// </summary>
 /// <returns></returns>
 void PathFD::CFDWndView::cleanup() noexcept {
-    // É¾Ç°µ÷ÓÃ
+    // åˆ å‰è°ƒç”¨
     this->before_deleted();
-    // ÊÍ·Å¿Õ¼ä
+    // é‡Šæ”¾ç©ºé—´
     delete this;
 }
 
 
 /// <summary>
-/// ÊÂ¼ş´¦Àí
+/// äº‹ä»¶å¤„ç†
 /// </summary>
 /// <param name="arg">The argument.</param>
 /// <returns></returns>
@@ -34,19 +35,19 @@ bool PathFD::CFDWndView::DoEvent(const LongUI::EventArgument& arg) noexcept {
     }
 }
 
-// ÒıÓÃº¯Êı
+// å¼•ç”¨å‡½æ•°
 using LongUI::longui_cast;
 
-// PathFD ÃüÃû¿Õ¼ä
+// PathFD å‘½åç©ºé—´
 namespace PathFD {
-    // Ëã·¨ÁĞ±í
+    // ç®—æ³•åˆ—è¡¨
     enum AlgorithmId : uint32_t {
-        Id_AStar = 0,       // A* Ëã·¨
-        Id_GreedyBFS,       // Ì°ĞÄ×î¼ÑËÑË÷Ëã·¨
-        Id_Dijkstra,        // DijkstraËã·¨
-        ID_COUNT,           // Ëã·¨¸öÊı
+        Id_AStar = 0,       // A* ç®—æ³•
+        Id_GreedyBFS,       // è´ªå¿ƒæœ€ä½³æœç´¢ç®—æ³•
+        Id_Dijkstra,        // Dijkstraç®—æ³•
+        ID_COUNT,           // ç®—æ³•ä¸ªæ•°
     };
-    // Ëã·¨Ãû³Æ
+    // ç®—æ³•åç§°
     static const wchar_t* const ALG_NAME[ID_COUNT] = {
          L"A-Star", 
          L"Greedy BFS",
@@ -54,21 +55,21 @@ namespace PathFD {
     };
 }
 
-// ³õÊ¼»¯¿Ø¼ş
+// åˆå§‹åŒ–æ§ä»¶
 void PathFD::CFDWndView::init_wndview() noexcept {
     LongUI::UIControl* ctrl = nullptr;
 #ifdef _DEBUG
     UIManager << DL_Log << L"called" << LongUI::endl;
 #endif
     this->add_algorithm();
-    // µØÍ¼¿Ø¼ş
+    // åœ°å›¾æ§ä»¶
     ctrl = m_pWindow->FindControl("mapPathFD");
     m_pMapControl = longui_cast<UIMapControl*>(ctrl);
-    // µØÍ¼¿í¶È
+    // åœ°å›¾å®½åº¦
     auto wc = m_pWindow->FindControl("edtMapWidth");
-    // µØÍ¼¸ß¶È
+    // åœ°å›¾é«˜åº¦
     auto wh = m_pWindow->FindControl("edtMapHeight");
-    // Éú³ÉµØÍ¼
+    // ç”Ÿæˆåœ°å›¾
     ctrl = m_pWindow->FindControl("btnMapGene");
     {
         auto map = m_pMapControl;
@@ -80,7 +81,7 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ±£´æµØÍ¼
+    // ä¿å­˜åœ°å›¾
     ctrl = m_pWindow->FindControl("btnMapSave");
     {
         auto map = m_pMapControl;
@@ -89,7 +90,7 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ÔØÈëµØÍ¼
+    // è½½å…¥åœ°å›¾
     ctrl = m_pWindow->FindControl("btnMapLoad");
     {
         auto map = m_pMapControl;
@@ -98,7 +99,7 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ÖØÖÃËõ·Å
+    // é‡ç½®ç¼©æ”¾
     ctrl = m_pWindow->FindControl("btnMapRezm");
     {
         auto map = m_pMapControl;
@@ -107,7 +108,7 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ÇåÀíµØÍ¼
+    // æ¸…ç†åœ°å›¾
     ctrl = m_pWindow->FindControl("btnMapCler");
     {
         auto map = m_pMapControl;
@@ -116,13 +117,13 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ¿ªÊ¼Ñ°Â·
-    ctrl =  m_pWindow->FindControl("btnFinderStart");
+    // å¼€å§‹å¯»è·¯
+    ctrl = m_pWindow->FindControl("btnFinderStart");
     {
         auto algorithmccb = longui_cast<LongUI::UIComboBox*>(m_pCcbAlgorithm);
         auto display = m_pWindow->FindControl("txtDisplay");
         auto map = m_pMapControl;
-        ctrl->AddEventCall([map, display, algorithmccb](LongUI::UIControl*) noexcept {
+        ctrl->AddEventCall([=](LongUI::UIControl*) noexcept {
             auto algorithm = CFDWndView::create_algorithm(algorithmccb->GetSelectedIndex());
             if (algorithm) {
                 LongUI::CUIString str;
@@ -133,19 +134,19 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ¿ªÊ¼ÑİÊ¾
+    // å¼€å§‹æ¼”ç¤º
     ctrl =  m_pWindow->FindControl("btnFinderShow");
     {
         auto algorithmccb = longui_cast<LongUI::UIComboBox*>(m_pCcbAlgorithm);
         auto map = m_pMapControl;
-        ctrl->AddEventCall([map, algorithmccb](LongUI::UIControl*) noexcept {
+        ctrl->AddEventCall([=](LongUI::UIControl*) noexcept {
             auto algorithm = CFDWndView::create_algorithm(algorithmccb->GetSelectedIndex());
             map->BeginShow(std::move(algorithm));
             assert(algorithm == nullptr);
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ²½½øÑİÊ¾
+    // æ­¥è¿›æ¼”ç¤º
     ctrl =  m_pWindow->FindControl("btnFinderStep");
     {
         auto map = m_pMapControl;
@@ -154,7 +155,7 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ÔİÍ£/»Ö¸´
+    // æš‚åœ/æ¢å¤
     ctrl =  m_pWindow->FindControl("btnFinderPaRe");
     {
         auto map = m_pMapControl;
@@ -163,7 +164,7 @@ void PathFD::CFDWndView::init_wndview() noexcept {
             return true;
         }, LongUI::SubEvent::Event_ItemClicked);
     }
-    // ²½½ø¼ä¸ô
+    // æ­¥è¿›é—´éš”
     ctrl =  m_pWindow->FindControl("edtMapStep");
     {
         auto map = m_pMapControl;
@@ -174,11 +175,11 @@ void PathFD::CFDWndView::init_wndview() noexcept {
     }
 }
 
-// Ìí¼ÓËã·¨
+// æ·»åŠ ç®—æ³•
 void PathFD::CFDWndView::add_algorithm() noexcept {
     m_pCcbAlgorithm = m_pWindow->FindControl("cbbAlgPath");
     assert(m_pCcbAlgorithm);
-    // Ëã·¨Ñ¡Ôñ
+    // ç®—æ³•é€‰æ‹©
     auto algorithm = longui_cast<LongUI::UIComboBox*>(m_pCcbAlgorithm);
     for (auto name : PathFD::ALG_NAME) {
         algorithm->PushItem(name);
@@ -186,7 +187,7 @@ void PathFD::CFDWndView::add_algorithm() noexcept {
     algorithm->SetSelectedIndex(0);
 }
 
-// ´´½¨Ëã·¨
+// åˆ›å»ºç®—æ³•
 auto PathFD::CFDWndView::create_algorithm(uint32_t id) noexcept -> IFDAlgorithm* {
     switch (AlgorithmId(id))
     {
@@ -204,64 +205,64 @@ auto PathFD::CFDWndView::create_algorithm(uint32_t id) noexcept -> IFDAlgorithm*
 
 #include "pdfImpl.h"
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
-    // Ğ¡¿éÄÚ´æÉêÇë
+    // å°å—å†…å­˜ç”³è¯·
     auto AllocSmall(size_t length) noexcept -> void * {
         assert(length < 256);
         return LongUI::SmallAlloc(length);
     }
-    // Ğ¡¿éÄÚ´æÊÍ·Å
+    // å°å—å†…å­˜é‡Šæ”¾
     void FreeSmall(void* address) noexcept {
         return LongUI::SmallFree(address);
     }
-    // »ñÈ¡¼ä¸ôÊ±¼ä
+    // è·å–é—´éš”æ—¶é—´
     auto GetDeltaTime() noexcept -> float {
         return UIManager.GetDeltaTime();
     }
-    // °´¼ü¼ì²é
+    // æŒ‰é”®æ£€æŸ¥
     auto InputCheck() noexcept -> CharacterDirection {
-        // ÏÂ·½Ïò¼ü¼ì²é
+        // ä¸‹æ–¹å‘é”®æ£€æŸ¥
         if (UIInput.IsKbPressed(UIInput.KB_DOWN)) {
             return Direction_S;
         }
-        // ×ó·½Ïò¼ü¼ì²é
+        // å·¦æ–¹å‘é”®æ£€æŸ¥
         if (UIInput.IsKbPressed(UIInput.KB_LEFT)) {
             return Direction_W;
         }
-        // ÓÒ·½Ïò¼ü¼ì²é
+        // å³æ–¹å‘é”®æ£€æŸ¥
         if (UIInput.IsKbPressed(UIInput.KB_RIGHT)) {
             return Direction_E;
         }
-        // ÉÏ·½Ïò¼ü¼ì²é
+        // ä¸Šæ–¹å‘é”®æ£€æŸ¥
         if (UIInput.IsKbPressed(UIInput.KB_UP)) {
             return Direction_N;
         }
-        // ÎŞ
+        // æ— 
         return Direction_Nil;
     }
-    // ·½ÏòÆ«ÒÆ
+    // æ–¹å‘åç§»
     extern const DT DIRECTION_OFFSET[DIRECTION_SIZE] = {
-        { 0, 1}, {-1, 0}, { 1, 0}, { 0,-1},
-        {-1, 1}, { 1, 1}, {-1,-1}, { 1,-1},
+        { 0, 0}, {-1, 1}, { 0, 1}, { 1, 1}, {-1, 0},
+        { 0, 0}, { 1, 0}, {-1,-1}, { 0,-1}, { 1,-1},
     };
-    // impl ÃüÃû¿Õ¼ä
+    // impl å‘½åç©ºé—´
     namespace impl {
 #ifdef _DEBUG
-        // µ÷ÊÔÊä³ö
+        // è°ƒè¯•è¾“å‡º
         void outputdebug(const wchar_t* a) noexcept {
             UIManager << DL_Log << a << LongUI::endl;
         }
 #endif
         // mutex
         struct mutex_impl { CRITICAL_SECTION cs; };
-        // ´´½¨»¥³âËø
+        // åˆ›å»ºäº’æ–¥é”
         auto create_mutex() noexcept ->mutex {
             auto ptr = reinterpret_cast<mutex_impl*>(PathFD::AllocSmall(sizeof(mutex_impl)));
             if (ptr) ::InitializeCriticalSection(&ptr->cs);
             return ptr;
         }
-        // ´İ»Ù»¥³âËø
+        // æ‘§æ¯äº’æ–¥é”
         void destroy(mutex& mx) noexcept {
             if (mx) {
                 ::DeleteCriticalSection(&mx->cs);
@@ -269,12 +270,12 @@ namespace PathFD {
             }
             mx = nullptr;
         }
-        // ÉÏ»¥³âËø
+        // ä¸Šäº’æ–¥é”
         void lock(mutex mx) noexcept {
             assert(mx && "bad argment");
             ::EnterCriticalSection(&mx->cs);
         }
-        // ÏÂ»¥³âËø
+        // ä¸‹äº’æ–¥é”
         void unlock(mutex mx) noexcept {
             assert(mx && "bad argment");
             ::LeaveCriticalSection(&mx->cs);
@@ -283,7 +284,7 @@ namespace PathFD {
         auto windows(event ev) noexcept { return reinterpret_cast<HANDLE>(ev); }
         // pathfd
         auto pathfd(HANDLE ev) noexcept { return reinterpret_cast<event>(ev); }
-        // ÉèÖÃÑÕÉ«
+        // è®¾ç½®é¢œè‰²
         void set_cell_color(void* sprite, uint32_t index, const color& c) noexcept {
             assert(sprite && "bad argument");
             auto* sb = reinterpret_cast<ID2D1SpriteBatch*>(sprite);
@@ -297,28 +298,28 @@ namespace PathFD {
                 0, 0, 0, 0
             );
         }
-        // ÉèÖÃ½ÚµãÏÔÊ¾
+        // è®¾ç½®èŠ‚ç‚¹æ˜¾ç¤º
         void set_node_display(void* num, void* display) noexcept {
             auto map = reinterpret_cast<UIMapControl*>(num);
             auto numdisplay = reinterpret_cast<NodeDisplay*>(display);
             map->SetNodeDisplay(*numdisplay);
         }
-        // ´´½¨ÊÂ¼ş
+        // åˆ›å»ºäº‹ä»¶
         auto create_event() noexcept->event {
             static_assert(sizeof(HANDLE) == sizeof(event), "bad action");
             return pathfd(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
         }
-        // ¼¤»îÊÂ¼ş
+        // æ¿€æ´»äº‹ä»¶
         void signal(event ev) noexcept {
             assert(ev && "bad argment");
             ::SetEvent(windows(ev));
         }
-        // µÈ´ıÊÂ¼ş
+        // ç­‰å¾…äº‹ä»¶
         void wait(event ev) noexcept {
             assert(ev && "bad argment");
             ::WaitForSingleObject(windows(ev), INFINITE);
         }
-        // ´İ»ÙÊÂ¼ş
+        // æ‘§æ¯äº‹ä»¶
         void destroy(event& ev) noexcept {
             if (ev) {
                 ::CloseHandle(windows(ev));

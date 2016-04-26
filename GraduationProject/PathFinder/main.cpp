@@ -42,10 +42,13 @@ u8R"(<?xml version="1.0" encoding="utf-8"?>
                 <Button templateid="3" text="清除地图" name="btnMapCler"/>
             </HorizontalLayout>
             <HorizontalLayout>
-                <RadioButton text="通行方格"/>
-                <RadioButton text="地图视图" checked="true"/>
+                <RadioButton text="通行方格" checked="true"/>
+                <RadioButton text="地图视图"/>
             </HorizontalLayout>
-            <Null weight="0.5"/>
+            <HorizontalLayout>
+                <RadioButton text="四方向" checked="true"/>
+                <RadioButton name="rdoDirection8" text="八方向"/>
+            </HorizontalLayout>
             <HorizontalLayout >
                 <Text weight="0.6" text="步进间隔:" />
                 <Edit bgbrush="3" templateid="4" text="0.1" name="edtMapStep"/>

@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <cstdint>
 #include <d2d1_3.h>
@@ -6,113 +6,113 @@
 
 #pragma warning(disable: 4200)
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
-    // µØÍ¼Êı¾İ
+    // åœ°å›¾æ•°æ®
     struct MapData {
-        // µØÍ¼Êı¾İ
+        // åœ°å›¾æ•°æ®
         const uint8_t*          map_data;
-        // µØÍ¼¿í¶È(µ¥Ôª¸ñ)
+        // åœ°å›¾å®½åº¦(å•å…ƒæ ¼)
         uint32_t                map_width;
-        // µØÍ¼¸ß¶È(µ¥Ôª¸ñ)
+        // åœ°å›¾é«˜åº¦(å•å…ƒæ ¼)
         uint32_t                map_height;
-        // ½ÇÉ«X×ø±ê(µ¥Ôª¸ñ)
+        // è§’è‰²Xåæ ‡(å•å…ƒæ ¼)
         uint32_t                char_x;
-        // ½ÇÉ«Y×ø±ê(µ¥Ôª¸ñ)
+        // è§’è‰²Yåæ ‡(å•å…ƒæ ¼)
         uint32_t                char_y;
-        // µ¥Ôª¸ñ¿í¶È(ÏñËØ)
+        // å•å…ƒæ ¼å®½åº¦(åƒç´ )
         uint32_t                cell_width;
-        // µ¥Ôª¸ñ¸ß¶È(ÏñËØ)
+        // å•å…ƒæ ¼é«˜åº¦(åƒç´ )
         uint32_t                cell_height;
     };
-    // ½ÇÉ«Êı¾İ
+    // è§’è‰²æ•°æ®
     struct CharData {
-        // ½ÇÉ«¿í¶È(ÏñËØ)
+        // è§’è‰²å®½åº¦(åƒç´ )
         uint32_t                width;
-        // ½ÇÉ«¸ß¶È(ÏñËØ)
+        // è§’è‰²é«˜åº¦(åƒç´ )
         uint32_t                height;
-        // Ô´XÆ«ÒÆ(ÏñËØ)
+        // æºXåç§»(åƒç´ )
         uint32_t                src_offsetx;
-        // Ô´YÆ«ÒÆ(ÏñËØ)
+        // æºYåç§»(åƒç´ )
         uint32_t                src_offsety;
-        // Ä¿±êXÆ«ÒÆ(ÏñËØ)
+        // ç›®æ ‡Xåç§»(åƒç´ )
         uint32_t                des_offsetx;
-        // Ä¿±êYÆ«ÒÆ(ÏñËØ)
+        // ç›®æ ‡Yåç§»(åƒç´ )
         uint32_t                des_offsety;
-        // ½ÇÉ«³¯Ïò
+        // è§’è‰²æœå‘
         CharacterDirection      direction;
-        // ¶¯×÷ÊıÁ¿
+        // åŠ¨ä½œæ•°é‡
         uint32_t                acount;
-        // ¶¯×÷ÏûºÄÊ±¼ä
+        // åŠ¨ä½œæ¶ˆè€—æ—¶é—´
         float                   atime;
-        // ÒÆ¶¯ËÙ¶È
+        // ç§»åŠ¨é€Ÿåº¦
         float                   speed;
-        // ¶¯×÷Êı¾İ
+        // åŠ¨ä½œæ•°æ®
         uint32_t                action[0];
     };
-    // ½ÇÉ«ÏÔÊ¾
+    // è§’è‰²æ˜¾ç¤º
     class CFDCharacter final {
     public:
-        // ¹¹Ôìº¯Êı
+        // æ„é€ å‡½æ•°
         CFDCharacter() noexcept;
-        // Îö¹¹º¯Êı
+        // ææ„å‡½æ•°
         ~CFDCharacter() noexcept { this->release_data(); }
-        // Ë¢ĞÂ, ÈôĞèÒªÖØĞÂäÖÈ¾×Å·µ»Øtrue
+        // åˆ·æ–°, è‹¥éœ€è¦é‡æ–°æ¸²æŸ“ç€è¿”å›true
         bool Update() noexcept;
-        // ÊäÈë
+        // è¾“å…¥
         void Input(CharacterDirection d) noexcept;
-        // äÖÈ¾
+        // æ¸²æŸ“
         void Render() const noexcept;
-        // ÖØÖÃµØÍ¼Êı¾İ
+        // é‡ç½®åœ°å›¾æ•°æ®
         void ResetMap(const MapData& data) noexcept;
-        // ÖØÖÃ½ÇÉ«Í¼Ïñ
+        // é‡ç½®è§’è‰²å›¾åƒ
         void ResetChar(ID2D1Bitmap1* bitmap, const CharData& data) noexcept;
-        // ÖØÖÃäÖÈ¾Ä¿±ê³ÊÏÖÆ÷
+        // é‡ç½®æ¸²æŸ“ç›®æ ‡å‘ˆç°å™¨
         void ResetRenderTarget(ID2D1DeviceContext2* d2ddc) noexcept;
-        // Ö´ĞĞ¶¯×÷
+        // æ‰§è¡ŒåŠ¨ä½œ
         void BeginAction();
-        // ½áÊø¶¯×÷
+        // ç»“æŸåŠ¨ä½œ
         void EndAction();
     public:
-        // ÒÆ¶¯ÖĞ
+        // ç§»åŠ¨ä¸­
         bool IsMoving() const noexcept { return m_dtMoving != PathFD::Direction_Nil; }
-        // »ñÈ¡XÏñËØ×ø±ê
+        // è·å–Xåƒç´ åæ ‡
         auto GetPxX() const noexcept { return; }
-        // »ñÈ¡XÏñËØ×ø±ê
+        // è·å–Xåƒç´ åæ ‡
         auto GetPxY() const noexcept { return;}
     private:
-        // ÊÍ·ÅÊı¾İ
+        // é‡Šæ”¾æ•°æ®
         void release_data() noexcept;
-        // Ë¢ĞÂÎ»ÖÃ
+        // åˆ·æ–°ä½ç½®
         void refresh_position() noexcept;
     private:
-        // äÖÈ¾Ä¿±ê³ÊÏÖÆ÷
+        // æ¸²æŸ“ç›®æ ‡å‘ˆç°å™¨
         ID2D1DeviceContext2*    m_pRenderTarget = nullptr;
-        // ËùÊ¹ÓÃÎ»Í¼
+        // æ‰€ä½¿ç”¨ä½å›¾
         ID2D1Bitmap1*           m_pBitmap = nullptr;
-        // µØÍ¼Êı¾İ
+        // åœ°å›¾æ•°æ®
         MapData                 m_map;
-        // ½ÇÉ«Êı¾İ
+        // è§’è‰²æ•°æ®
         CharData*               m_pCharData = nullptr;
-        // ¶¯×÷Ë÷Òı
+        // åŠ¨ä½œç´¢å¼•
         uint32_t                m_ixAction = 0;
-        // ¶¯×÷ÊÂ¼ş
+        // åŠ¨ä½œäº‹ä»¶
         float                   m_fActionTime = 0.f;
-        // ÒÆ¶¯·½Î»
+        // ç§»åŠ¨æ–¹ä½
         CharacterDirection      m_dtMoving = Direction_Nil;
-        // ÒÆ¶¯Æ«ÒÆÂÊ ·¶Î§[0, 1]
+        // ç§»åŠ¨åç§»ç‡ èŒƒå›´[0, 1]
         float                   m_fMoveOffset = 0.f;
-        // x ÏñËØÎ»ÖÃ
+        // x åƒç´ ä½ç½®
         float                   m_fPosX = 0.f;
-        // y ÏğËØÎ»ÖÃ
+        // y æ©¡ç´ ä½ç½®
         float                   m_fPosY = 0.f;
-        // Î´Ê¹ÓÃ
+        // æœªä½¿ç”¨
         //uint32_t                m_unused_u32 = 0;
-        // ½ÇÉ«²åÖµËã·¨
+        // è§’è‰²æ’å€¼ç®—æ³•
         uint16_t                m_uCharInter = D2D1_INTERPOLATION_MODE_NEAREST_NEIGHBOR;
-        // Ë¢ĞÂ
+        // åˆ·æ–°
         bool                    m_bNeedRefresh = false;
-        // ¶¯×÷ÖĞ
+        // åŠ¨ä½œä¸­
         bool                    m_bInAction = false;
     };
 }

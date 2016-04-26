@@ -1,46 +1,46 @@
-#pragma once
+ï»¿#pragma once
 
 #include <luibase.h>
 #include <luiconf.h>
 #include <Control/UIViewport.h>
 #include "pfdAlgorithm.h"
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
-    // µØÍ¼¿Ø¼ş
+    // åœ°å›¾æ§ä»¶
     class UIMapControl;
-    // ³ÌĞò´°¿ÚÊÓÍ¼
+    // ç¨‹åºçª—å£è§†å›¾
     class CFDWndView final : public LongUI::UIViewport {
-        // ¸¸ÀàÉêÃ÷
+        // çˆ¶ç±»ç”³æ˜
         using Super = LongUI::UIViewport;
-        // ÓÑÔªÉêÃ÷
+        // å‹å…ƒç”³æ˜
         friend class Super;
-        // Çå³ı¿Ø¼ş
+        // æ¸…é™¤æ§ä»¶
         virtual void cleanup() noexcept override;
     public:
-        // ¹¹Ôìº¯Êı
+        // æ„é€ å‡½æ•°
         CFDWndView(LongUI::XUIBaseWindow* window) : Super(window) { }
     public:
-        // ÊÂ¼ş´¦Àí
+        // äº‹ä»¶å¤„ç†
         virtual bool DoEvent(const LongUI::EventArgument& arg) noexcept override;
     protected:
-        // É¾Ç°´¦Àí
+        // åˆ å‰å¤„ç†
         void before_deleted() noexcept { Super::before_deleted(); }
-        // ³õÊ¼»¯
+        // åˆå§‹åŒ–
         void init_wndview() noexcept;
-        // Ìí¼ÓËã·¨
+        // æ·»åŠ ç®—æ³•
         void add_algorithm() noexcept;
-        // ´´½¨Ëã·¨
+        // åˆ›å»ºç®—æ³•
         static auto create_algorithm(uint32_t id) noexcept -> IFDAlgorithm*;
     private:
-        // ²»ÔÊĞí¸´ÖÆ¹¹Ôì
+        // ä¸å…è®¸å¤åˆ¶æ„é€ 
         CFDWndView(const CFDWndView&) = delete;
-        // Îö¹¹º¯Êı
+        // ææ„å‡½æ•°
         ~CFDWndView() = default;
     private:
-        // ±¾µØÍ¼¿Ø¼ş
+        // æœ¬åœ°å›¾æ§ä»¶
         UIMapControl*           m_pMapControl = nullptr;
-        // Ëã·¨Ñ¡Ôñ¿ò
+        // ç®—æ³•é€‰æ‹©æ¡†
         UIControl*              m_pCcbAlgorithm = nullptr;
     };
 }

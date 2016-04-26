@@ -1,50 +1,55 @@
-#pragma once
+ï»¿#pragma once
 
 #include <cstdint>
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
 #pragma warning(disable: 4200)
-    // ½ÇÉ«·½Î»
+    // è§’è‰²æ–¹ä½
     enum CharacterDirection : uint32_t {
-        Direction_Nil = uint32_t(-1),
-        Direction_S = 0,    // ÄÏ·½
-        Direction_W,        // Î÷·½
-        Direction_E,        // ¶«·½
-        Direction_N,        // ±±·½
-        Direction_SW,       // Î÷ÄÏ
-        Direction_SE,       // ¶«ÄÏ
-        Direction_NW,       // Î÷±±
-        Direction_NE,       // ¶«±±
-        DIRECTION_SIZE,     // ÊıÁ¿´óĞ¡
+        Direction_Nil = 0,  // æ— æ•ˆ
+        Direction_SW,       // è¥¿å—
+        Direction_S,        // å—æ–¹
+        Direction_SE,       // ä¸œå—
+        Direction_W,        // è¥¿æ–¹
+        Direction_D,        // æš‚æ— 
+        Direction_E,        // ä¸œæ–¹
+        Direction_NW,       // è¥¿åŒ—
+        Direction_N,        // åŒ—æ–¹
+        Direction_NE,       // ä¸œåŒ—
+        DIRECTION_SIZE,     // æ•°é‡å¤§å°
     };
-    // Êı×ÖÏÔÊ¾ÃèÊöÌå
+    // è®¡ç®—æ¡†æ¶
+    template<typename T> auto CaculateDirection(T px, T py) noexcept { 
+        return CharacterDirection(((px+T(1)) + (T(1)-(py)) * T(3)) + T(1));
+    }
+    // æ•°å­—æ˜¾ç¤ºæè¿°ä½“
     struct NodeDisplay {
         // CharacterDirection
         using CD = CharacterDirection;
-        // X×ø±ê
+        // Xåæ ‡
         uint32_t    x;
-        // Y×ø±ê
+        // Yåæ ‡
         uint32_t    y;
-        // Ë÷Òı
+        // ç´¢å¼•
         uint32_t    i;
-        // ³¯Ïò
+        // æœå‘
         CD          d;
-        // Êı×é³¤¶È
+        // æ•°ç»„é•¿åº¦
         uint32_t    argc;
-        // Êı×éÊı¾İ
+        // æ•°ç»„æ•°æ®
         uint32_t    argv[0];
     };
-    // ·½Ïò
+    // æ–¹å‘
     struct DT { int32_t x, y; };
-    // ·½ÏòÆ«ÒÆ
+    // æ–¹å‘åç§»
     extern const DT DIRECTION_OFFSET[DIRECTION_SIZE];
-    // »ñÈ¡Ã¿Ö¡¼ä¸ôÊ±¼ä
+    // è·å–æ¯å¸§é—´éš”æ—¶é—´
     auto GetDeltaTime() noexcept -> float;
-    // ÉêÇëĞ¡¿éÄÚ´æ
+    // ç”³è¯·å°å—å†…å­˜
     auto AllocSmall(size_t length) noexcept -> void*;
-    // ÉêÇëĞ¡¿éÄÚ´æ
+    // ç”³è¯·å°å—å†…å­˜
     void FreeSmall(void* address) noexcept;
-    // °´¼ü¼ì²é
+    // æŒ‰é”®æ£€æŸ¥
     auto InputCheck() noexcept ->CharacterDirection;
 }

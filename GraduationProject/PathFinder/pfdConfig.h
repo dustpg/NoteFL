@@ -1,42 +1,42 @@
-#pragma once
+ï»¿#pragma once
 
 #include <LongUI.h>
 
-// pathfd ÃüÃû¿Õ¼ä
+// pathfd å‘½åç©ºé—´
 namespace PathFD {
-    // ´´½¨µØÍ¼¿Ø¼þ
+    // åˆ›å»ºåœ°å›¾æŽ§ä»¶
     auto CreateMapControl(LongUI::CreateEventType, pugi::xml_node) noexcept->LongUI::UIControl*;
-    // ³ÌÐòÅäÖÃÐÅÏ¢
+    // ç¨‹åºé…ç½®ä¿¡æ¯
     class CFDConfig final : public LongUI::CUIDefaultConfigure {
-        // ¸¸Àà
+        // çˆ¶ç±»
         using Super = CUIDefaultConfigure;
     public:
         // template string
         const char*     tmplt = nullptr;
-        // ¹¹Ôìº¯Êý
+        // æž„é€ å‡½æ•°
         CFDConfig() : Super(UIManager) { }
-        // ×ÖÌåµØÓòÃû³Æ
+        // å­—ä½“åœ°åŸŸåç§°
         auto GetLocaleName(wchar_t name[/*LOCALE_NAME_MAX_LENGTH*/]) noexcept ->void override {
             std::wcscpy(name, L"en-us");
         };
-        // ·µ»Øflag
+        // è¿”å›žflag
         auto GetConfigureFlag() noexcept ->ConfigureFlag override { 
             return Flag_OutputDebugString /*| Flag_RenderByCPU /*| Flag_DbgOutputFontFamily*/;
         }
-        // »ñÈ¡Ä£°å×Ö·û´®
+        // èŽ·å–æ¨¡æ¿å­—ç¬¦ä¸²
         auto GetTemplateString() noexcept ->const char* override { return tmplt; }
-        // ×¢²á¿Ø¼þ
+        // æ³¨å†ŒæŽ§ä»¶
         auto RegisterSome() noexcept ->void override {
             m_manager.RegisterControlClass(CreateMapControl, "PathMap");
         };
-        // Ñ¡ÔñÏÔ¿¨
+        // é€‰æ‹©æ˜¾å¡
         auto ChooseAdapter(const DXGI_ADAPTER_DESC1 adapters[], const size_t length) noexcept -> size_t override {
-            // Intel ²âÊÔ
+            // Intel æµ‹è¯•
             for (size_t i = 0; i < length; ++i) {
                 if (!std::wcsncmp(L"Intel", adapters[i].Description, 5))
                     return i;
             }
-            // ºËÏÔ¿¨
+            // æ ¸æ˜¾å¡
             for (size_t i = 0; i < length; ++i) {
                 if (!std::wcsncmp(L"NVIDIA", adapters[i].Description, 6))
                     return i;
