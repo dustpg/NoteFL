@@ -242,8 +242,10 @@ namespace PathFD {
         //bool                    m_bNodeSet = true;
         // 未使用
         //bool                    m_unused_bool_map[1];
-        // 角色数据缓存 :目前只需要4个动作
-        char                    m_bufCharData[sizeof(CharData) + sizeof(CharData::action[0]) * 4];
+        // 数据使用
+        enum : size_t { CHAR_DATA = sizeof(CharData) + sizeof(CharData::action[0]) * DIRECTION_SIZE };
+        // 角色数据缓存
+        char                    m_bufCharData[CHAR_DATA];
     };
 }
 

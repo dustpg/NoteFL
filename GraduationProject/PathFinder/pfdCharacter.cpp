@@ -127,7 +127,7 @@ void PathFD::CFDCharacter::Render() const noexcept {
         // Y坐标是靠"源X偏移"和"朝向"计算 
         src.top = float(
             chardata.src_offsety +
-            chardata.width * chardata.direction
+            chardata.width * (uint32_t(chardata.direction) / 2 - 1)
             );
         // 宽高就是角色宽高
         src.right = src.left + charw;

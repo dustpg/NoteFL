@@ -25,6 +25,7 @@ PathFD::UIMapControl::UIMapControl(LongUI::UIContainer * cp) noexcept : Super(cp
     chardata.atime = 0.5f;
     chardata.speed = 4.f;
     chardata.acount = 4;
+    chardata.direction = Direction_S;
     chardata.action[0] = 1;
     chardata.action[1] = 0;
     chardata.action[2] = 1;
@@ -934,7 +935,13 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
     meter.Start();
     auto* path = algorithm->Execute(this->make_finder(finder));
     auto time = meter.Delta_ms<double>();
-    info.Format(L"%ls: %.3f 毫秒", path ? L"成功" : L"失败", time);
+    info.Format(
+        L"%ls: %.3f 毫秒, 路径%d[%d]", 
+        path ? L"成功" : L"失败", 
+        time,
+        path ? int(path->len) : 0,
+        int(m_uNodeSpriteCount)
+    );
     // 旧的路径有效
     if (m_pPath) std::free(m_pPath);
     // 新的路径有效
