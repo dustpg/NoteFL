@@ -307,25 +307,10 @@ namespace PathFD { namespace impl {
                         list.push_back(tmp);
                     }
                 };
-                // 南
-                moveto( 0,+1);
-                // 西
-                moveto(-1, 0);
-                // 东
-                moveto(+1, 0);
-                // 北
-                moveto( 0,-1);
+                // 南东西北
+                moveto(0, +1); moveto(-1, 0); moveto(+1, 0); moveto(0, -1);
                 // 8方向
-                if (direction8) {
-                    // 西南
-                    moveto(-1,+1);
-                    // 东南
-                    moveto(+1,+1);
-                    // 西北
-                    moveto(-1,-1);
-                    // 东北
-                    moveto(+1,-1);
-                }
+                if (direction8) { moveto(-1, +1); moveto(+1, +1); moveto(-1, -1); moveto(+1, -1); }
             }
             // 写入数据
             open_begin_index = open_end_index;

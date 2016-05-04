@@ -955,6 +955,8 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
             constexpr auto at = LongUI::AnimationType::Type_QuarticEaseOut;
             x = LongUI::EasingFunction(at, x);
             if (x != 1.f) {
+                // 加锁
+                LongUI::CUIDxgiAutoLocker locker;
                 // 计算
                 uint32_t end = uint32_t(x * float(path->len));
                 D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::Orange);
@@ -1077,6 +1079,29 @@ namespace PathFD {
         // 9
         { ArrowX(3), ArrowY(1), ArrowX(4), ArrowY(2) },
     };
+    // 方向箭头数组
+    static const D2D1_SIZE_F DIRARROW_OFFSET[CharacterDirection::DIRECTION_SIZE] = {
+        // 0
+        { 0.f, 0.f },
+        // 1
+        { -0.5f, 0.5f },
+        // 2
+        { 0.f , 0.5f },
+        // 3
+        { 0.5f , 0.5f },
+        // 4
+        { -0.5f, 0.f },
+        // 5
+        { 0.f, 0.f },
+        // 6
+        { 0.5f, 0.f },
+        // 7
+        { -0.5, -0.5f },
+        // 8
+        { 0.f , -0.5f },
+        // 9
+        { 0.5f , -0.5f },
+    };
 }
 
 // 设置节点显示
@@ -1127,6 +1152,8 @@ void PathFD::UIMapControl::SetNodeDisplay(const NodeDisplay& num) noexcept {
         m_pNumberDisplay->SetSprites(count - num.argc, num.argc, des, src);
         // 设置节点关系显示
         auto desnode = *des;
+        desnode.left += DIRARROW_OFFSET[num.d].width * float(m_dataMap.cell_width);
+        desnode.top += DIRARROW_OFFSET[num.d].height * float(m_dataMap.cell_height);
         desnode.right = desnode.left + float(m_dataMap.cell_width);
         desnode.bottom = desnode.top + float(m_dataMap.cell_height);
         m_pNodeDisplay->SetSprites(num.i, 1, &desnode, DIRARROW_SETS + num.d);

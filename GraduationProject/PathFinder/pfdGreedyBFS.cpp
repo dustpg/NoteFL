@@ -6,7 +6,8 @@
 #include <atomic>
 #include <thread>
 #include <memory>
-#include <list>
+#include <vector>
+#include <queue>
 #include <new>
 
 /*
@@ -30,6 +31,8 @@ namespace PathFD {
     namespace impl {
         // 步进操作类
         template<typename T> struct gbfs_step_op {
+            // 列表
+            using List = typename T::Vector;
             // 设置OPEN表
             template<typename Y>inline void set_open_list(Y& list) {
                 openlist = &list;
@@ -82,9 +85,9 @@ namespace PathFD {
             // 父对象
             T&                  parent;
             // OPEN表
-            typename T::List*   openlist = nullptr;
+            const List*         openlist = nullptr;
             // CLOSE表
-            typename T::List*   closelist = nullptr;
+            const List*         closelist = nullptr;
             // 选择节点X
             uint32_t            nodex = 0;
             // 选择节点Y
@@ -116,120 +119,35 @@ namespace PathFD {
             inline void unlock() { }
         };
     }
-    // 自定义分配器
-    template<typename T> class AllocatorEx {
-        // CHAIN
-        struct CHAIN { CHAIN* next; size_t used; char buffer[0]; };
-        // buffer length
-        enum : size_t { CHAIN_SIZE = 1024 * 1024, BUFFER_SIZE = CHAIN_SIZE - sizeof(void*) * 2 };
-        // memory chain
-        CHAIN*              m_pHeader = nullptr;
-    public : 
-        //    typedefs
-        typedef T value_type;
-        typedef value_type* pointer;
-        typedef const value_type* const_pointer;
-        typedef value_type& reference;
-        typedef const value_type& const_reference;
-        typedef std::size_t size_type;
-        typedef std::ptrdiff_t difference_type;
-
-    public : 
-        //    convert an allocator<T> to allocator<U>
-        template<typename U>
-        struct rebind {
-            typedef AllocatorEx<U> other;
-        };
-
-    public : 
-        // dtor
-        explicit AllocatorEx() {}
-        // dtor
-        ~AllocatorEx() {
-            auto node = m_pHeader;
-            while (node) {
-                auto tmp = node;
-                node = node->next;
-                std::free(tmp);
-            }
-            m_pHeader = nullptr;
-        }
-        inline explicit AllocatorEx(AllocatorEx const&) = delete;
-        template<typename U>
-        inline explicit AllocatorEx(AllocatorEx<U> const&) = delete;
-
-        //    address
-        inline pointer address(reference r) { return &r; }
-        inline const_pointer address(const_reference r) { return &r; }
-
-        //    memory allocation
-        inline pointer allocate(size_type cnt, 
-            typename std::allocator<void>::const_pointer = 0) { 
-            void* ptr = this->alloc(cnt * sizeof(T));
-            if (!ptr) throw(std::bad_alloc());
-            return reinterpret_cast<pointer>(ptr); 
-        }
-        inline void deallocate(pointer p, size_type) {
-            this->free(p);
-        }
-
-        //    size
-        inline size_type max_size() const { 
-            return std::numeric_limits<size_type>::max() / sizeof(T);
-        }
-
-        //    construction/destruction
-        inline void construct(pointer p, const T& t) { new(p) T(t); }
-        inline void destroy(pointer p) { p->~T(); }
-
-        inline bool operator==(AllocatorEx const&) { return true; }
-        inline bool operator!=(AllocatorEx const& a) { return !operator==(a); }
-    private:
-        // free
-        inline void free(const void*) {  }
-        // reserve
-        auto reserve(size_t len) noexcept ->CHAIN* {
-            assert(len < BUFFER_SIZE && "out of range");
-            // check
-            if (!m_pHeader || (m_pHeader->used + len) > BUFFER_SIZE) {
-                auto new_header = reinterpret_cast<CHAIN*>(std::malloc(CHAIN_SIZE));
-                if (!new_header) return nullptr;
-                new_header->next = m_pHeader;
-                new_header->used = 0;
-                m_pHeader = new_header;
-            }
-            return m_pHeader;
-        }
-        // alloc buffer
-        auto alloc(size_t len) noexcept ->void* {
-            assert(len < BUFFER_SIZE && "bad action");
-            void* address = nullptr;
-            auto chian = this->reserve(len);
-            if (chian) {
-                address = chian->buffer + chian->used;
-                chian->used += len;
-            }
-            return address;
-        }
-    };
     // GreedyBFS算法
     class CFDGreedyBFS final : public IFDAlgorithm {
     public:
         // 节点
         struct NODE {
+            // 节点启发值(gn)
+            uint16_t        hn;
             // 坐标
             int16_t         x, y;
-            // 节点启发值(gn)
-            uint32_t        hn;
             // 父节点
-            const NODE*     parent;
+            int8_t          px, py;
+        };
+        // 小于
+        struct Less {
+            // () 运算
+            bool operator()(const NODE& a, const NODE& b) noexcept {
+                return a.hn > b.hn;
+            }
         };
         // 列表
-#ifdef _DEBUG
-        using List = std::list<CFDGreedyBFS::NODE>;
-#else
-        using List = std::list<CFDGreedyBFS::NODE, AllocatorEx<CFDGreedyBFS::NODE>>;
-#endif
+        using Vector = std::vector<CFDGreedyBFS::NODE>;
+        // 优先队列
+        struct Queue : std::priority_queue<CFDGreedyBFS::NODE, Vector, Less> {
+            using Super = std::priority_queue<CFDGreedyBFS::NODE, Vector, Less>;
+            // 构造函数
+            Queue(const Vector& c) : Super(Less(), c) {  }
+            // 获取容器
+            const auto& get_c() const { return this->c; }
+        };
         // 操作
         using StepOp = impl::gbfs_step_op<CFDGreedyBFS>;
     public:
@@ -292,15 +210,28 @@ PathFD::CFDGreedyBFS::CFDGreedyBFS() noexcept : m_opStep(*this) {
 // pathfd::impl 命名空间
 namespace PathFD { namespace impl {
     // 找到路径
-    auto path_found(const PathFD::CFDGreedyBFS::List& close_list) noexcept {
-        assert(!close_list.empty());
+    auto path_found(const PathFD::CFDGreedyBFS::Vector& list) noexcept {
+        assert(!list.empty());
+        // 包括起始点
+        auto noop = list.crend();
+        // 查找结点
+        auto find_node = [noop](decltype(noop)& itr) noexcept -> decltype(noop)& {
+            const auto& node = *itr;
+            decltype(node.x) parentx = node.x + node.px;
+            decltype(node.y) parenty = node.y + node.py;
+            ++itr;
+            while (itr != noop) {
+                if (itr->x == parentx && itr->y == parenty) {
+                    break;
+                }
+                ++itr;
+            }
+            return itr;
+        };
         size_t size = 0;
         {
-            const auto* itr = &close_list.front();
-            while (itr->parent != itr) {
-                ++size;
-                itr = itr->parent;
-            }
+            auto itr = list.crbegin();
+            do { ++size; } while (find_node(itr) != noop);
         }
         {
             // 申请空间
@@ -311,14 +242,12 @@ namespace PathFD { namespace impl {
             if (path) {
                 path->len = uint32_t(size);
                 auto pp = path->pt + size;
-                // 遍历检查
-                const auto* itr = &close_list.front();
-                while (itr->parent != itr) {
+                auto itr = list.crbegin();
+                do {
                     --pp;
                     pp->x = itr->x;
                     pp->y = itr->y;
-                    itr = itr->parent;
-                }
+                } while (find_node(itr) != noop);
             }
             return path;
         }
@@ -348,7 +277,7 @@ namespace PathFD { namespace impl {
         auto check_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
             return mk_ptr[x + y * mk_width];
         };
-        // 估值函数 f(n)=g(n)+h(n)
+        // 估值函数 h(n)
         auto hn = [=](int16_t x, int16_t y) noexcept -> int16_t {
 #if 0
             auto xxx = std::abs(x - gx);
@@ -372,15 +301,20 @@ namespace PathFD { namespace impl {
         CFDGreedyBFS::NODE start; 
         start.x = sx; start.y = sy;
         start.hn = hn(start.x, start.y);
-        start.parent = &start;
+        start.px = 0; start.py = 0;
         // 终点数据
         struct { decltype(start.x) x, y; } end;
         end.x = gx; end.y = gy;
+        // OPEN表(优先队列) CLOSE表(线性表)
+        CFDGreedyBFS::Vector close;
+        constexpr auto reserved = 4096;
+        close.reserve(reserved);
+        CFDGreedyBFS::Queue open(close);
         // 起点加入OPEN表
-        CFDGreedyBFS::List open, close; open.push_back(start);
+        open.push(start);
         mark_visited(start.x, start.y);
         // 为操作设置表数据
-        op.set_open_list(open); op.set_close_list(close);
+        op.set_open_list(open.get_c()); op.set_close_list(close);
         // 解锁
         op.unlock();
         // 为空算法失败
@@ -388,13 +322,13 @@ namespace PathFD { namespace impl {
             // 加锁
             op.lock();
             // 从表头取一个结点 添加到CLOSE表
-            close.push_front(open.front());
+            close.push_back(open.top());
             // 事件处理
-            op.get_node(close.front());
+            op.get_node(close.back());
             // 弹出
-            open.pop_front();
+            open.pop();
             // 获取
-            const auto& node = close.front();
+            const auto& node = close.back();
             // 解锁
             op.unlock();
             // 目标解
@@ -404,26 +338,8 @@ namespace PathFD { namespace impl {
                 // 返回
                 return op.found(close);
             }
-            // 添加
-            auto insert2 = [&](const CFDGreedyBFS::NODE& node) {
-                // 比最后的都大?
-                if (open.empty() || node.hn >= open.back().hn) {
-                    // 添加到最后
-                    open.push_back(node);
-                    return;
-                }
-                // 添加节点
-                for (auto itr = open.begin(); itr != open.end(); ++itr) {
-                    if (node.hn <= itr->hn) {
-                        open.insert(itr, node);
-                        return;
-                    }
-                }
-                // 不可能
-                assert(!"Impossible ");
-            };
             // 移动
-            auto moveto = [&](int16_t xplus, int16_t yplus) {
+            auto moveto = [&](int8_t xplus, int8_t yplus) {
                 CFDGreedyBFS::NODE tmp; 
                 tmp.x = node.x + xplus; 
                 tmp.y = node.y + yplus; 
@@ -432,34 +348,20 @@ namespace PathFD { namespace impl {
                     // 标记
                     mark_visited(tmp.x, tmp.y);
                     // 记录父节点位置
-                    tmp.parent = &node;
+                    tmp.px = -xplus;
+                    tmp.py = -yplus;
                     // 计算h(n)
                     tmp.hn = hn(tmp.x, tmp.y);
                     // 加锁
                     impl::auto_locker<OP> locker(op);
                     // 添加
-                    insert2(tmp);
+                    open.push(tmp);
                 }
             };
-            // 南
-            moveto( 0,+1);
-            // 西
-            moveto(-1, 0);
-            // 东
-            moveto(+1, 0);
-            // 北
-            moveto( 0,-1);
+            // 东南西北
+            moveto( 0,+1); moveto(-1, 0); moveto(+1, 0); moveto( 0, -1);
             // 8方向
-            if (direction8) {
-                // 西南
-                moveto(-1,+1);
-                // 东南
-                moveto(+1,+1);
-                // 西北
-                moveto(-1,-1);
-                // 东北
-                moveto(+1,-1);
-            }
+            if (direction8) { moveto(-1,+1); moveto(+1,+1); moveto(-1,-1); moveto(+1,-1); }
             // 等待一步
             op.wait();
         }
@@ -526,7 +428,7 @@ bool PathFD::CFDGreedyBFS::NextStep(void* cells, void* num, bool refresh) noexce
                 numdis.i = s_index++;
                 numdis.argc = COUNT;
                 // 节点
-                numdis.d = PathFD::CaculateDirection(node.parent->x - node.x, node.parent->y - node.y);
+                numdis.d = PathFD::CaculateDirection(node.px, node.py);
                 // hn = 
                 numdis.argv[0] = node.hn;
                 // 显示数字

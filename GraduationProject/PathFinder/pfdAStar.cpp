@@ -218,12 +218,12 @@ namespace PathFD {
     public:
         // 节点
         struct NODE {
-            // 坐标
-            int16_t         x, y;
             // 节点深度(gn)
             uint16_t        gn;
             // 节点价值(fh)
             uint16_t        fh;
+            // 坐标
+            int16_t         x, y;
             // 父节点
             const NODE*     parent;
         };
@@ -478,25 +478,10 @@ namespace PathFD { namespace impl {
                     insert2(tmp);
                 }
             };
-            // 南
-            moveto( 0,+1, 2);
-            // 西
-            moveto(-1, 0, 2);
-            // 东
-            moveto(+1, 0, 2);
-            // 北
-            moveto( 0,-1, 2);
+            // 东南西北
+            moveto( 0,+1, 2); moveto(-1, 0, 2); moveto(+1, 0, 2); moveto( 0,-1, 2);
             // 8方向
-            if (direction8) {
-                // 西南
-                moveto(-1,+1, 3);
-                // 东南
-                moveto(+1,+1, 3);
-                // 西北
-                moveto(-1,-1, 3);
-                // 东北
-                moveto(+1,-1, 3);
-            }
+            if (direction8) { moveto(-1,+1, 3); moveto(+1,+1, 3); moveto(-1,-1, 3); moveto(+1,-1, 3); }
             // 等待一步
             op.wait();
         }
