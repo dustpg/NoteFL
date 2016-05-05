@@ -39,7 +39,7 @@ namespace PathFD {
     struct PathPoint { int16_t x, y; };
     // 路径
     struct Path { uint32_t len; PathPoint pt[0]; };
-    // 寻路算法
+    // 接口
     struct PATHFD_NOVTABLE IFDInterface {
         // 释放对象
         virtual void Dispose() noexcept = 0;
@@ -48,12 +48,10 @@ namespace PathFD {
     struct PATHFD_NOVTABLE IFDAlgorithm : IFDInterface {
         // 执行算法, 返回路径(成功的话), 需要调用者调用std::free释放
         virtual auto Execute(const PathFD::Finder& fd) noexcept->Path* = 0;
-        // 可视化步进
+        // 可视化步进开始
         virtual void BeginStep(const PathFD::Finder& fd) noexcept = 0;
         // 可视化步进, 写入可视化数据(保证访问安全), 返回true表示结束
         virtual bool NextStep(void* cells, void* num, bool refresh) noexcept = 0;
-        // 读取数据
-        //virtual void ReadData() const noexcept = 0;
         // 结束可视化步进
         virtual void EndStep() noexcept = 0;
     };

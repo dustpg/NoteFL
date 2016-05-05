@@ -124,7 +124,7 @@ namespace PathFD {
     public:
         // 节点
         struct NODE {
-            // 节点启发值(gn)
+            // 节点启发值(hn)
             uint16_t        hn;
             // 坐标
             int16_t         x, y;

@@ -220,8 +220,8 @@ namespace PathFD {
         struct NODE {
             // 节点深度(gn)
             uint16_t        gn;
-            // 节点价值(fh)
-            uint16_t        fh;
+            // 节点价值(fn)
+            uint16_t        fn;
             // 坐标
             int16_t         x, y;
             // 父节点
@@ -381,14 +381,14 @@ namespace PathFD { namespace impl {
         CFDAStar::NODE start; 
         start.x = sx; start.y = sy;
         start.gn = 0;
-        start.fh = hn(start.x, start.y);
+        start.fn = hn(start.x, start.y);
         start.parent = &start;
         // 终点数据
         struct { decltype(start.x) x, y; } end;
         end.x = gx; end.y = gy;
         // 起点加入OPEN表
         CFDAStar::List open, close; open.push_back(start);
-        mark_visited(start.x, start.y, start.fh);
+        mark_visited(start.x, start.y, start.fn);
         // 查找OPEN表位置
         auto find_in_open = [&open](int16_t x, int16_t y) noexcept {
             auto itr = open.begin();
@@ -426,14 +426,14 @@ namespace PathFD { namespace impl {
             // 添加
             auto insert2 = [&](const CFDAStar::NODE& node) {
                 // 比最后的都大?
-                if (open.empty() || node.fh >= open.back().fh) {
+                if (open.empty() || node.fn >= open.back().fn) {
                     // 添加到最后
                     open.push_back(node);
                     return;
                 }
                 // 添加节点
                 for (auto itr = open.begin(); itr != open.end(); ++itr) {
-                    if (node.fh <= itr->fh) {
+                    if (node.fn <= itr->fn) {
                         open.insert(itr, node);
                         return;
                     }
@@ -445,8 +445,7 @@ namespace PathFD { namespace impl {
             auto moveto = [&](int16_t xplus, int16_t yplus, uint16_t gplus) {
                 CFDAStar::NODE tmp;
                 // 计算节点位置
-                tmp.x = node.x + xplus;
-                tmp.y = node.y + yplus;
+                tmp.x = node.x + xplus; tmp.y = node.y + yplus;
                 // 可以通行 
                 if (!check_pass(tmp.x, tmp.y)) return;
                 // 记录父节点位置
@@ -454,11 +453,11 @@ namespace PathFD { namespace impl {
                 // 计算g(n)
                 tmp.gn = node.gn + gplus;
                 // f(n) = g(n) + h(n)
-                tmp.fh = tmp.gn + hn(tmp.x, tmp.y);
+                tmp.fn = tmp.gn + hn(tmp.x, tmp.y);
                 // 比OPEN表的低
-                if (check_openbelow(tmp.x, tmp.y, tmp.fh)) {
+                if (check_openbelow(tmp.x, tmp.y, tmp.fn)) {
                     // 标记
-                    mark_visited(tmp.x, tmp.y, tmp.fh);
+                    mark_visited(tmp.x, tmp.y, tmp.fn);
                     // 加锁
                     impl::auto_locker<OP> locker(op);
                     // 删除旧的
@@ -471,7 +470,7 @@ namespace PathFD { namespace impl {
                 // 并且没有遍历过
                 if (!check_visited(tmp.x, tmp.y)) {
                     // 标记
-                    mark_visited(tmp.x, tmp.y, tmp.fh);
+                    mark_visited(tmp.x, tmp.y, tmp.fn);
                     // 加锁
                     impl::auto_locker<OP> locker(op);
                     // 添加
@@ -549,12 +548,12 @@ bool PathFD::CFDAStar::NextStep(void* cells, void* num, bool refresh) noexcept {
                 numdis.argc = COUNT;
                 // 节点
                 numdis.d = PathFD::CaculateDirection(node.parent->x - node.x, node.parent->y - node.y);
-                // fh = 
-                numdis.argv[0] = node.fh;
+                // fn = 
+                numdis.argv[0] = node.fn;
                 // gn = 
                 numdis.argv[1] = node.gn;
                 // hn = 
-                numdis.argv[2] = node.fh - node.gn;
+                numdis.argv[2] = node.fn - node.gn;
                 // 显示数字
                 impl::set_node_display(num, &numdis);
             };
@@ -610,166 +609,4 @@ PathFD::CFDAStar::~CFDAStar() noexcept {
     m_bExit = true;
     if (m_thdStep.joinable()) m_thdStep.join();
 }
-
-/*
-    // 寻找路径ex
-    template<typename OP>
-    auto a_star_find_ex(OP& op, const PathFD::Finder& fd) {
-        // 加锁
-        op.lock();
-        // 8方向
-        auto direction8 = fd.dir8;
-        // 起点终点数据
-        const int16_t sx = fd.startx;
-        const int16_t sy = fd.starty;
-        const int16_t gx = fd.goalx;
-        const int16_t gy = fd.goaly;
-        // 遍历过数据
-        auto visited = std::make_unique<uint8_t[]>(fd.width * fd.height);
-        std::memset(visited.get(), 0, sizeof(uint8_t) * fd.width * fd.height);
-        // 标记需要数据
-        auto mk_ptr = visited.get(); int16_t mk_width = fd.width;
-        // 标记遍历
-        auto mark_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
-            mk_ptr[x + y * mk_width] = true;
-        };
-        // 检查标记
-        auto check_visited = [mk_ptr, mk_width](int16_t x, int16_t y) noexcept {
-            return mk_ptr[x + y * mk_width];
-        };
-        // 估值函数 f(n)=g(n)+h(n)
-        auto hn = [=](int16_t x, int16_t y) noexcept -> int16_t {
-#if 0
-            auto xxx = std::abs(x - gx);
-            auto yyy = std::abs(y - gy);
-            auto maxone = std::max(xxx, yyy);
-            auto minone = std::min(xxx, yyy);
-            return minone * 3 + (maxone - minone) * 2;
-#else
-            return (std::abs(x - gx) + std::abs(y - gy));
-#endif
-        };
-        // 检查通行
-        auto cp_ptr = fd.data; int16_t cp_width = fd.width; int16_t cp_height = fd.height;
-        auto check_pass = [cp_ptr, cp_width, cp_height](int16_t x, int16_t y) noexcept {
-            if (x >= 0 && x < cp_width && y >= 0 && y < cp_height) {
-                return !!cp_ptr[x + y * cp_width];
-            }
-            return false;
-        };
-        // 起点数据
-        CFDAStar::NODE start; 
-        start.x = sx; start.y = sy;
-        start.gn = 0;
-        start.fh = hn(start.x, start.y);
-        start.parent = &start;
-        // 终点数据
-        struct { decltype(start.x) x, y; } end;
-        end.x = gx; end.y = gy;
-        // 起点加入OPEN表
-        CFDAStar::List open, close; open.push_back(start);
-        mark_visited(start.x, start.y);
-        // 为操作设置表数据
-        op.set_open_list(open); op.set_close_list(close);
-        // 解锁
-        op.unlock();
-        // 为空算法失败
-        while (!open.empty() && op.go_on()) {
-            // 加锁
-            op.lock();
-            // 从表头取一个结点 添加到CLOSE表
-            close.push_front(open.front());
-            // 事件处理
-            op.get_node(close.front());
-            // 弹出
-            open.pop_front();
-            // 获取
-            const auto& node = close.front();
-            // 解锁
-            op.unlock();
-            // 目标解
-            if (node.x == end.x && node.y == end.y) {
-                // 加锁
-                impl::auto_locker<OP> locker(op);
-                // 返回
-                return op.found(close);
-            }
-            // 添加
-            auto insert2 = [&](const CFDAStar::NODE& node) {
-                // 比最后的都大?
-                if (open.empty() || node.fh >= open.back().fh) {
-                    // 添加到最后
-                    open.push_back(node);
-                    return;
-                }
-                // 添加节点
-                for (auto itr = open.begin(); itr != open.end(); ++itr) {
-                    if (node.fh <= itr->fh) {
-                        open.insert(itr, node);
-                        return;
-                    }
-                }
-                // 不可能
-                assert(!"Impossible ");
-            };
-            // 移动
-            auto moveto = [&](int16_t xplus, int16_t yplus) {
-                CFDAStar::NODE tmp; 
-                tmp.x = node.x + xplus; 
-                tmp.y = node.y + yplus; 
-#ifdef _DEBUG
-#endif
-                // 可以通行 并且没有遍历过
-                if (check_pass(tmp.x, tmp.y) && !check_visited(tmp.x, tmp.y)) {
-                    // 标记
-                    mark_visited(tmp.x, tmp.y);
-                    // 记录父节点位置
-                    tmp.parent = &node;
-                    // 计算g(n)
-                    tmp.gn = node.gn + 1;
-                    // f(n) = g(n) + h(n)
-                    tmp.fh = tmp.gn + hn(tmp.x, tmp.y);
-                    // 加锁
-                    impl::auto_locker<OP> locker(op);
-                    // 添加
-                    insert2(tmp);
-#ifdef _DEBUG
-                    int fh = 0;
-                    for (const auto& node : open) {
-                        assert(fh <= node.fh);
-                        fh = node.fh;
-                    }
-#endif
-                }
-            };
-            // 南
-            moveto( 0,+1);
-            // 西
-            moveto(-1, 0);
-            // 东
-            moveto(+1, 0);
-            // 北
-            moveto( 0,-1);
-            // 8方向
-            if (direction8) {
-                // 西南
-                moveto(-1,+1);
-                // 东南
-                moveto(+1,+1);
-                // 西北
-                moveto(-1,-1);
-                // 东北
-                moveto(+1,-1);
-            }
-            // 等待一步
-            op.wait();
-        }
-        // 加锁
-        impl::auto_locker<OP> locker(op);
-        // 失败
-        return op.failed();
-    }
-}}
-
-*/
 
