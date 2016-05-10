@@ -6,7 +6,8 @@
 #include <atomic>
 #include <thread>
 #include <memory>
-#include <list>
+#include <vector>
+#include <queue>
 #include <new>
 
 /*
@@ -31,6 +32,8 @@ namespace PathFD {
     namespace impl {
         // 步进操作类
         template<typename T> struct astar_step_op {
+            // 表
+            using List = typename T::List;
             // 设置OPEN表
             template<typename Y>inline void set_open_list(Y& list) {
                 openlist = &list;
@@ -83,9 +86,9 @@ namespace PathFD {
             // 父对象
             T&                  parent;
             // OPEN表
-            typename T::List*   openlist = nullptr;
+            const List*         openlist = nullptr;
             // CLOSE表
-            typename T::List*   closelist = nullptr;
+            const List*         closelist = nullptr;
             // 选择节点X
             uint32_t            nodex = 0;
             // 选择节点Y
@@ -117,124 +120,30 @@ namespace PathFD {
             inline void unlock() { }
         };
     }
-    // 自定义分配器
-    template<typename T> class AllocatorEx {
-        // CHAIN
-        struct CHAIN { CHAIN* next; size_t used; char buffer[0]; };
-        // buffer length
-        enum : size_t { CHAIN_SIZE = 1024 * 1024, BUFFER_SIZE = CHAIN_SIZE - sizeof(void*) * 2 };
-        // memory chain
-        CHAIN*              m_pHeader = nullptr;
-    public : 
-        //    typedefs
-        typedef T value_type;
-        typedef value_type* pointer;
-        typedef const value_type* const_pointer;
-        typedef value_type& reference;
-        typedef const value_type& const_reference;
-        typedef std::size_t size_type;
-        typedef std::ptrdiff_t difference_type;
-
-    public : 
-        //    convert an allocator<T> to allocator<U>
-        template<typename U>
-        struct rebind {
-            typedef AllocatorEx<U> other;
-        };
-
-    public : 
-        // dtor
-        explicit AllocatorEx() {}
-        // dtor
-        ~AllocatorEx() {
-            auto node = m_pHeader;
-            while (node) {
-                auto tmp = node;
-                node = node->next;
-                std::free(tmp);
-            }
-            m_pHeader = nullptr;
-        }
-        inline explicit AllocatorEx(AllocatorEx const&) = delete;
-        template<typename U>
-        inline explicit AllocatorEx(AllocatorEx<U> const&) = delete;
-
-        //    address
-        inline pointer address(reference r) { return &r; }
-        inline const_pointer address(const_reference r) { return &r; }
-
-        //    memory allocation
-        inline pointer allocate(size_type cnt, 
-            typename std::allocator<void>::const_pointer = 0) { 
-            void* ptr = this->alloc(cnt * sizeof(T));
-            if (!ptr) throw(std::bad_alloc());
-            return reinterpret_cast<pointer>(ptr); 
-        }
-        inline void deallocate(pointer p, size_type) {
-            this->free(p);
-        }
-
-        //    size
-        inline size_type max_size() const { 
-            return std::numeric_limits<size_type>::max() / sizeof(T);
-        }
-
-        //    construction/destruction
-        inline void construct(pointer p, const T& t) { new(p) T(t); }
-        inline void destroy(pointer p) { p->~T(); }
-
-        inline bool operator==(AllocatorEx const&) { return true; }
-        inline bool operator!=(AllocatorEx const& a) { return !operator==(a); }
-    private:
-        // free
-        inline void free(const void*) {  }
-        // reserve
-        auto reserve(size_t len) noexcept ->CHAIN* {
-            assert(len < BUFFER_SIZE && "out of range");
-            // check
-            if (!m_pHeader || (m_pHeader->used + len) > BUFFER_SIZE) {
-                auto new_header = reinterpret_cast<CHAIN*>(std::malloc(CHAIN_SIZE));
-                if (!new_header) return nullptr;
-                new_header->next = m_pHeader;
-                new_header->used = 0;
-                m_pHeader = new_header;
-            }
-            return m_pHeader;
-        }
-        // alloc buffer
-        auto alloc(size_t len) noexcept ->void* {
-            assert(len < BUFFER_SIZE && "bad action");
-            void* address = nullptr;
-            auto chian = this->reserve(len);
-            if (chian) {
-                address = chian->buffer + chian->used;
-                chian->used += len;
-            }
-            return address;
-        }
-    };
     // A*算法
     class CFDAStar final : public IFDAlgorithm {
     public:
         // 节点
-        struct NODE {
+        struct alignas(void*) NODE {
             // 节点深度(gn)
             uint16_t        gn;
             // 节点价值(fn)
             uint16_t        fn;
             // 坐标
             int16_t         x, y;
-            // 父节点
-            const NODE*     parent;
+            // 父节点方向
+            int16_t         px,py;
+            // 未使用变量
+            uint32_t        unused;
+            // 相等判断
+            bool operator==(const NODE& node) {
+                return this->x == node.x && this->y == node.y;
+            }
         };
-        // 列表
-#ifdef _DEBUG
-        using List = std::list<CFDAStar::NODE>;
-#else
-        using List = std::list<CFDAStar::NODE, AllocatorEx<CFDAStar::NODE>>;
-#endif
         // 操作
         using StepOp = impl::astar_step_op<CFDAStar>;
+        // 线性表
+        using List = std::vector<NODE>;
     public:
         // 构造函数
         CFDAStar() noexcept;
@@ -275,6 +184,60 @@ namespace PathFD {
 }
 
 
+// pathfd::impl 命名空间
+namespace PathFD { namespace impl {
+    // 节点比较操作
+    struct node_comp {
+        // 节点
+        using node = PathFD::CFDAStar::NODE;
+        // () 运算符
+        inline bool operator()(const node& a, const node& b) const noexcept {
+            return a.fn > b.fn;
+        }
+    };
+    // A* 算法适用二叉堆
+    class astar_bheap /*: public std::priority_queue<
+        PathFD::CFDAStar::NODE, 
+        PathFD::CFDAStar::List, 
+        node_comp>*/ {
+        // 节点
+        using node = PathFD::CFDAStar::NODE;
+        // 线性表
+        using vector = PathFD::CFDAStar::List;
+    public:
+        // 构造函数
+        astar_bheap()  {  }
+        // 获取数组
+        const auto& get_c() const { return c; }
+#if 1
+        // 检查是否为空
+        auto empty() const { return c.empty(); }
+        // 获取最顶端数据
+        auto&top() const { return c.front(); }
+        // 添加元素
+        void push(const node& data) {
+            c.push_back(data); std::push_heap(c.begin(), c.end(), comp);
+        }
+        // 删除元素
+        void pop() {
+            assert(!c.empty()); std::pop_heap(c.begin(), c.end(), comp); c.pop_back();
+        }
+        // A* 提升某节点
+        void astar_elevate(vector::iterator itr, const node& data) {
+            assert(itr != c.end() && comp(*itr, data)); *itr = data; 
+            std::push_heap(c.begin(), itr + 1, comp);
+        }
+        // 查找数据位置
+        auto find(const node& data) { return std::find(c.begin(), c.end(), data); }
+#endif
+    protected:
+        // 大于操作
+        node_comp           comp;
+        // 线性表
+        vector              c;
+    };
+}}
+
 /// <summary>
 /// 创建A*算法
 /// </summary>
@@ -295,16 +258,28 @@ PathFD::CFDAStar::CFDAStar() noexcept : m_opStep(*this){
 // pathfd::impl 命名空间
 namespace PathFD { namespace impl {
     // 找到路径
-    auto path_found(const PathFD::CFDAStar::List& close_list) noexcept {
-        assert(!close_list.empty());
-        // 包括终点
+    auto path_found(const PathFD::CFDAStar::List& list) noexcept {
+        assert(!list.empty());
+        // 包括起始点
+        auto noop = list.crend();
+        // 查找结点
+        auto find_node = [noop](decltype(noop)& itr) noexcept -> decltype(noop)& {
+            const auto& node = *itr;
+            decltype(node.x) parentx = node.x + node.px;
+            decltype(node.y) parenty = node.y + node.py;
+            ++itr;
+            while (itr != noop) {
+                if (itr->x == parentx && itr->y == parenty) {
+                    break;
+                }
+                ++itr;
+            }
+            return itr;
+        };
         size_t size = 0;
         {
-            const auto* itr = &close_list.front();
-            while (itr->parent != itr) {
-                ++size;
-                itr = itr->parent;
-            }
+            auto itr = list.crbegin();
+            do { ++size; } while (find_node(itr) != noop);
         }
         {
             // 申请空间
@@ -315,18 +290,33 @@ namespace PathFD { namespace impl {
             if (path) {
                 path->len = uint32_t(size);
                 auto pp = path->pt + size;
-                // 遍历检查
-                const auto* itr = &close_list.front();
-                while (itr->parent != itr) {
+                auto itr = list.crbegin();
+                do {
                     --pp;
                     pp->x = itr->x;
                     pp->y = itr->y;
-                    itr = itr->parent;
-                }
+                } while (find_node(itr) != noop);
             }
             return path;
         }
     }
+    // 创建节点
+    template<int16_t xplus, int16_t yplus, uint16_t gplus, typename T, typename Y, typename U> 
+    auto moveto(const CFDAStar::NODE& node, T insert2, Y check_pass, U hn)  {
+        CFDAStar::NODE tmp;
+        // 计算节点位置
+        tmp.x = node.x + xplus; tmp.y = node.y + yplus;
+        // 可以通行 
+        if (!check_pass(tmp.x, tmp.y)) return;
+        // 记录父节点位置
+        tmp.px = -xplus; tmp.py = -yplus;
+        // 计算g(n)
+        tmp.gn = node.gn + gplus;
+        // f(n) = g(n) + h(n)
+        tmp.fn = tmp.gn + hn(tmp.x, tmp.y);
+        // 插入
+        insert2(tmp);
+    };
     // 寻找路径ex
     template<typename OP>
     auto a_star_find_ex(OP& op, const PathFD::Finder& fd) {
@@ -341,7 +331,6 @@ namespace PathFD { namespace impl {
         const int16_t gy = fd.goaly;
         // 遍历过数据
         auto visited = std::make_unique<uint16_t[]>(fd.width * fd.height);
-        std::memset(visited.get(), 0, sizeof(uint16_t) * fd.width * fd.height);
         // 标记需要数据
         auto mk_ptr = visited.get(); int16_t mk_width = fd.width;
         // 标记遍历
@@ -380,40 +369,55 @@ namespace PathFD { namespace impl {
         // 起点数据
         CFDAStar::NODE start; 
         start.x = sx; start.y = sy;
-        start.gn = 0;
-        start.fn = hn(start.x, start.y);
-        start.parent = &start;
+        start.gn = 0; start.fn = hn(start.x, start.y);
+        start.px = 0; start.py = 0;
         // 终点数据
         struct { decltype(start.x) x, y; } end;
         end.x = gx; end.y = gy;
         // 起点加入OPEN表
-        CFDAStar::List open, close; open.push_back(start);
+        CFDAStar::List close;
+        impl::astar_bheap open;
+        open.push(start);
         mark_visited(start.x, start.y, start.fn);
-        // 查找OPEN表位置
-        auto find_in_open = [&open](int16_t x, int16_t y) noexcept {
-            auto itr = open.begin();
-            for (; itr != open.end(); ++itr) {
-                if (itr->x == x && itr->y == y) break;
-            }
-            assert(itr != open.end());
-            return itr;
-        };
         // 为操作设置表数据
-        op.set_open_list(open); op.set_close_list(close);
+        op.set_open_list(open.get_c()); op.set_close_list(close);
         // 解锁
         op.unlock();
+        // 插入节点
+        auto insert2 = [&](const CFDAStar::NODE& node) {
+            // 比OPEN表的低
+            if (check_openbelow(node.x, node.y, node.fn)) {
+                // 标记
+                mark_visited(node.x, node.y, node.fn);
+                // 加锁
+                impl::auto_locker<OP> locker(op);
+                // 删除旧的
+                open.astar_elevate(open.find(node), node);
+                // 返回
+                return;
+            }
+            // 并且没有遍历过
+            if (!check_visited(node.x, node.y)) {
+                // 标记
+                mark_visited(node.x, node.y, node.fn);
+                // 加锁
+                impl::auto_locker<OP> locker(op);
+                // 添加
+                open.push(node);
+            }
+        };
         // 为空算法失败
         while (!open.empty() && op.go_on()) {
             // 加锁
             op.lock();
             // 从表头取一个结点 添加到CLOSE表
-            close.push_front(open.front());
+            close.push_back(open.top());
             // 事件处理
-            op.get_node(close.front());
+            op.get_node(close.back());
             // 弹出
-            open.pop_front();
+            open.pop();
             // 获取
-            const auto& node = close.front();
+            const auto& node = close.back();
             // 解锁
             op.unlock();
             // 目标解
@@ -423,64 +427,28 @@ namespace PathFD { namespace impl {
                 // 返回
                 return op.found(close);
             }
-            // 添加
-            auto insert2 = [&](const CFDAStar::NODE& node) {
-                // 比最后的都大?
-                if (open.empty() || node.fn >= open.back().fn) {
-                    // 添加到最后
-                    open.push_back(node);
-                    return;
-                }
-                // 添加节点
-                for (auto itr = open.begin(); itr != open.end(); ++itr) {
-                    if (node.fn <= itr->fn) {
-                        open.insert(itr, node);
-                        return;
-                    }
-                }
-                // 不可能
-                assert(!"Impossible ");
-            };
-            // 移动
-            auto moveto = [&](int16_t xplus, int16_t yplus, uint16_t gplus) {
-                CFDAStar::NODE tmp;
-                // 计算节点位置
-                tmp.x = node.x + xplus; tmp.y = node.y + yplus;
-                // 可以通行 
-                if (!check_pass(tmp.x, tmp.y)) return;
-                // 记录父节点位置
-                tmp.parent = &node;
-                // 计算g(n)
-                tmp.gn = node.gn + gplus;
-                // f(n) = g(n) + h(n)
-                tmp.fn = tmp.gn + hn(tmp.x, tmp.y);
-                // 比OPEN表的低
-                if (check_openbelow(tmp.x, tmp.y, tmp.fn)) {
-                    // 标记
-                    mark_visited(tmp.x, tmp.y, tmp.fn);
-                    // 加锁
-                    impl::auto_locker<OP> locker(op);
-                    // 删除旧的
-                    open.erase(find_in_open(tmp.x, tmp.y));
-                    // 添加
-                    insert2(tmp);
-                    // 返回
-                    return;
-                }
-                // 并且没有遍历过
-                if (!check_visited(tmp.x, tmp.y)) {
-                    // 标记
-                    mark_visited(tmp.x, tmp.y, tmp.fn);
-                    // 加锁
-                    impl::auto_locker<OP> locker(op);
-                    // 添加
-                    insert2(tmp);
-                }
-            };
-            // 东南西北
-            moveto( 0,+1, 2); moveto(-1, 0, 2); moveto(+1, 0, 2); moveto( 0,-1, 2);
+            // 标记在CLOSE表中
+            mark_visited(node.x, node.y, 1);
+            // 强行手动内联,提高10%性能
+            // 南
+            moveto< 0,+1, 2>(node, insert2, check_pass, hn);
+            // 西
+            moveto<-1, 0, 2>(node, insert2, check_pass, hn);
+            // 东
+            moveto<+1, 0, 2>(node, insert2, check_pass, hn);
+            // 北
+            moveto< 0,-1, 2>(node, insert2, check_pass, hn);
             // 8方向
-            if (direction8) { moveto(-1,+1, 3); moveto(+1,+1, 3); moveto(-1,-1, 3); moveto(+1,-1, 3); }
+            if (direction8) {
+                // 东南
+                moveto<-1,+1, 3>(node, insert2, check_pass, hn);
+                // 西南
+                moveto<+1,+1, 3>(node, insert2, check_pass, hn);
+                // 东北
+                moveto<-1,-1, 3>(node, insert2, check_pass, hn);
+                // 西北
+                moveto<+1,-1, 3>(node, insert2, check_pass, hn);
+            }
             // 等待一步
             op.wait();
         }
@@ -547,7 +515,7 @@ bool PathFD::CFDAStar::NextStep(void* cells, void* num, bool refresh) noexcept {
                 numdis.i = s_index++;
                 numdis.argc = COUNT;
                 // 节点
-                numdis.d = PathFD::CaculateDirection(node.parent->x - node.x, node.parent->y - node.y);
+                numdis.d = PathFD::CaculateDirection(node.px, node.py);
                 // fn = 
                 numdis.argv[0] = node.fn;
                 // gn = 

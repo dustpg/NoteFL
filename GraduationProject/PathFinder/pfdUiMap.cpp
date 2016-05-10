@@ -209,6 +209,8 @@ void PathFD::UIMapControl::reset_map() noexcept {
 /// </summary>
 /// <returns></returns>
 void PathFD::UIMapControl::reset_sprites() noexcept {
+    // 加锁
+    LongUI::CUIDxgiAutoLocker locker;
     m_uNumberSpriteCount = 0;
     m_uNodeSpriteCount = 0;
     // 无效

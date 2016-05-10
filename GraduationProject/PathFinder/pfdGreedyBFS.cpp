@@ -266,7 +266,6 @@ namespace PathFD { namespace impl {
         const int16_t gy = fd.goaly;
         // 遍历过数据
         auto visited = std::make_unique<uint8_t[]>(fd.width * fd.height);
-        std::memset(visited.get(), 0, sizeof(uint8_t) * fd.width * fd.height);
         // 标记需要数据
         auto mk_ptr = visited.get(); int16_t mk_width = fd.width;
         // 标记遍历
