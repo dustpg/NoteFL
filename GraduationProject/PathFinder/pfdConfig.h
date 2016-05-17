@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <LongUI.h>
+#include <LongUI/luiUiDConf.h>
 
 // pathfd 命名空间
 namespace PathFD {
@@ -15,6 +16,8 @@ namespace PathFD {
         const char*     tmplt = nullptr;
         // 构造函数
         CFDConfig() : Super(UIManager) { }
+        // add/release
+        LONGUI_BASIC_INTERFACE_IMPL;
         // 字体地域名称
         auto GetLocaleName(wchar_t name[/*LOCALE_NAME_MAX_LENGTH*/]) noexcept ->void override {
             std::wcscpy(name, L"en-us");
