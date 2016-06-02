@@ -24,7 +24,7 @@ static const GUID GUID_DustPG_RadialBlurShader = {
             assert(obj);\
             if (data) {\
                 auto impl = static_cast<const ID2D1EffectImpl*>(obj);\
-                auto ths = static_cast<const RadialBlurEffect*>(impl);\
+                auto ths = static_cast<const CLASS*>(impl);\
                 *reinterpret_cast<TYPE*>(data) = ths->Get##NAME();\
             }\
             if (outeln) {\
