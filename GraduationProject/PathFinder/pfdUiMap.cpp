@@ -8,7 +8,6 @@
 #include <Shobjidl.h>
 #include <Shlwapi.h>
 
-
 /// <summary>
 /// Initializes a new instance of the <see cref="UIMapControl"/> class.
 /// </summary>
@@ -492,7 +491,6 @@ void PathFD::UIMapControl::Render() const noexcept {
     // 前景渲染
     this->render_chain_foreground();
 }
-
 
 /// <summary>
 /// 重建控件资源
