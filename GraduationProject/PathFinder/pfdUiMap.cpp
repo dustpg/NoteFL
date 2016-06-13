@@ -955,8 +955,6 @@ void PathFD::UIMapControl::Execute(IFDAlgorithm* algorithm, LongUI::CUIString& i
             constexpr auto at = LongUI::AnimationType::Type_QuarticEaseOut;
             x = LongUI::EasingFunction(at, x);
             if (x != 1.f) {
-                // 加锁
-                LongUI::CUIDxgiAutoLocker locker;
                 // 计算
                 uint32_t end = uint32_t(x * float(path->len));
                 D2D1_COLOR_F color = D2D1::ColorF(D2D1::ColorF::Orange);
