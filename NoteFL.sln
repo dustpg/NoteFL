@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25029.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "D3D12", "D3D12", "{BCDE7BD2-7E91-4E5E-9A0D-DBCD40620A14}"
 EndProject
@@ -40,6 +40,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GraduationProject", "GraduationProject", "{B4397AAE-9BB3-4954-ADBB-4CCA1BC59481}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PathFinder", "GraduationProject\PathFinder\PathFinder.vcxproj", "{02D5A0AA-0FD3-4855-B5F5-3E25D50DF54F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "D3D11", "D3D11", "{3F85FC56-70E8-415C-AA3B-E31D330F7A06}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "D3D11InteropWithD2D", "D3D11\D3D11InteropWithD2D\D3D11InteropWithD2D.vcxproj", "{F7161A65-6DB5-4162-B4D3-BCD65E46E283}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -137,6 +141,14 @@ Global
 		{02D5A0AA-0FD3-4855-B5F5-3E25D50DF54F}.Release|x64.Build.0 = Release|x64
 		{02D5A0AA-0FD3-4855-B5F5-3E25D50DF54F}.Release|x86.ActiveCfg = Release|Win32
 		{02D5A0AA-0FD3-4855-B5F5-3E25D50DF54F}.Release|x86.Build.0 = Release|Win32
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Debug|x64.ActiveCfg = Debug|x64
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Debug|x64.Build.0 = Debug|x64
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Debug|x86.ActiveCfg = Debug|Win32
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Debug|x86.Build.0 = Debug|Win32
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Release|x64.ActiveCfg = Release|x64
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Release|x64.Build.0 = Release|x64
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Release|x86.ActiveCfg = Release|Win32
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,5 +167,9 @@ Global
 		{058C6437-88C5-4DE2-B7B8-7A6ECA88A0B6} = {2092E3C8-BDCB-4D9B-A5CA-D9084C2E324C}
 		{609D220D-832F-4649-915D-FDE35015193A} = {2092E3C8-BDCB-4D9B-A5CA-D9084C2E324C}
 		{02D5A0AA-0FD3-4855-B5F5-3E25D50DF54F} = {B4397AAE-9BB3-4954-ADBB-4CCA1BC59481}
+		{F7161A65-6DB5-4162-B4D3-BCD65E46E283} = {3F85FC56-70E8-415C-AA3B-E31D330F7A06}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {976E85DC-B9BE-40F6-BB95-8D35441FCE2D}
 	EndGlobalSection
 EndGlobal

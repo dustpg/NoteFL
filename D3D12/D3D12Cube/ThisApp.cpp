@@ -76,7 +76,7 @@ void ThisApp::RunMessageLoop() noexcept {
             ::DispatchMessageW(&msg);
         }
         else {
-            m_sceneRenderer.OnRender(0);
+            m_sceneRenderer.OnRender(1);
         }
     }
 #else
