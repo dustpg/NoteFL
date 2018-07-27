@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+ï»¿#define _CRT_SECURE_NO_WARNINGS
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -37,12 +37,12 @@ struct alignas(sizeof(float)*4) GlobalData {
     ID2D1SolidColorBrush*   d2d_brush;
 } g_data = {  };
 
-// ¶¥µã-ÎÆÀí Ä£ĞÍ
+// é¡¶ç‚¹-çº¹ç† æ¨¡å‹
 struct VertexTex {
     DirectX::XMFLOAT3   pos;
     DirectX::XMFLOAT2   tex;
 };
-// ³£Á¿»º´æ
+// å¸¸é‡ç¼“å­˜
 struct MatrixBufferType {
     DirectX::XMMATRIX   world;
     DirectX::XMMATRIX   view;
@@ -82,7 +82,7 @@ extern "C" int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE, char*, int nCmdS
         SCREEN_NEAR_Z,
         SCREEN_FAR_Z
     );
-    // ×¢²á´°¿Ú
+    // æ³¨å†Œçª—å£
     WNDCLASSEXW wcex = { sizeof(WNDCLASSEXW) };
     wcex.style = CS_HREDRAW | CS_VREDRAW;
     wcex.lpfnWndProc = ThisWndProc;
@@ -95,7 +95,7 @@ extern "C" int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE, char*, int nCmdS
     wcex.lpszClassName = L"DemoWindowClass";
     wcex.hIcon = nullptr;
     ::RegisterClassExW(&wcex);
-    // ¼ÆËã´°¿Ú´óĞ¡
+    // è®¡ç®—çª—å£å¤§å°
     RECT window_rect = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
     DWORD window_style = WS_OVERLAPPEDWINDOW;
     AdjustWindowRect(&window_rect, window_style, FALSE);
@@ -103,7 +103,7 @@ extern "C" int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE, char*, int nCmdS
     window_rect.bottom -= window_rect.top;
     window_rect.left = (::GetSystemMetrics(SM_CXFULLSCREEN) - window_rect.right) / 2;
     window_rect.top = (::GetSystemMetrics(SM_CYFULLSCREEN) - window_rect.bottom) / 2;
-    // ´´½¨´°¿Ú
+    // åˆ›å»ºçª—å£
     const auto hwnd = ::CreateWindowExW(
         0,
         wcex.lpszClassName, WINDOW_TITLE, window_style,
@@ -116,7 +116,7 @@ extern "C" int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE, char*, int nCmdS
     if (::InitD3D(hwnd)) {
         MSG msg = { 0 };
         while (msg.message != WM_QUIT) {
-            // »ñÈ¡ÏûÏ¢
+            // è·å–æ¶ˆæ¯
             if (::PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
                 ::TranslateMessage(&msg);
                 ::DispatchMessageW(&msg);
@@ -205,14 +205,14 @@ bool InitD3D(HWND hwnd) noexcept {
     ID3D11Texture2D* buffer = nullptr;
     IDXGIDevice1* dxgi_device = nullptr;
     IDXGISurface* dxgi_surface = nullptr;
-    // ´´½¨D3DÉè±¸Óë½»»»Á´
+    // åˆ›å»ºD3Dè®¾å¤‡ä¸äº¤æ¢é“¾
     if (SUCCEEDED(hr)) {
-        // D3D11 ´´½¨flag 
-        // Ò»¶¨ÒªÓĞD3D11_CREATE_DEVICE_BGRA_SUPPORT
-        // ·ñÔò´´½¨D2DÉè±¸ÉÏÏÂÎÄ»áÊ§°Ü
+        // D3D11 åˆ›å»ºflag 
+        // ä¸€å®šè¦æœ‰D3D11_CREATE_DEVICE_BGRA_SUPPORT
+        // å¦åˆ™åˆ›å»ºD2Dè®¾å¤‡ä¸Šä¸‹æ–‡ä¼šå¤±è´¥
         UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 #if !defined(NDEBUG)
-        // Debug×´Ì¬ ÓĞD3D DebugLayer¾Í¿ÉÒÔÈ¡Ïû×¢ÊÍ
+        // DebugçŠ¶æ€ æœ‰D3D DebugLayerå°±å¯ä»¥å–æ¶ˆæ³¨é‡Š
         creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
         const D3D_FEATURE_LEVEL featureLevels[] = {
@@ -251,15 +251,15 @@ bool InitD3D(HWND hwnd) noexcept {
             &g_data.device_context
         );
     }
-    // »ñÈ¡ºó±¸»º´æ×÷ÎªTexture2D
+    // è·å–åå¤‡ç¼“å­˜ä½œä¸ºTexture2D
     if (SUCCEEDED(hr)) {
         hr = g_data.swap_chain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&buffer);
     }
-    // ´´½¨äÖÈ¾Ä¿±êÊÓÍ¼
+    // åˆ›å»ºæ¸²æŸ“ç›®æ ‡è§†å›¾
     if (SUCCEEDED(hr)) {
         hr = g_data.device->CreateRenderTargetView(buffer, nullptr, &g_data.d3d_rtv);
     }
-    // ´´½¨Éî¶ÈÄ£°å»º´æ
+    // åˆ›å»ºæ·±åº¦æ¨¡æ¿ç¼“å­˜
     if (SUCCEEDED(hr)) {
         D3D11_TEXTURE2D_DESC dsbuffer_desc = {};
         dsbuffer_desc.Width = WINDOW_WIDTH;
@@ -276,11 +276,11 @@ bool InitD3D(HWND hwnd) noexcept {
         dsbuffer_desc.MiscFlags = 0;
         hr = g_data.device->CreateTexture2D(&dsbuffer_desc, nullptr, &g_data.d3d_dsbuffer);
     }
-    // ´´½¨Éî¶ÈÄ£°åÊÓÍ¼
+    // åˆ›å»ºæ·±åº¦æ¨¡æ¿è§†å›¾
     if (SUCCEEDED(hr)) {
         hr = g_data.device->CreateDepthStencilView(g_data.d3d_dsbuffer, nullptr, &g_data.d3d_dsv);
     }
-    // ´´½¨³£Á¿»º´æ
+    // åˆ›å»ºå¸¸é‡ç¼“å­˜
     if (SUCCEEDED(hr)) {
         D3D11_BUFFER_DESC matrix_desc = { 0 };
         matrix_desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -291,11 +291,11 @@ bool InitD3D(HWND hwnd) noexcept {
         matrix_desc.StructureByteStride = 0;
         hr = g_data.device->CreateBuffer(&matrix_desc, nullptr, &g_data.d3d_cube_cbuffer);
     }
-    // ´´½¨²ÊÉ«Á¢·½Ìå
+    // åˆ›å»ºå½©è‰²ç«‹æ–¹ä½“
     if (SUCCEEDED(hr)) {
         hr = ::CreateColoredCube();
     }
-    // ´´½¨D2D¹¤³§
+    // åˆ›å»ºD2Då·¥å‚
     if (SUCCEEDED(hr)) {
         hr = ::D2D1CreateFactory(
             D2D1_FACTORY_TYPE_SINGLE_THREADED,
@@ -303,25 +303,25 @@ bool InitD3D(HWND hwnd) noexcept {
             (void**)&g_data.d2d_factory
         );
     }
-    // ´´½¨ IDXGIDevice
+    // åˆ›å»º IDXGIDevice
     if (SUCCEEDED(hr)) {
         hr = g_data.device->QueryInterface(
             IID_IDXGIDevice1,
             reinterpret_cast<void**>(&dxgi_device)
         );
     }
-    // ´´½¨ D2DÉè±¸
+    // åˆ›å»º D2Dè®¾å¤‡
     if (SUCCEEDED(hr)) {
         hr = g_data.d2d_factory->CreateDevice(dxgi_device, &g_data.d2d_device);
     }
-    // ´´½¨ D2DÉè±¸ÉÏÏÂÎÄ
+    // åˆ›å»º D2Dè®¾å¤‡ä¸Šä¸‹æ–‡
     if (SUCCEEDED(hr)) {
         hr = g_data.d2d_device->CreateDeviceContext(
             D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
             &g_data.d2d_context
         );
     }
-    // ´´½¨²ÉÑùÆ÷
+    // åˆ›å»ºé‡‡æ ·å™¨
     if (SUCCEEDED(hr)) {
         D3D11_SAMPLER_DESC sampler_desc = { };
         sampler_desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -335,7 +335,7 @@ bool InitD3D(HWND hwnd) noexcept {
         sampler_desc.MaxLOD = D3D11_FLOAT32_MAX;
         hr = g_data.device->CreateSamplerState(&sampler_desc, &g_data.d3d_sampler);
     }
-    // ´´½¨ÎÆÀí
+    // åˆ›å»ºçº¹ç†
     if (SUCCEEDED(hr)) {
         D3D11_TEXTURE2D_DESC tex_desc = {};
         tex_desc.Height = OFFSCREEN_WIDTH;
@@ -352,7 +352,7 @@ bool InitD3D(HWND hwnd) noexcept {
 
         hr = g_data.device->CreateTexture2D(&tex_desc, nullptr, &g_data.d3d_texture);
     }
-    // ÀûÓÃÎÆÀí´´½¨ÎÆÀíÊÓÍ¼
+    // åˆ©ç”¨çº¹ç†åˆ›å»ºçº¹ç†è§†å›¾
     if (SUCCEEDED(hr)) {
         D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc = { };
         srv_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -363,11 +363,11 @@ bool InitD3D(HWND hwnd) noexcept {
             g_data.d3d_texture, &srv_desc, &g_data.d3d_texture_view
         );
     }
-    // ÀûÓÃÎÆÀí»ñÈ¡DXGI±íÃæ
+    // åˆ©ç”¨çº¹ç†è·å–DXGIè¡¨é¢
     if (SUCCEEDED(hr)) {
         hr = g_data.d3d_texture->QueryInterface(IID_IDXGISurface, (void**)&dxgi_surface);
     }
-    // ÀûÓÃDXGI±íÃæ´´½¨D2DäÖÈ¾³ĞÔØÎ»Í¼
+    // åˆ©ç”¨DXGIè¡¨é¢åˆ›å»ºD2Dæ¸²æŸ“æ‰¿è½½ä½å›¾
     if (SUCCEEDED(hr)) {
         D2D1_BITMAP_PROPERTIES1 bitmap_properties = D2D1::BitmapProperties1(
             D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
@@ -379,20 +379,20 @@ bool InitD3D(HWND hwnd) noexcept {
             &g_data.d2d_target
         );
     }
-    // ´´½¨´¿É«±ÊË¢
+    // åˆ›å»ºçº¯è‰²ç¬”åˆ·
     if (SUCCEEDED(hr)) {
         hr = g_data.d2d_context->CreateSolidColorBrush(
             D2D1::ColorF(0.f, 0.f, 0.f, 1.f),
             &g_data.d2d_brush
         );
     }
-    // ÉèÖÃÎªÊä³öÄ¿±ê
+    // è®¾ç½®ä¸ºè¾“å‡ºç›®æ ‡
     if (SUCCEEDED(hr)) {
         g_data.device_context->OMSetRenderTargets(1, &g_data.d3d_rtv, g_data.d3d_dsv);
         g_data.d2d_context->SetUnitMode(D2D1_UNIT_MODE_PIXELS);
         g_data.d2d_context->SetTarget(g_data.d2d_target);
     }
-    // ÉèÖÃÊÓ¿ÚÊı¾İ
+    // è®¾ç½®è§†å£æ•°æ®
     if (SUCCEEDED(hr)) {
         D3D11_VIEWPORT vp;
         vp.Width = static_cast<FLOAT>(WINDOW_WIDTH);
@@ -437,20 +437,20 @@ void ClearD3D() noexcept {
 
 
 const char s_cube_shader[] = u8R"shader(
-// C Buffer 0 : ´¢´æ×ª»»¾ØÕó
+// C Buffer 0 : å‚¨å­˜è½¬æ¢çŸ©é˜µ
 cbuffer MatrixBuffer : register (b0) {
     matrix worldMatrix;
     matrix viewMatrix;
     matrix projectionMatrix;
 };
 
-// VS ÊäÈë
+// VS è¾“å…¥
 struct VertexInputType {
     float4 position     : POSITION;
     float2 tex          : TEXCOORD0;
 };
 
-// VS Êä³ö
+// VS è¾“å‡º
 struct PixelInputType {
     float4 position     : SV_POSITION;
     float2 tex          : TEXCOORD0;
@@ -458,30 +458,30 @@ struct PixelInputType {
 Texture2D shaderTexture;
 SamplerState SampleType;
 
-// ´¦Àí
-PixelInputType ColorVertexShader(VertexInputType input) {
+// å¤„ç†
+PixelInputType TexVertexShader(VertexInputType input) {
     PixelInputType output;
-    // ×ø±ê×ª»»
+    // åæ ‡è½¬æ¢
     output.position = mul(float4(input.position.xyz, 1), worldMatrix);
     output.position = mul(output.position, viewMatrix);
     output.position = mul(output.position, projectionMatrix);
-    // Ö±½ÓÊä³ö
+    // ç›´æ¥è¾“å‡º
     output.tex = input.tex;
 
     return output;
 }
 
-// ÏñËØ×ÅÉ«Æ÷´¦Àí
-float4 ColorPixelShader(PixelInputType input) : SV_TARGET {
+// åƒç´ ç€è‰²å™¨å¤„ç†
+float4 TexPixelShader(PixelInputType input) : SV_TARGET {
     return shaderTexture.Sample(SampleType, input.tex);
 }
 )shader";
 
 
 
-// ´´½¨´øÑÕÉ«µÄÕı·½Ìå
+// åˆ›å»ºå¸¦é¢œè‰²çš„æ­£æ–¹ä½“
 HRESULT CreateColoredCube() noexcept {
-    // Á¢·½ÌåµÄ8¸ö¶¥µã ÓëÏàÓ¦ÎÆÀí×ø±ê
+    // ç«‹æ–¹ä½“çš„8ä¸ªé¡¶ç‚¹ ä¸ç›¸åº”çº¹ç†åæ ‡
     const VertexTex vertices[] = {
         { DirectX::XMFLOAT3(-1.f, -1.f, -1.f), DirectX::XMFLOAT2(1.f, 1.f) },
         { DirectX::XMFLOAT3(-1.f, +1.f, -1.f), DirectX::XMFLOAT2(0.f, 1.f) },
@@ -493,7 +493,7 @@ HRESULT CreateColoredCube() noexcept {
         { DirectX::XMFLOAT3(+1.f, +1.f, +1.f), DirectX::XMFLOAT2(0.f, 1.f) },
         { DirectX::XMFLOAT3(+1.f, -1.f, +1.f), DirectX::XMFLOAT2(1.f, 1.f) }
     };
-    // Á¢·½Ìå 6¸öÃæ 12¸öÈı½ÇÃæ 36¸ö¶¥µã
+    // ç«‹æ–¹ä½“ 6ä¸ªé¢ 12ä¸ªä¸‰è§’é¢ 36ä¸ªé¡¶ç‚¹
     const uint16_t indices[] = {
         0, 1, 2, 0, 2, 3,
         4, 5, 1, 4, 1, 0,
@@ -502,14 +502,14 @@ HRESULT CreateColoredCube() noexcept {
         1, 5, 6, 1, 6, 2,
         4, 0, 3, 4, 3, 7
     };
-    // ÊäÈë²¼¾Ö
+    // è¾“å…¥å¸ƒå±€
     const D3D11_INPUT_ELEMENT_DESC inputLayout[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(VertexTex, pos), D3D11_INPUT_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(VertexTex, tex), D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
     HRESULT hr = S_OK;
     ID3DBlob* vs = nullptr, *ps = nullptr;
-    // ´´½¨¶¥µã»º´æ
+    // åˆ›å»ºé¡¶ç‚¹ç¼“å­˜
     if (SUCCEEDED(hr)) {
         D3D11_BUFFER_DESC buffer_desc = { 0 };
         buffer_desc.Usage = D3D11_USAGE_DEFAULT;
@@ -519,7 +519,7 @@ HRESULT CreateColoredCube() noexcept {
         D3D11_SUBRESOURCE_DATA sub_data = { vertices };
         hr = g_data.device->CreateBuffer(&buffer_desc, &sub_data, &g_data.d3d_cube_vertex);
     }
-    // ´´½¨Ë÷Òı»º´æ
+    // åˆ›å»ºç´¢å¼•ç¼“å­˜
     if (SUCCEEDED(hr)) {
         D3D11_BUFFER_DESC buffer_desc = { 0 };
         buffer_desc.Usage = D3D11_USAGE_DEFAULT;
@@ -533,25 +533,25 @@ HRESULT CreateColoredCube() noexcept {
 #if !defined(NDEBUG)
     flag |= D3DCOMPILE_DEBUG;
 #endif
-    // ±àÒëVS
+    // ç¼–è¯‘VS
     if (SUCCEEDED(hr)) {
         hr = ::D3DCompile(
             s_cube_shader, sizeof(s_cube_shader), 
             nullptr, nullptr, nullptr,
-            "ColorVertexShader", "vs_5_0", 
+            "TexVertexShader", "vs_4_0", 
             flag, 0, &vs, nullptr
         );
     }
-    // ±àÒëPS
+    // ç¼–è¯‘PS
     if (SUCCEEDED(hr)) {
         hr = ::D3DCompile(
             s_cube_shader, sizeof(s_cube_shader),
             nullptr, nullptr, nullptr,
-            "ColorPixelShader", "ps_5_0",
+            "TexPixelShader", "ps_4_0",
             flag, 0, &ps, nullptr
         );
     }
-    // ´´½¨VS
+    // åˆ›å»ºVS
     if (SUCCEEDED(hr)) {
         hr = g_data.device->CreateVertexShader(
             vs->GetBufferPointer(), 
@@ -559,7 +559,7 @@ HRESULT CreateColoredCube() noexcept {
             nullptr, &g_data.d3d_cube_vs
         );
     }
-    // ´´½¨PS
+    // åˆ›å»ºPS
     if (SUCCEEDED(hr)) {
         hr = g_data.device->CreatePixelShader(
             ps->GetBufferPointer(),
@@ -567,7 +567,7 @@ HRESULT CreateColoredCube() noexcept {
             nullptr, &g_data.d3d_cube_ps
         );
     }
-    // ´´½¨¶ÔÓ¦ÊäÈë²¼¾Ö
+    // åˆ›å»ºå¯¹åº”è¾“å…¥å¸ƒå±€
     if (SUCCEEDED(hr)) {
         g_data.device->CreateInputLayout(
             inputLayout, sizeof(inputLayout)/sizeof(inputLayout[0]), 
