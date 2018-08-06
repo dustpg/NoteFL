@@ -192,6 +192,7 @@ void CallOnce() noexcept {
         const auto ctx = g_data.d2d_context;
         ctx->BeginDraw();
         ctx->Clear(D2D1::ColorF(0.f, 0.f, 0.f, 0.f));
+        ctx->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
         ctx->DrawTextLayout({}, g_data.dw_layout, g_data.d2d_brush);
         const auto hr = ctx->EndDraw();
     }
