@@ -42,13 +42,13 @@ struct VertexTex {
     DirectX::XMFLOAT3   pos;
     DirectX::XMFLOAT2   tex;
 };
+
 // 常量缓存
 struct MatrixBufferType {
     DirectX::XMMATRIX   world;
     DirectX::XMMATRIX   view;
     DirectX::XMMATRIX   projection;
 };
-
 
 static constexpr float SCREEN_NEAR_Z = (0.01f);
 static constexpr float SCREEN_FAR_Z = (1000.f);
@@ -569,7 +569,7 @@ HRESULT CreateColoredCube() noexcept {
     }
     // 创建对应输入布局
     if (SUCCEEDED(hr)) {
-        g_data.device->CreateInputLayout(
+        hr = g_data.device->CreateInputLayout(
             inputLayout, sizeof(inputLayout)/sizeof(inputLayout[0]), 
             vs->GetBufferPointer(),
             vs->GetBufferSize(), 
